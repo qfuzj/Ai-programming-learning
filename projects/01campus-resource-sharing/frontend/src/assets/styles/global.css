@@ -1,0 +1,47 @@
+:root {
+  --theme-primary: #ffe60f;
+  --theme-text: #000000;
+  --theme-bg: #f4f7fb;
+  --brand-blue: #2563eb;
+  --brand-blue-soft: #dbeafe;
+  --brand-indigo: #1e3a8a;
+  --surface: #ffffff;
+  --muted-text: #64748b;
+  --border-soft: #e2e8f0;
+  --radius-md: 12px;
+  --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--theme-text);
+  background:
+    radial-gradient(circle at 10% 10%, #fff7cc 0%, transparent 24%),
+    radial-gradient(circle at 90% 20%, #dbeafe 0%, transparent 26%),
+    linear-gradient(180deg, #fffef0 0%, #ffffff 35%, #f4f7fb 100%);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
