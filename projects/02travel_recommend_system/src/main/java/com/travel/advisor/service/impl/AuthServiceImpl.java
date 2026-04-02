@@ -134,7 +134,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void resetPassword(ResetPasswordDTO dto) {
-        captchaService.validateCaptcha(dto.getCaptchaId(), dto.getCaptchaCode());
+//        captchaService.validateCaptcha(dto.getCaptchaId(), dto.getCaptchaCode());
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
             .eq(User::getPhone, dto.getPhone())
             .last("limit 1"));

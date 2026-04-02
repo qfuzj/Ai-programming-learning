@@ -55,9 +55,9 @@ public class TokenService {
 
     /**
      * 添加 tokenId 到黑名单，并删除 Redis 中对应的 refreshToken 记录。黑名单只存储 accessToken 的 tokenId，过期后由 Redis 自动淘汰。
-     * @param loginUser
-     * @param tokenId
-     * @param remainingSeconds
+     * @param loginUser 登录用户信息，包含 userId、username、roleType、roleCode、loginType 等字段。
+     * @param tokenId 需要失效的 tokenId，通常来自 JWT 的 claims.getId()，确保与生成 token 时一致。
+     * @param remainingSeconds accessToken 的剩余有效时间，单位为秒，用于设置黑名单的过期时间，确保 accessToken 过期后黑名单记录自动清理。
      */
     public void invalidateToken(LoginUser loginUser, String tokenId, long remainingSeconds) {
         String tokenKey = buildTokenKey(loginUser.getRoleType(), loginUser.getUserId(), tokenId);
