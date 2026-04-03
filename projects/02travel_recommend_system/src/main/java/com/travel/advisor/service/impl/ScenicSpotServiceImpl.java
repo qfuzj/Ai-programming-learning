@@ -422,20 +422,8 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             return scenicSpotTag;
         }).collect(Collectors.toList());
 
-//        for (Long tagId : tagIds) {
-//            ScenicSpotTag scenicSpotTag = new ScenicSpotTag();
-//            scenicSpotTag.setScenicSpotId(scenicSpotId);
-//            scenicSpotTag.setTagId(tagId);
-//            scenicSpotTag.setCreateTime(LocalDateTime.now());
-//            scenicSpotTags.add(scenicSpotTag);
-//        }
         if (!CollectionUtils.isEmpty(scenicSpotTags)) {
             scenicSpotTagMapper.insertBatch(scenicSpotTags);
-
-        }
-
-        for (ScenicSpotTag scenicSpotTag : scenicSpotTags) {
-            scenicSpotTagMapper.insert(scenicSpotTag);
         }
     }
 
@@ -444,18 +432,22 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         if (CollectionUtils.isEmpty(imageIds)) {
             return;
         }
-        int index = 0;
-        for (Long imageId : imageIds) {
+        final int[] index = {0};
+        List<ScenicImage> scenicImages = imageIds.stream().map(imageId -> {
             ScenicImage scenicImage = new ScenicImage();
             scenicImage.setScenicSpotId(scenicSpotId);
             scenicImage.setFileResourceId(imageId);
             scenicImage.setImageUrl("");
             scenicImage.setImageType(1);
             scenicImage.setTitle(null);
-            scenicImage.setSortOrder(index);
-            scenicImage.setIsCover(index == 0 ? 1 : 0);
-            scenicImageMapper.insert(scenicImage);
-            index++;
+            scenicImage.setSortOrder(index[0]);
+            scenicImage.setIsCover(index[0] == 0 ? 1 : 0);
+            index[0]++;
+            return scenicImage;
+        }).collect(Collectors.toList());
+
+        if(!CollectionUtils.isEmpty(scenicImages)) {
+            scenicImageMapper.insertBatch(scenicImages);
         }
     }
 
@@ -478,6 +470,11 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         return source;
     }
 
+    /**
+     * 获取对象中值为null的属性名称列表，供BeanUtils.copyProperties时忽略这些属性，避免覆盖原有值
+     * @param source 源对象
+     * @return 值为null的属性名称数组
+     */
     private String[] getNullPropertyNames(Object source) {
         BeanWrapper src = new BeanWrapperImpl(source);
         PropertyDescriptor[] pds = src.getPropertyDescriptors();

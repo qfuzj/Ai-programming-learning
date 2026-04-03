@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-LLM-Travel-Advisor 是一个基于 Spring Boot 3 的智能旅游景点推荐平台。当前处于早期开发阶段，认证模块已完成，核心业务模块（景点、评论、行程、推荐、AI 对话）待实现。
+LLM-Travel-Advisor 是一个基于 Spring Boot 3 的智能旅游景点推荐平台。认证、地区、标签、景点、收藏、浏览历史、点评、审核模块已完成，待实现行程计划、推荐引擎、AI 对话、文件上传、统计看板等模块。
 
 ## 技术栈
 
@@ -103,13 +103,28 @@ PageResult.<T>builder()
 - ✅ 认证模块 (注册/登录/登出/刷新Token/重置密码/验证码)
 - ✅ 地区模块 (用户端树形查询、管理端 CRUD)
 - ✅ 标签模块 (用户端按类型查询、管理端 CRUD)
+- ✅ 景点管理模块 (用户端分页/详情/筛选/热门榜, 管理端 CRUD/上下架/标签绑定/图片管理)
+- ✅ 收藏模块 (收藏/取消收藏/收藏列表)
+- ✅ 浏览历史模块 (上报/查询/删除/清空)
+- ✅ 点评模块 (发布点评/我的点评/景点评价列表/删除点评)
+- ✅ 审核模块 (审核列表/通过/拒绝/隐藏)
 
-**待实现**: 用户管理、景点管理、收藏、浏览历史、点评、审核、行程计划、推荐引擎、AI 对话、文件上传、运营管理
+**待实现**: 用户管理、行程计划、推荐引擎、AI 对话、文件上传、运营管理、统计看板、操作日志
+
+## 已知问题
+
+### `syncImages` 方法会覆盖已有的图片 URL (P0)
+- **问题**: `ScenicSpotServiceImpl.syncImages()` 先将景点所有图片记录清空, 再插入新记录时 `imageUrl` 置为空字符串。如果之前通过 `addImage` 独立接口上传了带真实 URL 的图片, 调用 `create`/`update` 时会丢失图片 URL。
+- **原因**: `ScenicCreateDTO`/`ScenicUpdateDTO` 的 `imageIds` 只传了文件资源 ID, 没有 URL 信息; 而 `file_resource` 表尚未实现, 无法反查 URL。
+- **临时方案**: 景点图片管理使用 `addImage`/`listImages`/`deleteImage` 独立接口, 不依赖 `create`/`update` 中的 `imageIds` 同步。
+- **彻底修复 (阶段十一完成)**: 创建 `FileResource` 实体和 Mapper 后, 将 `syncImages` 改为从 `file_resource` 表查出 URL 写入; 同时将 `create`/`update` 方法重新启用 `syncImages` 调用。
 
 ## 注意事项
 
-- `application-dev.yml` 中包含硬编码的数据库密码, 勿泄露
-- 数据库密码: `wo221000`, Redis: `172.16.219.100:6379`
+- 密码已通过环境变量引用 (`DB_PASSWORD`, `REDIS_PASSWORD`), 生产环境应覆盖这些变量
 - `后端接口规范文档.md` 定义了完整的接口契约, 新增接口时需遵循文档规范
+- `AI分阶段生成代码任务清单.md` 定义了开发顺序, 新增模块时参考依赖关系
 - 前端规划使用 Vue 3 + Vite + Naive UI, 尚未开始
-- MyBatis-Plus 的 XML mapper 文件应放在 `resources/mapper/` 目录下 (配置在 `application.yml`)
+- MyBatis-Plus 的 XML mapper 文件放在 `resources/mapper/` 目录下 (当前仅 `ScenicSpotTagMapper.xml`)
+- 项目已配置 MinIO 支持 (见 `application.yml` 的 minio 配置段), 但服务层尚未实现
+- pom.xml 中已引入 springdoc-openapi (v2.6.0), Swagger UI 在 http://localhost:8080/swagger-ui.html

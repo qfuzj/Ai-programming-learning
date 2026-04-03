@@ -91,5 +91,5 @@ app:
     jwt:
       issuer: llm-travel-advisor
       secret: ${JWT_SECRET:ReplaceThisWithAtLeast32ByteSecretKey123456789}
-      access-token-expire-seconds: 7200
-      refresh-token-expire-seconds: 604800
+      access-token-expire-seconds:  604800 # 暂时设置7天 后面根据需要设置 7200 2小时
+      refresh-token-expire-seconds: 604800 # 7天

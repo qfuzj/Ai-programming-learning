@@ -11,7 +11,7 @@
  Target Server Version : 80042 (8.0.42)
  File Encoding         : 65001
 
- Date: 02/04/2026 18:39:26
+ Date: 03/04/2026 14:28:44
 */
 
 SET NAMES utf8mb4;
@@ -45,7 +45,7 @@ CREATE TABLE `admin_user` (
 -- Records of admin_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `admin_user` (`id`, `username`, `password`, `real_name`, `phone`, `email`, `avatar`, `role`, `permissions`, `status`, `last_login_time`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 'admin', '$2a$10$xyz...', '系统管理员', NULL, NULL, NULL, 'super_admin', NULL, 1, NULL, '2026-04-01 18:41:02', '2026-04-01 18:41:02', 0);
+INSERT INTO `admin_user` (`id`, `username`, `password`, `real_name`, `phone`, `email`, `avatar`, `role`, `permissions`, `status`, `last_login_time`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 'admin', '$2a$10$wDFUz0gh59U6lL2zowmTI./PMCHx3RvEWJ4P161RRX/I3ABS.csRK', '系统管理员', NULL, NULL, NULL, 'super_admin', NULL, 1, '2026-04-03 14:20:51', '2026-04-01 18:41:02', '2026-04-02 18:44:55', 0);
 COMMIT;
 
 -- ----------------------------
@@ -341,7 +341,7 @@ CREATE TABLE `region` (
   KEY `idx_level` (`level`),
   KEY `idx_pinyin` (`pinyin`),
   KEY `idx_is_hot` (`is_hot`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='地区表';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='地区表';
 
 -- ----------------------------
 -- Records of region
@@ -350,6 +350,7 @@ BEGIN;
 INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 0, '四川省', NULL, 1, '510000', 'Sichuan', NULL, NULL, 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
 INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 1, '成都市', NULL, 2, '510100', 'Chengdu', NULL, NULL, 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
 INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (3, 1, '阿坝藏族羌族自治州', NULL, 2, '513200', 'Aba', NULL, NULL, 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
+INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (4, 1, 'test2', 't2', 2, '123', 'test1', 72.0000000, 89.0000000, 2, 2, '2026-04-02 18:58:48', '2026-04-02 19:00:14', 0);
 COMMIT;
 
 -- ----------------------------
@@ -363,7 +364,7 @@ CREATE TABLE `scenic_image` (
   `image_url` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '图片 URL（冗余字段，方便直接读取）',
   `image_type` tinyint NOT NULL DEFAULT '1' COMMENT '图片类型：1 实景 2 地图 3 全景',
   `title` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图片标题 / 说明',
-  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序（升序）',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序（数值越小优先展示）',
   `is_cover` tinyint NOT NULL DEFAULT '0' COMMENT '是否封面图：0 否 1 是',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -568,7 +569,7 @@ CREATE TABLE `tag` (
   UNIQUE KEY `uk_name` (`name`),
   KEY `idx_type` (`type`),
   KEY `idx_category` (`category`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
 
 -- ----------------------------
 -- Records of tag
@@ -579,6 +580,7 @@ INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_orde
 INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (3, '大熊猫', 1, '特色', NULL, '#333333', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
 INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (4, '深度游', 2, '风格', NULL, '#2196F3', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
 INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (5, '吃货必备', 2, '偏好', NULL, '#E91E63', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
+INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (21, '掌11', 48, 'ut', 'https://avatars.githubusercontent.com/u/75775389', 'maroon', 8, 67, '2026-04-02 19:46:10', '2026-04-02 19:46:36', 0);
 COMMIT;
 
 -- ----------------------------
