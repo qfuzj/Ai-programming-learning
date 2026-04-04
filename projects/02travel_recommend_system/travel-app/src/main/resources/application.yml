@@ -20,21 +20,6 @@ spring:
       minimum-idle: 10
       pool-name: LLMTravelHikariPool
 
-  # MyBatis-Plus 配置
-  mybatis-plus:
-    global-config:
-      db-config:
-        logic-delete-field: is_deleted
-        logic-delete-value: 1
-        logic-not-delete-value: 0
-        update-strategy: not_empty
-      mapper-locations: classpath:/mapper/*.xml
-      type-aliases-package: com.travel.entity
-    configuration:
-      map-underscore-to-camel-case: true
-      auto-mapping-behavior: full
-      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-
   # Redis 配置
   data:
     redis:
@@ -65,10 +50,17 @@ server:
 
 # MyBatis-Plus 配置（顶级）
 mybatis-plus:
-  mapper-locations: classpath:/mapper/*.xml
-  type-aliases-package: com.travel.entity
+  mapper-locations: classpath*:/com/travel/advisor/mapper/*.xml
+  type-aliases-package: com.travel.advisor.entity
+  global-config:
+    db-config:
+      logic-delete-field: is_deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      update-strategy: not_empty
   configuration:
     map-underscore-to-camel-case: true
+    auto-mapping-behavior: full
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 # Swagger/SpringDoc 配置

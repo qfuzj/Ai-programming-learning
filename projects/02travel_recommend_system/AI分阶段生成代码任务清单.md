@@ -35,48 +35,40 @@
 ## 阶段一：后端基础工程搭建
 
 ### 任务 1
-- 任务名称：初始化 Spring Boot 3 项目骨架
-- 目标模块：基础工程
-- 要生成的文件：
-  - `pom.xml`
-  - `application.yml`
-  - `application-dev.yml`
-  - `application-prod.yml`
-  - `LLMTravelAdvisorApplication.java`
-- 前置依赖：无
+- 任务名称：初始化 Spring Boot 3 多模块项目骨架（已完成）
+- 目标模块：父 POM + 子模块
+- 已完成的文件：
+  - `pom.xml`（父 POM，`<packaging>pom</packaging>`）
+  - `travel-common/pom.xml`（通用组件模块）
+  - `travel-model/pom.xml`（数据模型模块）
+  - `travel-web/pom.xml`（Web 层模块）
+  - `travel-app/pom.xml`（启动模块，含 Spring Boot 打包插件）
+  - `travel-app/src/main/resources/application.yml`
+  - `travel-app/src/main/resources/application-dev.yml`
+  - `travel-app/src/main/resources/application-prod.yml`
+  - `travel-app/src/main/java/com/travel/advisor/LLMTravelAdvisorApplication.java`
+- 前置依赖：⭕ 已完成
+- 跨模块依赖：travel-app → travel-web → travel-common + travel-model
 - 关键注意事项：
   - 引入 Spring Web / Validation / MyBatis-Plus / MySQL / Redis / JWT 等依赖
-  - 保留 Knife4j 或 SpringDoc 接口文档能力
+  - 保留 SpringDoc 接口文档能力
   - 单体分层架构，不要微服务化
 
 ### 任务 2
-- 任务名称：生成基础目录结构与公共模块
-- 目标模块：common/config/exception
-- 要生成的文件：
-  - `common/result/Result.java`
-  - `common/result/ResultCode.java`
-  - `common/page/PageQuery.java`
-  - `common/page/PageResult.java`
-  - `exception/BusinessException.java`
-  - `exception/GlobalExceptionHandler.java`
-  - `config/MybatisPlusConfig.java`
-  - `config/RedisConfig.java`
+- 任务名称：生成基础目录结构与公共模块（已完成）
+- 目标模块：
+  - Common → `travel-common`（`Result<T>`, `PageQuery`, `PageResult`, `BusinessException`, `GlobalExceptionHandler`）
+  - Config 与 Security → `travel-web`（`MybatisPlusConfig`, `RedisConfig`, `ResponseAdviceConfig`）
 - 前置依赖：任务1
 - 关键注意事项：
-  - 统一返回结构
-  - 统一异常处理
-  - 分页对象封装
-  - MyBatis-Plus 分页插件配置
+  - 统一返回结构放在 travel-common
+  - 统一异常处理放在 travel-common
+  - 分页对象封装放在 travel-common
+  - MyBatis-Plus 分页插件配置放在 travel-web
 
 ### 任务 3
-- 任务名称：生成基础工具类
-- 目标模块：utils
-- 要生成的文件：
-  - `utils/JwtUtils.java`
-  - `utils/RedisUtils.java`
-  - `utils/SecurityUtils.java`
-  - `utils/BeanCopyUtils.java`
-  - `utils/JsonUtils.java`
+- 任务名称：生成基础工具类（已完成）
+- 目标模块：travel-common → `com.travel.advisor.utils`
 - 前置依赖：任务2
 - 关键注意事项：
   - JWT 工具要支持 accessToken 和 refreshToken
@@ -87,411 +79,370 @@
 ## 阶段二：认证与权限模块
 
 ### 任务 4
-- 任务名称：生成认证与权限基础代码
-- 目标模块：security/auth
-- 要生成的文件：
-  - `security/LoginUser.java`
-  - `security/JwtAuthenticationFilter.java`
-  - `security/SecurityConfig.java`
-  - `security/TokenService.java`
-  - `security/PermissionService.java`
-- 前置依赖：阶段一
+- 任务名称：生成认证与权限基础代码（已完成）
+- 目标模块：
+  - Security → `travel-web/src/main/java/com/travel/advisor/security`
+  - LoginUser → `travel-common/src/main/java/com/travel/advisor/security/LoginUser.java`
+  - Config → `travel-web/src/main/java/com/travel/advisor/config`
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 区分用户端与管理员端登录
   - 支持白名单接口
   - 支持 token 黑名单校验
 
 ### 任务 5
-- 任务名称：生成用户认证模块代码
-- 目标模块：user auth
-- 要生成的文件：
-  - `controller/user/AuthController.java`
-  - `service/AuthService.java`
-  - `service/impl/AuthServiceImpl.java`
-  - `dto/auth/UserRegisterDTO.java`
-  - `dto/auth/UserLoginDTO.java`
-  - `dto/auth/ResetPasswordDTO.java`
-  - `vo/auth/LoginVO.java`
-  - `entity/User.java`
-  - `mapper/UserMapper.java`
-- 前置依赖：任务4
+- 任务名称：生成用户认证模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 实现注册、登录、登出、刷新Token、重置密码
   - 用户密码必须加密存储
   - Redis 保存验证码与 token
+- 文件清单：
+  - `travel-web/controller/user/AuthController.java`
+  - `travel-web/service/AuthService.java` + impl
+  - `travel-web/dto/auth/UserRegisterDTO.java`
+  - `travel-web/dto/auth/UserLoginDTO.java`
+  - `travel-web/dto/auth/ResetPasswordDTO.java`
+  - `travel-web/vo/auth/LoginVO.java`
+  - `travel-model/entity/User.java`
+  - `travel-model/mapper/UserMapper.java`
 
 ### 任务 6
-- 任务名称：生成管理员认证模块代码
-- 目标模块：admin auth
-- 要生成的文件：
-  - `controller/admin/AdminAuthController.java`
-  - `service/AdminAuthService.java`
-  - `service/impl/AdminAuthServiceImpl.java`
-  - `entity/AdminUser.java`
-  - `mapper/AdminUserMapper.java`
-  - `dto/auth/AdminLoginDTO.java`
-- 前置依赖：任务4
+- 任务名称：生成管理员认证模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 管理员登录接口独立
   - 管理员 token 与用户 token Redis key 隔离
+- 文件清单：
+  - `travel-web/controller/admin/AdminAuthController.java`
+  - `travel-web/service/AdminAuthService.java` + impl
+  - `travel-model/entity/AdminUser.java`
+  - `travel-model/mapper/AdminUserMapper.java`
+  - `travel-web/dto/auth/AdminLoginDTO.java`
 
 ---
 
 ## 阶段三：基础数据模块
 
 ### 任务 7
-- 任务名称：生成地区模块代码
-- 目标模块：region
-- 要生成的文件：
-  - `controller/common/RegionController.java`
-  - `controller/admin/AdminRegionController.java`
-  - `service/RegionService.java`
-  - `service/impl/RegionServiceImpl.java`
-  - `entity/Region.java`
-  - `mapper/RegionMapper.java`
-  - `vo/region/RegionTreeVO.java`
-- 前置依赖：阶段二
+- 任务名称：生成地区模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 同时支持用户端树形查询与管理端 CRUD
+- 文件清单：
+  - `travel-web/controller/common/RegionController.java`
+  - `travel-web/controller/admin/AdminRegionController.java`
+  - `travel-web/service/RegionService.java` + impl
+  - `travel-model/entity/Region.java`
+  - `travel-model/mapper/RegionMapper.java`
+  - `travel-web/vo/region/RegionTreeVO.java`
 
 ### 任务 8
-- 任务名称：生成标签模块代码
-- 目标模块：tag
-- 要生成的文件：
-  - `controller/common/TagController.java`
-  - `controller/admin/AdminTagController.java`
-  - `service/TagService.java`
-  - `service/impl/TagServiceImpl.java`
-  - `entity/Tag.java`
-  - `mapper/TagMapper.java`
-- 前置依赖：阶段二
+- 任务名称：生成标签模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 支持按类型筛选标签
   - 预留用户偏好标签与景点标签共用能力
+- 文件清单：
+  - `travel-web/controller/common/TagController.java`
+  - `travel-web/controller/admin/AdminTagController.java`
+  - `travel-web/service/TagService.java` + impl
+  - `travel-model/entity/Tag.java`
+  - `travel-model/mapper/TagMapper.java`
 
 ---
 
 ## 阶段四：景点模块
 
 ### 任务 9
-- 任务名称：生成景点实体与Mapper
-- 目标模块：scenic
-- 要生成的文件：
-  - `entity/ScenicSpot.java`
-  - `entity/ScenicImage.java`
-  - `entity/ScenicSpotTag.java`
-  - `mapper/ScenicSpotMapper.java`
-  - `mapper/ScenicImageMapper.java`
-  - `mapper/ScenicSpotTagMapper.java`
-- 前置依赖：阶段三
+- 任务名称：生成景点实体与Mapper（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 严格映射现有表
   - 不自行扩展不存在的核心表
+- 文件清单：
+  - `travel-model/entity/ScenicSpot.java`
+  - `travel-model/entity/ScenicImage.java`
+  - `travel-model/entity/ScenicSpotTag.java`
+  - `travel-model/mapper/ScenicSpotMapper.java`
+  - `travel-model/mapper/ScenicImageMapper.java`
+  - `travel-model/mapper/ScenicSpotTagMapper.java`
 
 ### 任务 10
-- 任务名称：生成用户端景点查询模块
-- 目标模块：user scenic
-- 要生成的文件：
-  - `controller/user/ScenicSpotController.java`
-  - `service/ScenicSpotService.java`
-  - `service/impl/ScenicSpotServiceImpl.java`
-  - `dto/scenic/ScenicQueryDTO.java`
-  - `vo/scenic/ScenicListVO.java`
-  - `vo/scenic/ScenicDetailVO.java`
-- 前置依赖：任务9
+- 任务名称：生成用户端景点查询模块（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 支持分页、筛选、排序、详情
   - 详情页返回图片、标签、地区、评分、收藏状态
+- 文件清单：
+  - `travel-web/controller/user/ScenicSpotController.java`
+  - `travel-web/service/ScenicSpotService.java` + impl
+  - `travel-web/dto/scenic/ScenicQueryDTO.java`
+  - `travel-web/vo/scenic/ScenicListVO.java`
+  - `travel-web/vo/scenic/ScenicDetailVO.java`
+  - `travel-web/vo/scenic/ScenicImageVO.java`
 
 ### 任务 11
-- 任务名称：生成管理端景点管理模块
-- 目标模块：admin scenic
-- 要生成的文件：
-  - `controller/admin/AdminScenicSpotController.java`
-  - `dto/scenic/ScenicCreateDTO.java`
-  - `dto/scenic/ScenicUpdateDTO.java`
-  - `dto/scenic/ScenicStatusDTO.java`
-- 前置依赖：任务9、任务10
+- 任务名称：生成管理端景点管理模块（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 覆盖 CRUD、上下架、标签绑定、图片关联
+- 文件清单：
+  - `travel-web/controller/admin/AdminScenicSpotController.java`
+  - `travel-web/dto/scenic/ScenicCreateDTO.java`
+  - `travel-web/dto/scenic/ScenicUpdateDTO.java`
+  - `travel-web/dto/scenic/ScenicStatusDTO.java`
+  - `travel-web/dto/scenic/ScenicImageCreateDTO.java`
 
 ---
 
 ## 阶段五：用户行为模块
 
 ### 任务 12
-- 任务名称：生成收藏模块代码
-- 目标模块：favorite
-- 要生成的文件：
-  - `entity/UserFavorite.java`
-  - `mapper/UserFavoriteMapper.java`
-  - `controller/user/FavoriteController.java`
-  - `service/FavoriteService.java`
-  - `service/impl/FavoriteServiceImpl.java`
-- 前置依赖：阶段四
+- 任务名称：生成收藏模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 防止重复收藏
   - 收藏列表支持分页
+- 文件清单：
+  - `travel-model/entity/UserFavorite.java`
+  - `travel-model/mapper/UserFavoriteMapper.java`
+  - `travel-web/controller/user/FavoriteController.java`
+  - `travel-web/service/FavoriteService.java` + impl
+  - `travel-web/vo/favorite/FavoriteVO.java`
 
 ### 任务 13
-- 任务名称：生成浏览历史模块代码
-- 目标模块：browse history
-- 要生成的文件：
-  - `entity/UserBrowseHistory.java`
-  - `mapper/UserBrowseHistoryMapper.java`
-  - `controller/user/BrowseHistoryController.java`
-  - `service/BrowseHistoryService.java`
-  - `service/impl/BrowseHistoryServiceImpl.java`
-  - `dto/history/BrowseHistoryCreateDTO.java`
-- 前置依赖：阶段四
+- 任务名称：生成浏览历史模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 支持记录停留时长和来源
   - 用户只能查看自己的浏览记录
+- 文件清单：
+  - `travel-model/entity/UserBrowseHistory.java`
+  - `travel-model/mapper/UserBrowseHistoryMapper.java`
+  - `travel-web/controller/user/BrowseHistoryController.java`
+  - `travel-web/service/BrowseHistoryService.java` + impl
+  - `travel-web/dto/history/BrowseHistoryCreateDTO.java`
+  - `travel-web/vo/history/BrowseHistoryVO.java`
 
 ### 任务 14
-- 任务名称：生成点评模块代码
-- 目标模块：review
-- 要生成的文件：
-  - `entity/UserReview.java`
-  - `mapper/UserReviewMapper.java`
-  - `controller/user/ReviewController.java`
-  - `service/ReviewService.java`
-  - `service/impl/ReviewServiceImpl.java`
-  - `dto/review/ReviewCreateDTO.java`
-  - `vo/review/ReviewVO.java`
-- 前置依赖：阶段四
+- 任务名称：生成点评模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 发布点评后同步生成审核记录
   - 点评状态应受审核结果影响
+- 文件清单：
+  - `travel-model/entity/UserReview.java`
+  - `travel-model/mapper/UserReviewMapper.java`
+  - `travel-web/controller/user/ReviewController.java`
+  - `travel-web/service/ReviewService.java` + impl
+  - `travel-web/dto/review/ReviewCreateDTO.java`
+  - `travel-web/dto/review/ReviewQueryDTO.java`
+  - `travel-web/vo/review/ReviewVO.java`
 
 ---
 
 ## 阶段六：审核与用户管理模块
 
 ### 任务 15
-- 任务名称：生成内容审核模块代码
-- 目标模块：audit
-- 要生成的文件：
-  - `entity/ContentAudit.java`
-  - `mapper/ContentAuditMapper.java`
-  - `controller/admin/AuditController.java`
-  - `service/AuditService.java`
-  - `service/impl/AuditServiceImpl.java`
-  - `dto/audit/AuditActionDTO.java`
-- 前置依赖：任务14
+- 任务名称：生成内容审核模块代码（已完成）
+- 前置依赖：⭕ 已完成
 - 关键注意事项：
   - 支持通过、拒绝、隐藏
   - 审核结果要回写 user_review 状态
+- 文件清单：
+  - `travel-model/entity/ContentAudit.java`
+  - `travel-model/mapper/ContentAuditMapper.java`
+  - Audit 相关代码尚未生成（待实现 Admin/AuditController、AuditService 等）
 
 ### 任务 16
-- 任务名称：生成管理员用户管理模块代码
-- 目标模块：admin user
-- 要生成的文件：
-  - `controller/admin/AdminUserController.java`
-  - `service/AdminUserManageService.java`
-  - `service/impl/AdminUserManageServiceImpl.java`
-  - `dto/user/UserStatusDTO.java`
-  - `vo/user/AdminUserDetailVO.java`
+- 任务名称：生成管理员用户管理模块代码（待实现）
 - 前置依赖：阶段二、阶段五
 - 关键注意事项：
   - 支持禁用/启用用户
   - 用户禁用时清理登录态
+- 文件清单：
+  - `travel-web/controller/admin/AdminUserController.java`（待生成）
+  - `travel-web/service/AdminUserManageService.java`（待生成）
+  - `travel-web/dto/user/UserStatusDTO.java`（待生成）
+  - `travel-web/vo/user/AdminUserDetailVO.java`（待生成）
 
 ---
 
 ## 阶段七：行程计划模块
 
 ### 任务 17
-- 任务名称：生成行程计划基础代码
-- 目标模块：travel plan
-- 要生成的文件：
-  - `entity/TravelPlan.java`
-  - `entity/TravelPlanItem.java`
-  - `mapper/TravelPlanMapper.java`
-  - `mapper/TravelPlanItemMapper.java`
-  - `controller/user/TravelPlanController.java`
-  - `service/TravelPlanService.java`
-  - `service/impl/TravelPlanServiceImpl.java`
-  - `dto/plan/TravelPlanCreateDTO.java`
-  - `dto/plan/TravelPlanItemCreateDTO.java`
-  - `vo/plan/TravelPlanDetailVO.java`
+- 任务名称：生成行程计划基础代码（待实现）
 - 前置依赖：阶段四
 - 关键注意事项：
   - 按用户隔离数据
   - 明确 dayNo 与 itemType
+- 文件清单：
+  - `travel-model/entity/TravelPlan.java`（待生成）
+  - `travel-model/entity/TravelPlanItem.java`（待生成）
+  - `travel-model/mapper/TravelPlanMapper.java`（待生成）
+  - `travel-model/mapper/TravelPlanItemMapper.java`（待生成）
+  - `travel-web/controller/user/TravelPlanController.java`（待生成）
+  - `travel-web/service/TravelPlanService.java`（待生成）
+  - `travel-web/dto/plan/TravelPlanCreateDTO.java`（待生成）
+  - `travel-web/dto/plan/TravelPlanItemCreateDTO.java`（待生成）
+  - `travel-web/vo/plan/TravelPlanDetailVO.java`（待生成）
 
 ### 任务 18
-- 任务名称：生成 AI辅助行程模块
-- 目标模块：travel plan ai
-- 要生成的文件：
-  - `controller/user/TravelPlanAiController.java`
-  - `dto/plan/TravelPlanAiGenerateDTO.java`
-  - `vo/plan/TravelPlanAiGenerateVO.java`
-  - `service/TravelPlanAiService.java`
-  - `service/impl/TravelPlanAiServiceImpl.java`
+- 任务名称：生成 AI辅助行程模块（待实现）
 - 前置依赖：任务17、阶段九前置LLM封装
 - 关键注意事项：
   - 仅生成草案
   - 支持保存为正式计划
+- 文件清单：
+  - `travel-web/controller/user/TravelPlanAiController.java`（待生成）
+  - `travel-web/dto/plan/TravelPlanAiGenerateDTO.java`（待生成）
+  - `travel-web/vo/plan/TravelPlanAiGenerateVO.java`（待生成）
+  - `travel-web/service/TravelPlanAiService.java`（待生成）
 
 ---
 
 ## 阶段八：推荐系统模块
 
 ### 任务 19
-- 任务名称：生成推荐实体与记录模块
-- 目标模块：recommend record
-- 要生成的文件：
-  - `entity/RecommendRecord.java`
-  - `entity/RecommendResultItem.java`
-  - `mapper/RecommendRecordMapper.java`
-  - `mapper/RecommendResultItemMapper.java`
+- 任务名称：生成推荐实体与记录模块（待实现）
 - 前置依赖：阶段五
 - 关键注意事项：
   - 推荐记录与结果项一对多映射清晰
+- 文件清单：
+  - `travel-model/entity/RecommendRecord.java`（待生成）
+  - `travel-model/entity/RecommendResultItem.java`（待生成）
+  - `travel-model/mapper/RecommendRecordMapper.java`（待生成）
+  - `travel-model/mapper/RecommendResultItemMapper.java`（待生成）
 
 ### 任务 20
-- 任务名称：生成推荐模块骨架代码
-- 目标模块：recommend
-- 要生成的文件：
-  - `controller/user/RecommendController.java`
-  - `service/RecommendService.java`
-  - `service/impl/RecommendServiceImpl.java`
-  - `recommend/RecallStrategy.java`
-  - `recommend/HotRecallStrategy.java`
-  - `recommend/TagRecallStrategy.java`
-  - `recommend/GeoRecallStrategy.java`
-  - `recommend/RecommendRankService.java`
-  - `recommend/RecommendReasonBuilder.java`
-  - `vo/recommend/RecommendItemVO.java`
+- 任务名称：生成推荐模块骨架代码（待实现）
 - 前置依赖：任务19
 - 关键注意事项：
   - 先实现可运行的规则推荐，再预留 LLM 精排
+- 文件清单：
+  - `travel-web/controller/user/RecommendController.java`（待生成）
+  - `travel-web/service/RecommendService.java`（待生成）
+  - `travel-web/recommend/RecallStrategy.java`（待生成）
+  - `travel-web/recommend/HotRecallStrategy.java`（待生成）
+  - `travel-web/recommend/TagRecallStrategy.java`（待生成）
+  - `travel-web/recommend/GeoRecallStrategy.java`（待生成）
+  - `travel-web/recommend/RecommendRankService.java`（待生成）
+  - `travel-web/recommend/RecommendReasonBuilder.java`（待生成）
+  - `travel-web/vo/recommend/RecommendItemVO.java`（待生成）
 
 ### 任务 21
-- 任务名称：生成推荐反馈模块代码
-- 目标模块：recommend feedback
-- 要生成的文件：
-  - `dto/recommend/RecommendFeedbackDTO.java`
-  - `service/RecommendFeedbackService.java`
-  - `service/impl/RecommendFeedbackServiceImpl.java`
+- 任务名称：生成推荐反馈模块代码（待实现）
 - 前置依赖：任务20
 - 关键注意事项：
   - 覆盖曝光、点击、收藏反馈
   - 回写 recommend_result_item 或扩展统计逻辑
+- 文件清单：
+  - `travel-web/dto/recommend/RecommendFeedbackDTO.java`（待生成）
+  - `travel-web/service/RecommendFeedbackService.java`（待生成）
 
 ---
 
 ## 阶段九：LLM与对话模块
 
 ### 任务 22
-- 任务名称：生成LLM调用网关基础封装
-- 目标模块：llm gateway
-- 要生成的文件：
-  - `llm/LlmGateway.java`
-  - `llm/impl/DefaultLlmGateway.java`
-  - `llm/dto/LlmChatRequest.java`
-  - `llm/dto/LlmChatResponse.java`
-  - `llm/PromptBuilder.java`
-  - `llm/LlmProperties.java`
+- 任务名称：生成LLM调用网关基础封装（待实现）
 - 前置依赖：阶段一
 - 关键注意事项：
   - 做统一网关抽象
   - 便于后续切换模型服务商
+- 文件清单：
+  - `travel-web/llm/LlmGateway.java`（待生成）
+  - `travel-web/llm/impl/DefaultLlmGateway.java`（待生成）
+  - `travel-web/llm/dto/LlmChatRequest.java`（待生成）
+  - `travel-web/llm/dto/LlmChatResponse.java`（待生成）
+  - `travel-web/llm/PromptBuilder.java`（待生成）
+  - `travel-web/llm/LlmProperties.java`（待生成）
 
 ### 任务 23
-- 任务名称：生成对话模块基础代码
-- 目标模块：chat
-- 要生成的文件：
-  - `entity/LlmConversation.java`
-  - `entity/LlmMessage.java`
-  - `entity/LlmCallLog.java`
-  - `mapper/LlmConversationMapper.java`
-  - `mapper/LlmMessageMapper.java`
-  - `mapper/LlmCallLogMapper.java`
-  - `controller/user/ChatController.java`
-  - `service/ConversationService.java`
-  - `service/MessageService.java`
-  - `service/LlmCallLogService.java`
+- 任务名称：生成对话模块基础代码（待实现）
 - 前置依赖：任务22
 - 关键注意事项：
   - 支持创建会话、发送消息、查询历史、删除会话
+- 文件清单：
+  - `travel-model/entity/LlmConversation.java`（待生成）
+  - `travel-model/entity/LlmMessage.java`（待生成）
+  - `travel-model/entity/LlmCallLog.java`（待生成）
+  - `travel-model/mapper/LlmConversationMapper.java`（待生成）
+  - `travel-model/mapper/LlmMessageMapper.java`（待生成）
+  - `travel-model/mapper/LlmCallLogMapper.java`（待生成）
+  - `travel-web/controller/user/ChatController.java`（待生成）
+  - `travel-web/service/ConversationService.java`（待生成）
+  - `travel-web/service/MessageService.java`（待生成）
+  - `travel-web/service/LlmCallLogService.java`（待生成）
 
 ### 任务 24
-- 任务名称：生成上下文管理与Prompt注入逻辑
-- 目标模块：chat context
-- 要生成的文件：
-  - `llm/ConversationContextManager.java`
-  - `llm/SensitiveFilterService.java`
-  - `llm/ChatFallbackService.java`
+- 任务名称：生成上下文管理与Prompt注入逻辑（待实现）
 - 前置依赖：任务23
 - 关键注意事项：
   - 支持当前景点上下文注入
   - 支持消息截断与摘要预留
+- 文件清单：
+  - `travel-web/llm/ConversationContextManager.java`（待生成）
+  - `travel-web/llm/SensitiveFilterService.java`（待生成）
+  - `travel-web/llm/ChatFallbackService.java`（待生成）
 
 ---
 
 ## 阶段十：系统配置、日志、统计模块
 
 ### 任务 25
-- 任务名称：生成系统配置模块代码
-- 目标模块：system config
-- 要生成的文件：
-  - `entity/SystemConfig.java`
-  - `mapper/SystemConfigMapper.java`
-  - `controller/admin/SystemConfigController.java`
-  - `service/SystemConfigService.java`
-  - `service/impl/SystemConfigServiceImpl.java`
+- 任务名称：生成系统配置模块代码（待实现）
 - 前置依赖：阶段二
 - 关键注意事项：
   - 配置支持按 key 查询与更新
+- 文件清单：
+  - `travel-model/entity/SystemConfig.java`（待生成）
+  - `travel-model/mapper/SystemConfigMapper.java`（待生成）
+  - `travel-web/controller/admin/SystemConfigController.java`（待生成）
+  - `travel-web/service/SystemConfigService.java`（待生成）
 
 ### 任务 26
-- 任务名称：生成操作日志模块代码
-- 目标模块：operation log
-- 要生成的文件：
-  - `entity/OperationLog.java`
-  - `mapper/OperationLogMapper.java`
-  - `controller/admin/OperationLogController.java`
-  - `aspect/OperationLogAspect.java`
-  - `annotation/OperationLog.java`
+- 任务名称：生成操作日志模块代码（待实现）
 - 前置依赖：阶段一
 - 关键注意事项：
   - 使用 AOP 记录管理员操作
+- 文件清单：
+  - `travel-model/entity/OperationLog.java`（待生成）
+  - `travel-model/mapper/OperationLogMapper.java`（待生成）
+  - `travel-web/controller/admin/OperationLogController.java`（待生成）
+  - `travel-web/aspect/OperationLogAspect.java`（待生成）
+  - `travel-web/annotation/OperationLog.java`（待生成，放在 travel-common 或 travel-web 中）
 
 ### 任务 27
-- 任务名称：生成统计看板模块代码
-- 目标模块：dashboard
-- 要生成的文件：
-  - `entity/StatScenicDaily.java`
-  - `entity/StatPlatformDaily.java`
-  - `mapper/StatScenicDailyMapper.java`
-  - `mapper/StatPlatformDailyMapper.java`
-  - `controller/admin/DashboardController.java`
-  - `service/DashboardService.java`
-  - `service/impl/DashboardServiceImpl.java`
+- 任务名称：生成统计看板模块代码（待实现）
 - 前置依赖：阶段八、阶段九、任务26
 - 关键注意事项：
   - 统计接口优先返回图表可直接消费的数据结构
+- 文件清单：
+  - `travel-model/entity/StatScenicDaily.java`（待生成）
+  - `travel-model/entity/StatPlatformDaily.java`（待生成）
+  - `travel-model/mapper/StatScenicDailyMapper.java`（待生成）
+  - `travel-model/mapper/StatPlatformDailyMapper.java`（待生成）
+  - `travel-web/controller/admin/DashboardController.java`（待生成）
+  - `travel-web/service/DashboardService.java`（待生成）
 
 ---
 
 ## 阶段十一：文件资源预留模块
 
 ### 任务 28
-- 任务名称：生成文件资源模块预留代码
-- 目标模块：file resource
-- 要生成的文件：
-  - `entity/FileResource.java`
-  - `mapper/FileResourceMapper.java`
-  - `controller/common/FileController.java`
-  - `service/FileService.java`
-  - `service/impl/FileServiceImpl.java`
-  - `dto/file/FileUploadCallbackDTO.java`
+- 任务名称：生成文件资源模块预留代码（待实现）
 - 前置依赖：阶段一
 - 关键注意事项：
   - 只做元数据登记与接口预留
   - 不深度实现 MinIO 上传
+- 文件清单：
+  - `travel-model/entity/FileResource.java`（待生成）
+  - `travel-model/mapper/FileResourceMapper.java`（待生成）
+  - `travel-web/controller/common/FileController.java`（待生成）
+  - `travel-web/service/FileService.java`（待生成）
+  - `travel-web/dto/file/FileUploadCallbackDTO.java`（待生成）
 
 ---
 
@@ -772,21 +723,11 @@
 ## 6. 下一轮可直接复制使用的代码生成 Prompt 模板
 
 ### 模板 1：生成后端基础工程
-```text
-请为项目 LLM-Travel-Advisor 生成 Spring Boot 3 后端基础工程骨架，技术栈为 Spring Boot 3 + MyBatis-Plus + MySQL + Redis + JWT。请输出：
-1. pom.xml 依赖
-2. application.yml 基础配置
-3. 主启动类
-4. common/result 包下统一响应结构 Result、ResultCode
-5. common/page 包下分页对象 PageQuery、PageResult
-6. 全局异常处理 GlobalExceptionHandler
-7. MybatisPlusConfig 与 RedisConfig
-要求：
-- 代码结构清晰
-- 包名规范
-- 可直接复制到项目中使用
-- 不要省略 import
-```
+> 注：本项目已拆分为多模块（travel-common / travel-model / travel-web / travel-app），基础工程已完成。后续生成代码时请将文件放在对应模块中：
+> - 实体/ Mapper → `travel-model/src/main/java/com/travel/advisor/entity|mapper/`
+> - Service/Controller/DTO/VO → `travel-web/src/main/java/com/travel/advisor/`
+> - 通用组件/Result/Page → `travel-common/src/main/java/com/travel/advisor/`
+> - 配置文件 → `travel-app/src/main/resources/`
 
 ### 模板 2：生成认证模块完整代码
 ```text
@@ -1013,6 +954,19 @@
 
 
 ## 特别说明
+
+### 项目模块结构（2026-04-04 更新）
+
+本项目已拆分为 Maven 多模块结构，生成代码时请将文件放在对应模块中：
+
+| 模块 | 路径前缀 | 放置内容 |
+|------|----------|----------|
+| travel-common | `travel-common/src/main/java/com/travel/advisor/` | Result, PageQuery, PageResult, 工具类, 异常, LoginUser, 注解 |
+| travel-model | `travel-model/src/main/java/com/travel/advisor/` | Entity, Mapper, XML mapper |
+| travel-web | `travel-web/src/main/java/com/travel/advisor/` | Controller, Service, DTO, VO, Security, Config, Filter, 业务推荐/LLM 组件 |
+| travel-app | `travel-app/src/main/` | 主启动类, application*.yml |
+
+跨模块依赖: travel-app → travel-web → travel-common + travel-model
 
 ### 关于 MinIO 文件模块
 

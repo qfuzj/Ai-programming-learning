@@ -12,6 +12,5 @@
             <foreach collection="list" item="item" separator=",">
                 (#{item.scenicSpotId}, #{item.fileResourceId}, #{item.imageUrl}, #{item.imageType}, #{item.title}, #{item.sortOrder}, #{item.isCover})
             </foreach>
-
     </insert>
 </mapper>
