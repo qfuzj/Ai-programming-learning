@@ -28,7 +28,13 @@
             <n-input v-model:value="modal.form.title" placeholder="可为空" />
           </n-form-item>
           <n-form-item label="图片地址">
-            <n-input v-model:value="modal.form.imageUrl" placeholder="请输入图片 URL" />
+            <n-space vertical style="width: 100%">
+              <n-input v-model:value="modal.form.imageUrl" placeholder="请输入图片 URL 或上传后自动填充" />
+              <input type="file" accept="image/*" @change="handleImageUpload" />
+              <div v-if="modal.form.imageUrl" class="image-preview">
+                <img :src="resolveFileUrl(modal.form.imageUrl)" alt="轮播预览" />
+              </div>
+            </n-space>
           </n-form-item>
           <n-form-item label="跳转链接">
             <n-input v-model:value="modal.form.linkUrl" placeholder="可为空" />
@@ -56,7 +62,9 @@
 <script setup>
 import { h, onMounted, reactive, ref } from 'vue'
 import { NButton, NCard, NDataTable, NForm, NFormItem, NFormItemGi, NGrid, NInput, NInputNumber, NModal, NPagination, NSelect, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
+import { uploadGoodsImage } from '@/api/goods'
 import { addAdminBanner, adminBannerPage, deleteAdminBanner, updateAdminBanner, updateAdminBannerStatus } from '@/api/admin'
+import { resolveFileUrl } from '@/utils/file'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -120,6 +128,25 @@ const openModal = (row) => {
   modal.show = true
 }
 
+const handleImageUpload = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  try {
+    const res = await uploadGoodsImage(file)
+    if (res?.imageUrl) {
+      modal.form.imageUrl = res.imageUrl
+      message.success('图片上传成功')
+    } else {
+      message.error('上传失败')
+    }
+  } catch (error) {
+    message.error(error.message || '上传失败')
+  } finally {
+    event.target.value = ''
+  }
+}
+
 const saveBanner = async () => {
   if (!modal.form.imageUrl.trim()) {
     message.warning('请填写图片地址')
@@ -179,7 +206,7 @@ const columns = [
     title: '图片',
     key: 'imageUrl',
     width: 120,
-    render: (row) => h('img', { src: row.imageUrl, style: 'width: 90px;height: 40px;object-fit: cover;border-radius: 4px;' })
+    render: (row) => h('img', { src: resolveFileUrl(row.imageUrl), style: 'width: 90px;height: 40px;object-fit: cover;border-radius: 4px;' })
   },
   { title: '排序', key: 'sort', width: 80 },
   {
@@ -218,6 +245,14 @@ onMounted(loadList)
   margin-top: 14px;
   display: flex;
   justify-content: flex-end;
+}
+
+.image-preview img {
+  width: 180px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
 }
 
 @media (max-width: 900px) {

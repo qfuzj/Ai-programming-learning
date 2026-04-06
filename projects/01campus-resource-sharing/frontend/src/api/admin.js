@@ -16,6 +16,10 @@ export function adminGoodsPage(params) {
   return request.get('/admin/goods/page', { params })
 }
 
+export function adminGoodsDetail(id) {
+  return request.get(`/admin/goods/detail/${id}`)
+}
+
 export function updateAdminGoodsStatus(id, data) {
   return request.put(`/admin/goods/status/${id}`, data)
 }

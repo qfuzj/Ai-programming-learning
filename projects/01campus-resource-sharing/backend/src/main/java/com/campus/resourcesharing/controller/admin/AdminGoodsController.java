@@ -12,6 +12,7 @@ import com.campus.resourcesharing.service.admin.AdminUserLookupService;
 import com.campus.resourcesharing.service.GoodsInfoService;
 import com.campus.resourcesharing.utils.JwtUtil;
 import com.campus.resourcesharing.vo.admin.AdminGoodsVO;
+import com.campus.resourcesharing.vo.admin.AdminGoodsDetailVO;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -80,6 +81,37 @@ public class AdminGoodsController extends AdminBaseController {
         }).toList();
 
         return Result.success(new PageResult<>(page.getTotal(), page.getCurrent(), page.getSize(), records));
+    }
+
+    @GetMapping("/detail/{id}")
+    public Result<AdminGoodsDetailVO> detail(@RequestHeader("Authorization") String authorization,
+                                             @PathVariable Long id) {
+        assertAdmin(authorization);
+
+        GoodsInfo goods = goodsInfoService.getById(id);
+        if (goods == null || (goods.getDeleted() != null && goods.getDeleted() == 1)) {
+            throw new BusinessException(404, "商品不存在");
+        }
+
+        AdminGoodsDetailVO vo = new AdminGoodsDetailVO();
+        vo.setId(goods.getId());
+        vo.setUserId(goods.getUserId());
+        vo.setUserName(adminUserLookupService.buildUserDisplayNameMap(List.of(goods.getUserId())).get(goods.getUserId()));
+        vo.setCategoryId(goods.getCategoryId());
+        vo.setTitle(goods.getTitle());
+        vo.setDescription(goods.getDescription());
+        vo.setPrice(goods.getPrice());
+        vo.setOriginalPrice(goods.getOriginalPrice());
+        vo.setConditionLevel(goods.getConditionLevel());
+        vo.setContactInfo(goods.getContactInfo());
+        vo.setTradeLocation(goods.getTradeLocation());
+        vo.setMainImage(goods.getMainImage());
+        vo.setViewCount(goods.getViewCount());
+        vo.setFavoriteCount(goods.getFavoriteCount());
+        vo.setStatus(goods.getStatus());
+        vo.setCreateTime(goods.getCreateTime());
+        vo.setImageList(goodsInfoService.getDetail(null, id).getImageList());
+        return Result.success(vo);
     }
 
     @PutMapping("/status/{id}")

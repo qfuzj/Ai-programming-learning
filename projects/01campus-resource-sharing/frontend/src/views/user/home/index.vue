@@ -80,7 +80,11 @@
       <div v-if="displayedGoods.length" class="goods-grid">
         <div class="goods-card" v-for="goods in displayedGoods" :key="`${activeTabKey}-${goods.id}`" @click="navigateToDetail(goods.id)">
           <div class="goods-image">
-            <img :src="resolveFileUrl(goods.mainImage)" :alt="goods.title" />
+            <img
+              :src="resolveFileUrl(goods.mainImage) || GOODS_IMAGE_PLACEHOLDER"
+              :alt="goods.title"
+              @error="handleGoodsImageError"
+            />
             <div class="condition">{{ goods.conditionLevel || '成色良好' }}</div>
           </div>
           <div class="goods-info">
@@ -116,6 +120,8 @@ const latest = ref([])
 const notices = ref([])
 const categories = ref([])
 const activeTabKey = ref('recommend')
+const GOODS_IMAGE_PLACEHOLDER =
+  "data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='420' viewBox='0 0 600 420'><rect width='600' height='420' fill='%23f3f4f6'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%239ca3af' font-size='28' font-family='Arial'>暂无图片</text></svg>"
 
 const interestTabs = computed(() => {
   const dynamic = categories.value.slice(0, 8).map((item) => ({
@@ -165,6 +171,13 @@ const formatDate = (date) => {
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+const handleGoodsImageError = (event) => {
+  const target = event?.target
+  if (target && target.src !== GOODS_IMAGE_PLACEHOLDER) {
+    target.src = GOODS_IMAGE_PLACEHOLDER
+  }
 }
 
 const loadData = async () => {

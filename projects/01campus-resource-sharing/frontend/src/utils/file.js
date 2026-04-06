@@ -14,5 +14,7 @@ export function resolveFileUrl(url) {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url
   }
-  return `${API_BASE}${url}`
+
+  const normalizedPath = url.startsWith('/') ? url : `/${url}`
+  return `${API_BASE}${normalizedPath}`
 }

@@ -19,6 +19,8 @@ import java.util.UUID;
 @RequestMapping("/api/upload")
 public class UploadController {
 
+    private static final long MAX_IMAGE_SIZE = 10L * 1024 * 1024;
+
     @PostMapping("/image")
     public Result<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -30,8 +32,8 @@ public class UploadController {
             throw new BusinessException(400, "仅支持图片文件");
         }
 
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new BusinessException(400, "图片大小不能超过5MB");
+        if (file.getSize() > MAX_IMAGE_SIZE) {
+            throw new BusinessException(400, "图片大小不能超过10MB");
         }
 
         String originalName = file.getOriginalFilename();

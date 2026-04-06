@@ -1,10 +1,13 @@
 package com.campus.resourcesharing.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.campus.resourcesharing.entity.GoodsInfo;
+import com.campus.resourcesharing.entity.GoodsImage;
 import com.campus.resourcesharing.entity.SysBanner;
 import com.campus.resourcesharing.entity.SysNotice;
 import com.campus.resourcesharing.service.GoodsInfoService;
+import com.campus.resourcesharing.service.GoodsImageService;
 import com.campus.resourcesharing.service.HomeService;
 import com.campus.resourcesharing.service.SysBannerService;
 import com.campus.resourcesharing.service.SysNoticeService;
@@ -20,13 +23,16 @@ public class HomeServiceImpl implements HomeService {
 
     private final SysBannerService sysBannerService;
     private final GoodsInfoService goodsInfoService;
+    private final GoodsImageService goodsImageService;
     private final SysNoticeService sysNoticeService;
 
     public HomeServiceImpl(SysBannerService sysBannerService, 
                          GoodsInfoService goodsInfoService,
+                         GoodsImageService goodsImageService,
                          SysNoticeService sysNoticeService) {
         this.sysBannerService = sysBannerService;
         this.goodsInfoService = goodsInfoService;
+        this.goodsImageService = goodsImageService;
         this.sysNoticeService = sysNoticeService;
     }
 
@@ -106,12 +112,32 @@ public class HomeServiceImpl implements HomeService {
             goods.getTitle(),
             goods.getCategoryId(),
             goods.getPrice(),
-            goods.getMainImage(),
+            resolveMainImage(goods),
             goods.getConditionLevel(),
             goods.getFavoriteCount(),
             goods.getViewCount(),
             goods.getStatus(),
             goods.getCreateTime()
         );
+    }
+
+    private String resolveMainImage(GoodsInfo goods) {
+        if (goods == null) {
+            return null;
+        }
+        if (StringUtils.isNotBlank(goods.getMainImage())) {
+            return goods.getMainImage();
+        }
+
+        List<GoodsImage> images = goodsImageService.list(
+                new LambdaQueryWrapper<GoodsImage>()
+                        .eq(GoodsImage::getGoodsId, goods.getId())
+                        .orderByAsc(GoodsImage::getSort)
+                        .last("LIMIT 1")
+        );
+        if (images == null || images.isEmpty()) {
+            return null;
+        }
+        return images.get(0).getImageUrl();
     }
 }

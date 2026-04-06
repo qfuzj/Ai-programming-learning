@@ -8,7 +8,7 @@
 
 `campus-resource-sharing` 是一个适用于校园内部二手转让场景的前后端分离项目，帮助学生高效处理闲置物品，提升资源利用率。
 
-项目支持：
+### 1.1 核心能力
 - 普通用户注册登录
 - 闲置商品发布与管理
 - 商品搜索、筛选、详情展示
@@ -17,11 +17,16 @@
 - 评价与举报
 - 管理员后台管理
 
+### 1.2 项目定位
+- 适合课程设计 / 毕业设计 / 全栈实战项目
+- 聚焦“校园内部二手流转”场景
+- 强调可扩展、易二次开发
+
 ---
 
 ## 2. 技术栈
 
-## 前端
+### 2.1 前端
 - Vue 3
 - Vite
 - Naive UI
@@ -30,7 +35,7 @@
 - Axios
 - @vicons
 
-## 后端
+### 2.2 后端
 - Spring Boot 3
 - MyBatis-Plus
 - MySQL
@@ -39,20 +44,9 @@
 
 ---
 
-## 3. 项目特色
+## 3. 功能概览
 
-- 面向校园场景设计
-- 采用轻量级交易流程
-- 不依赖在线支付
-- 前后端分离架构清晰
-- 适合课程设计 / 毕业设计 / 项目实战
-- 具备良好的扩展性
-
----
-
-## 4. 功能模块
-
-## 用户端
+### 3.1 用户端
 - 注册 / 登录 / 退出
 - 首页展示
 - 商品浏览、搜索、筛选
@@ -64,7 +58,7 @@
 - 举报违规商品或用户
 - 个人中心
 
-## 管理端
+### 3.2 管理端
 - 管理员登录
 - 仪表盘统计
 - 用户管理
@@ -78,63 +72,88 @@
 
 ---
 
-## 5. 项目结构
+## 4. 项目结构
 
-## 后端结构
+### 4.1 后端结构
 ```text
 backend
 ├─ src/main/java/com/campus/resourcesharing
-│  ├─ controller
-│  ├─ service
-│  ├─ service/impl
-│  ├─ mapper
-│  ├─ entity
-│  ├─ dto
-│  ├─ vo
-│  ├─ query
-│  ├─ config
-│  ├─ interceptor
-│  ├─ utils
-│  └─ common
+│  ├─ controller        # 控制层
+│  ├─ service           # 业务接口
+│  ├─ service/impl      # 业务实现
+│  ├─ mapper            # MyBatis-Plus 映射层
+│  ├─ entity            # 实体类
+│  ├─ dto               # 数据传输对象
+│  ├─ vo                # 视图对象
+│  ├─ query             # 查询对象
+│  ├─ config            # 配置类
+│  ├─ interceptor       # 拦截器
+│  ├─ utils             # 工具类
+│  └─ common            # 通用返回/异常等
 ├─ src/main/resources
 │  ├─ application.yml
 │  └─ mapper
 ```
 
-## 前端结构
+### 4.2 前端结构
 ```text
 frontend
 ├─ src
-│  ├─ api
-│  ├─ assets
-│  ├─ components
-│  ├─ layout
-│  ├─ router
-│  ├─ store
-│  ├─ utils
-│  └─ views
+│  ├─ api               # 接口请求封装
+│  ├─ assets            # 静态资源
+│  ├─ components        # 通用组件
+│  ├─ layout            # 布局组件
+│  ├─ router            # 路由配置
+│  ├─ store             # Pinia 状态管理
+│  ├─ utils             # 工具方法
+│  └─ views             # 页面视图
 ```
 
 ---
 
-## 6. 数据库初始化
+## 5. 快速开始
 
-1. 创建 MySQL 数据库
-2. 执行 `数据库设计.sql`
-3. 修改后端 `application.yml` 中的数据库连接配置
-
----
-
-## 7. 后端启动说明
-
-## 7.1 环境要求
+### 5.1 环境要求
 - JDK 17+
 - Maven 3.8+
 - MySQL 8.x
+- Node.js 18+
+- npm / pnpm / yarn
 
-## 7.2 配置文件
-修改 `application.yml`：
+### 5.2 数据库初始化
+1. 创建 MySQL 数据库（如：`campus_resource_sharing`）
+2. 执行 `数据库设计.sql`
+3. 修改后端 `application.yml` 中的数据源配置
 
+### 5.3 启动后端
+```bash
+cd backend
+mvn clean install
+mvn spring-boot:run
+```
+
+后端默认地址：
+```text
+http://localhost:8080
+```
+
+### 5.4 启动前端
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+前端默认地址：
+```text
+http://localhost:5173
+```
+
+---
+
+## 6. 配置说明
+
+### 6.1 后端数据库配置（`application.yml`）
 ```yml
 spring:
   datasource:
@@ -143,60 +162,33 @@ spring:
     password: 123456
 ```
 
-## 7.3 启动步骤
-```bash
-cd backend
-mvn clean install
-mvn spring-boot:run
-```
-
-后端默认启动后访问：
-```text
-http://localhost:8080
-```
-
----
-
-## 8. 前端启动说明
-
-## 8.1 环境要求
-- Node.js 18+
-- npm / pnpm / yarn
-
-## 8.2 安装依赖
-```bash
-cd frontend
-npm install
-```
-
-## 8.3 可选环境变量
-可在 `frontend/.env.development` 中配置后端地址：
-
+### 6.2 前端环境变量（可选）
+可在 `frontend/.env.development` 中配置：
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
-## 8.4 启动开发环境
-```bash
-npm run dev
-```
-
-前端默认访问：
-```text
-http://localhost:5173
-```
-
 ---
 
-## 9. 默认账号说明
+## 7. 默认账号说明
 
-## 管理员账号
+### 管理员账号
 - 用户名：`admin`
 - 密码：请在后端初始化后自行重置或替换为加密后的安全密码
 
 ---
 
-## 10. 页面设计风格
+## 8. 项目特色
+
+- 面向校园场景设计
+- 采用轻量级交易流程
+- 不依赖在线支付
+- 前后端分离架构清晰
+- 具备良好的扩展性与二开能力
+
+---
+
+## 9. 页面设计风格
 
 - 主题色：`#ffe60f`
 - 文字主色：黑色
@@ -205,7 +197,7 @@ http://localhost:5173
 
 ---
 
-## 11. 开发文档说明
+## 10. 配套文档
 
 项目配套文档包括：
 - `开发文档.md`
@@ -218,7 +210,7 @@ http://localhost:5173
 
 ---
 
-## 12. 开发建议
+## 11. 开发建议
 
 推荐开发顺序：
 1. 项目初始化
@@ -233,7 +225,7 @@ http://localhost:5173
 
 ---
 
-## 13. 后续可扩展方向
+## 12. 后续可扩展方向
 
 - 校园邮箱认证
 - WebSocket 即时聊天
@@ -245,7 +237,7 @@ http://localhost:5173
 
 ---
 
-## 14. 适用场景
+## 13. 适用场景
 
 本项目适用于：
 - Java Web 课程设计
@@ -255,9 +247,6 @@ http://localhost:5173
 
 ---
 
-## 15. License
+## 14. License
 
 本项目仅用于学习、课程设计与技术研究用途。
-```
-
----
