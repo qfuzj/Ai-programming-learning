@@ -132,11 +132,16 @@ PageResult.<T>builder()
 - ✅ 收藏模块 (收藏/取消收藏/收藏列表)
 - ✅ 浏览历史模块 (上报/查询/删除/清空)
 - ✅ 点评模块 (发布点评/我的点评/景点评价列表/删除点评)
-- ✅ 审核模块 (审核列表/通过/拒绝/隐藏)
+- ✅ 审核模块 (review 点评类型审核列表/通过/拒绝/隐藏)
 
 **待实现**: 用户管理、行程计划、推荐引擎、AI 对话、文件上传、运营管理、统计看板、操作日志
 
 ## 已知问题
+
+### 审核模块仅完成 review 类型，其余类型未实现
+- **现状**: `AuditServiceImpl.updateAuditAndReview()` 只处理 contentType 为 "review" 的审核。
+  数据库中 `content_audit` 定义了 review/image/scenic/plan 四种类型，但目前仅 review 的发布 → 审核 → 回写状态流程完整。
+- **待完善**: 实现 image/scenic/plan 的审核创建入口和状态回写策略。各类型的审核逻辑应独立为各自的方法，而不是硬塞进 `updateAuditAndReview`。
 
 ### `syncImages` 方法会覆盖已有的图片 URL (P0)
 - **问题**: `ScenicSpotServiceImpl.syncImages()` 先将景点所有图片记录清空, 再插入新记录时 `imageUrl` 置为空字符串。如果之前通过 `addImage` 独立接口上传了带真实 URL 的图片, 调用 `create`/`update` 时会丢失图片 URL。

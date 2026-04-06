@@ -252,7 +252,9 @@
 - 文件清单：
   - `travel-model/entity/ContentAudit.java`
   - `travel-model/mapper/ContentAuditMapper.java`
-  - Audit 相关代码尚未生成（待实现 Admin/AuditController、AuditService 等）
+  - `travel-common/common/enums/ContentAuditStatusEnum.java`（审核状态枚举：待审核/通过/拒绝/人工复审）
+  - `travel-common/common/enums/UserReviewStatusEnum.java`（点评状态枚举：待审核/通过/拒绝/隐藏）
+  - Audit 相关代码已完成（AuditController、AuditService 等）
 
 ### 任务 16
 - 任务名称：生成管理员用户管理模块代码（待实现）
@@ -836,6 +838,7 @@
 - AuditService / AuditServiceImpl
 - ContentAudit 实体与 Mapper
 - AuditActionDTO
+- AuditQueryDTO（分页查询参数）
 要求：
 - 管理端接口前缀 /api/admin/audits
 - 给出审核状态枚举建议
