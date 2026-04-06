@@ -79,10 +79,11 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .build();
         }
 
+        // 从用户收藏记录中提取景点ID，并批量查询景点信息，避免N+1查询问题
         List<Long> scenicIds = records.stream().map(UserFavorite::getScenicSpotId).distinct().toList();
         Map<Long, ScenicSpot> scenicMap = scenicSpotMapper.selectBatchIds(scenicIds).stream()
             .collect(Collectors.toMap(ScenicSpot::getId, scenic -> scenic));
-
+        // 将用户收藏记录转换为VO对象，并填充景点信息
         List<FavoriteVO> vos = records.stream().map(item -> {
             ScenicSpot scenicSpot = scenicMap.get(item.getScenicSpotId());
             if (scenicSpot == null) {
@@ -106,6 +107,10 @@ public class FavoriteServiceImpl implements FavoriteService {
             .build();
     }
 
+    /**
+     * 获取当前请求的用户ID，如果未登录则抛出异常
+     * @return 当前用户ID
+     */
     private Long getCurrentUserIdRequired() {
         Long userId = SecurityUtils.getCurrentUserId();
         if (userId == null) {
@@ -114,6 +119,10 @@ public class FavoriteServiceImpl implements FavoriteService {
         return userId;
     }
 
+    /**
+     * 确保景点存在，如果不存在则抛出异常
+     * @param scenicId 景点ID
+     */
     private void ensureScenicExists(Long scenicId) {
         ScenicSpot scenicSpot = scenicSpotMapper.selectById(scenicId);
         if (scenicSpot == null) {

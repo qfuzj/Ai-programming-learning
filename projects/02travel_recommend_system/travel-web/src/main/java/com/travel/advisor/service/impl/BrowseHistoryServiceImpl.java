@@ -68,10 +68,12 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
                 .build();
         }
 
+        // 根据浏览记录中的景点ID批量查询景点信息，避免N+1查询问题
         List<Long> scenicIds = records.stream().map(UserBrowseHistory::getScenicSpotId).distinct().toList();
         Map<Long, ScenicSpot> scenicMap = scenicSpotMapper.selectBatchIds(scenicIds).stream()
             .collect(Collectors.toMap(ScenicSpot::getId, scenic -> scenic));
 
+        // 将用户浏览历史转换为VO对象，并添加景点信息
         List<BrowseHistoryVO> vos = records.stream().map(item -> {
             ScenicSpot scenicSpot = scenicMap.get(item.getScenicSpotId());
             if (scenicSpot == null) {

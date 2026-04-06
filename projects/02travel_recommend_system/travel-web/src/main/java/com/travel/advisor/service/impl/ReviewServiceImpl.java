@@ -6,7 +6,6 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.review.ReviewCreateDTO;
-import com.travel.advisor.dto.review.ReviewQueryDTO;
 import com.travel.advisor.entity.ContentAudit;
 import com.travel.advisor.entity.ScenicSpot;
 import com.travel.advisor.entity.User;
@@ -102,9 +101,14 @@ public class ReviewServiceImpl implements ReviewService {
         }
     }
 
+    /**
+     * 分页查询景点点评列表
+     * @param scenicId 景点ID
+     * @param pageQuery 分页查询参数
+     * @return 点评列表分页结果
+     */
     @Override
-    public PageResult<ReviewVO> pageScenicReviews(Long scenicId, ReviewQueryDTO dto) {
-        ReviewQueryDTO query = dto == null ? new ReviewQueryDTO() : dto;
+    public PageResult<ReviewVO> pageScenicReviews(Long scenicId, PageQuery pageQuery) {
         ScenicSpot scenicSpot = scenicSpotMapper.selectById(scenicId);
         if (scenicSpot == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "景点不存在");
@@ -113,9 +117,9 @@ public class ReviewServiceImpl implements ReviewService {
         LambdaQueryWrapper<UserReview> wrapper = new LambdaQueryWrapper<UserReview>()
             .eq(UserReview::getScenicSpotId, scenicId)
             .eq(UserReview::getStatus, 1);
-        applySort(wrapper, query.getSortBy());
+        applySort(wrapper, pageQuery.getSortBy());
 
-        Page<UserReview> page = new Page<>(query.getPageNum(), query.getPageSize());
+        Page<UserReview> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());
         Page<UserReview> result = userReviewMapper.selectPage(page, wrapper);
 
         List<ReviewVO> records = buildReviewVO(result.getRecords());
@@ -128,6 +132,11 @@ public class ReviewServiceImpl implements ReviewService {
             .build();
     }
 
+    /**
+     * 构建点评VO列表
+     * @param reviews 某一个景点的所有用户点评列表
+     * @return 点评VO列表
+     */
     private List<ReviewVO> buildReviewVO(List<UserReview> reviews) {
         if (reviews == null || reviews.isEmpty()) {
             return Collections.emptyList();

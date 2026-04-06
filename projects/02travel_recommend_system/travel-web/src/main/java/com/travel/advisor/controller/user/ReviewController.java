@@ -4,7 +4,6 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.review.ReviewCreateDTO;
-import com.travel.advisor.dto.review.ReviewQueryDTO;
 import com.travel.advisor.service.ReviewService;
 import com.travel.advisor.vo.review.ReviewVO;
 import jakarta.validation.Valid;
@@ -17,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 用户评论 Controller
+ */
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
@@ -41,7 +43,7 @@ public class ReviewController {
     }
 
     @GetMapping("/scenic-spots/{scenicId}/reviews")
-    public Result<PageResult<ReviewVO>> scenicReviews(@PathVariable Long scenicId, ReviewQueryDTO dto) {
-        return Result.success(reviewService.pageScenicReviews(scenicId, dto));
+    public Result<PageResult<ReviewVO>> scenicReviews(@PathVariable Long scenicId, PageQuery pageQuery) {
+        return Result.success(reviewService.pageScenicReviews(scenicId, pageQuery));
     }
 }

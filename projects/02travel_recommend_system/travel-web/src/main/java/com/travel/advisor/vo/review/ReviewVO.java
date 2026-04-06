@@ -6,6 +6,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 用户评论 VO
+ */
 @Data
 public class ReviewVO {
 

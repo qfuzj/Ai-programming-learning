@@ -237,7 +237,6 @@
   - `travel-web/controller/user/ReviewController.java`
   - `travel-web/service/ReviewService.java` + impl
   - `travel-web/dto/review/ReviewCreateDTO.java`
-  - `travel-web/dto/review/ReviewQueryDTO.java`
   - `travel-web/vo/review/ReviewVO.java`
 
 ---
