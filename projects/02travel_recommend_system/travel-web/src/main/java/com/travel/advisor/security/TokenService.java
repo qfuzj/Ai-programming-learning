@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -39,7 +40,7 @@ public class TokenService {
         String accessToken = jwtUtils.generateAccessToken(loginUser);
         String refreshToken = jwtUtils.generateRefreshToken(loginUser);
 
-        // 仅把 refreshToken 存入 Redis；accessToken 由 JWT 自包含并配合黑名单校验。
+        // 仅把 refreshToken 存入 Redis；accessToken 由 JWT 自包含并配合黑名单校验。 key: auth:{roleType}:token:{userId}:{tokenId} -> refreshToken
         String tokenKey = buildTokenKey(loginUser.getRoleType(), loginUser.getUserId(), tokenId);
         redisUtils.set(tokenKey, refreshToken, Duration.ofSeconds(jwtProperties.getRefreshTokenExpireSeconds()));
 
@@ -68,6 +69,14 @@ public class TokenService {
         }
     }
 
+    public void invalidateUserSessions(Long userId) {
+        invalidateSessions(USER_TOKEN_PREFIX + userId + ":");
+    }
+
+    public void invalidateAdminSessions(Long adminId) {
+        invalidateSessions(ADMIN_TOKEN_PREFIX + adminId + ":");
+    }
+
     public boolean isBlacklisted(String tokenId) {
         return Boolean.TRUE.equals(redisUtils.hasKey(BLACKLIST_PREFIX + tokenId));
     }
@@ -91,6 +100,19 @@ public class TokenService {
     private String buildTokenKey(String roleType, Long userId, String tokenId) {
         String prefix = "ADMIN".equalsIgnoreCase(roleType) ? ADMIN_TOKEN_PREFIX : USER_TOKEN_PREFIX;
         return prefix + userId + ":" + tokenId;
+    }
+
+    private void invalidateSessions(String tokenKeyPrefix) {
+        Set<String> tokenKeys = redisUtils.scanKeys(tokenKeyPrefix + "*");
+        if (tokenKeys == null || tokenKeys.isEmpty()) {
+            return;
+        }
+
+        for (String tokenKey : tokenKeys) {
+            redisUtils.delete(tokenKey);
+            String tokenId = tokenKey.substring(tokenKey.lastIndexOf(':') + 1);
+            redisUtils.set(BLACKLIST_PREFIX + tokenId, 1, Duration.ofSeconds(jwtProperties.getAccessTokenExpireSeconds()));
+        }
     }
 
     public record TokenPair(String accessToken, String refreshToken, String tokenId, Long expiresIn) {

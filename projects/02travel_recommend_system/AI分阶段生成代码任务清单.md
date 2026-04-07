@@ -257,37 +257,44 @@
   - Audit 相关代码已完成（AuditController、AuditService 等）
 
 ### 任务 16
-- 任务名称：生成管理员用户管理模块代码（待实现）
+- 任务名称：生成管理员用户管理模块代码（已完成）
 - 前置依赖：阶段二、阶段五
 - 关键注意事项：
   - 支持禁用/启用用户
   - 用户禁用时清理登录态
+- 实现说明：
+  - 已提供管理端用户分页查询、用户详情查询、用户状态更新接口
+  - 用户状态更新为禁用（status=0）时，会清理该用户在 Redis 中的登录态并拉黑现有 tokenId
 - 文件清单：
-  - `travel-web/controller/admin/AdminUserController.java`（待生成）
-  - `travel-web/service/AdminUserManageService.java`（待生成）
-  - `travel-web/dto/user/UserStatusDTO.java`（待生成）
-  - `travel-web/vo/user/AdminUserDetailVO.java`（待生成）
+  - `travel-web/controller/admin/AdminUserController.java`
+  - `travel-web/service/AdminUserManageService.java`
+  - `travel-web/service/impl/AdminUserManageServiceImpl.java`
+  - `travel-web/dto/user/UserQueryDTO.java`
+  - `travel-web/dto/user/UserStatusDTO.java`
+  - `travel-web/vo/user/AdminUserDetailVO.java`
+  - `travel-web/security/TokenService.java`（新增按用户维度清理会话能力）
+  - `travel-common/utils/RedisUtils.java`（新增 `scanKeys` 查询方法）
 
 ---
 
 ## 阶段七：行程计划模块
 
 ### 任务 17
-- 任务名称：生成行程计划基础代码（待实现）
+- 任务名称：生成行程计划基础代码（已完成）
 - 前置依赖：阶段四
 - 关键注意事项：
   - 按用户隔离数据
   - 明确 dayNo 与 itemType
 - 文件清单：
-  - `travel-model/entity/TravelPlan.java`（待生成）
-  - `travel-model/entity/TravelPlanItem.java`（待生成）
-  - `travel-model/mapper/TravelPlanMapper.java`（待生成）
-  - `travel-model/mapper/TravelPlanItemMapper.java`（待生成）
-  - `travel-web/controller/user/TravelPlanController.java`（待生成）
-  - `travel-web/service/TravelPlanService.java`（待生成）
-  - `travel-web/dto/plan/TravelPlanCreateDTO.java`（待生成）
-  - `travel-web/dto/plan/TravelPlanItemCreateDTO.java`（待生成）
-  - `travel-web/vo/plan/TravelPlanDetailVO.java`（待生成）
+  - `travel-model/entity/TravelPlan.java`
+  - `travel-model/entity/TravelPlanItem.java`
+  - `travel-model/mapper/TravelPlanMapper.java`
+  - `travel-model/mapper/TravelPlanItemMapper.java`
+  - `travel-web/controller/user/TravelPlanController.java`
+  - `travel-web/service/TravelPlanService.java` + impl
+  - `travel-web/dto/plan/TravelPlanCreateDTO.java`
+  - `travel-web/dto/plan/TravelPlanItemCreateDTO.java`
+  - `travel-web/vo/plan/TravelPlanDetailVO.java`
 
 ### 任务 18
 - 任务名称：生成 AI辅助行程模块（待实现）

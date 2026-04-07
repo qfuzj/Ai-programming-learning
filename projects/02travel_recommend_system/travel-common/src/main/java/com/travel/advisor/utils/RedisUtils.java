@@ -2,10 +2,14 @@ package com.travel.advisor.utils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -30,6 +34,30 @@ public class RedisUtils {
 
     public Boolean delete(String key) {
         return redisTemplate.delete(key);
+    }
+
+    /**
+     * 使用 SCAN 命令增量遍历匹配的键，避免阻塞 Redis。
+     *
+     * @param pattern 键名匹配模式，如 "auth:user:token:123:*"
+     * @return 匹配的键集合
+     */
+    public Set<String> scanKeys(String pattern) {
+        Set<String> keys = new HashSet<>();
+        ScanOptions options = ScanOptions.scanOptions()
+            .match(pattern)
+            .count(100)
+            .build();
+
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
+            while (cursor.hasNext()) {
+                keys.add(cursor.next());
+            }
+        } catch (Exception e) {
+            log.error("Redis scan keys error, pattern: {}", pattern, e);
+        }
+
+        return keys;
     }
 
     public Boolean hasKey(String key) {

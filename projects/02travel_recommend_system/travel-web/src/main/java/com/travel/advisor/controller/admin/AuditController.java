@@ -23,7 +23,7 @@ public class AuditController {
     private final AuditService auditService;
 
     @GetMapping
-    public Result<PageResult<ContentAudit>> page(AuditQueryDTO dto) {
+    public Result<PageResult<ContentAudit>> page(@Valid AuditQueryDTO dto) {
         return Result.success(auditService.page(dto));
     }
 
