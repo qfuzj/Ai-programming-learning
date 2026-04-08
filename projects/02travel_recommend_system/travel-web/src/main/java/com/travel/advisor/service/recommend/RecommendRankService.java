@@ -21,7 +21,7 @@ public class RecommendRankService {
     private final ScenicSpotService scenicSpotService;
 
     /**
-     * 对找回的候选景点进行打分聚合、过滤并排序，返回最终的推荐结果列表。
+     * 对召回的候选景点进行打分聚合、过滤并排序，返回最终的推荐结果列表。
      *
      * @param candidates      - 来自不同召回策略的候选景点列表，包含景点ID、基础分数和来源类型等信息。
      * @param excludeScenicId - 可选的景点ID，若不为null，则在排序时排除该景点（例如当前正在查看的景点）。

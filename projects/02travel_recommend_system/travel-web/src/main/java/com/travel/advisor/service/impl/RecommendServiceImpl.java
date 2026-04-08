@@ -35,7 +35,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class RecommendServiceImpl implements RecommendService {
 
-    // 首页推荐和相似推荐的缓存时间设置为10分钟，可以根据实际情况调整
+    // 首页推荐和相似推荐的缓存时间设置为60分钟，可以根据实际情况调整
     private static final Duration HOME_CACHE_TTL = Duration.ofMinutes(60);
     private static final Duration SIMILAR_CACHE_TTL = Duration.ofMinutes(60);
     private static final String TAG_STRATEGY_NAME = "TAG";
@@ -321,7 +321,8 @@ public class RecommendServiceImpl implements RecommendService {
     }
 
     /**
-     * RecommendCachePayload是一个用于缓存推荐结果的静态内部类，包含推荐结果列表、总记录数和总页数等信息，供Redis缓存使用。该类使用了@Data注解，自动生成了getter、setter、toString、equals
+     * RecommendCachePayload是一个用于缓存推荐结果的静态内部类，包含推荐结果列表、总记录数和总页数等信息，供Redis缓存使用。
+     * 该类使用了@Data注解，自动生成了getter、setter、toString、equals和hashCode等常用方法。
      */
     @Data
     private static class RecommendCachePayload {

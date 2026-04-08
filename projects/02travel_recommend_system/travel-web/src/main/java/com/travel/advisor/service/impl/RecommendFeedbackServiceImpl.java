@@ -28,7 +28,7 @@ public class RecommendFeedbackServiceImpl implements RecommendFeedbackService {
     private final RecommendResultItemMapper recommendResultItemMapper;
 
     /**
-     * 记录推荐曝光事件，仅校验曝光的有效性，不更新结果项状态。
+     * 记录推荐曝光事件(用户看到了推荐结果，但没有点击)，仅校验曝光的有效性，不更新结果项状态。
      *
      * @param dto 推荐反馈DTO，包含推荐记录ID、结果项ID和景点ID
      */
@@ -38,7 +38,7 @@ public class RecommendFeedbackServiceImpl implements RecommendFeedbackService {
     }
 
     /**
-     * 记录推荐点击事件，更新结果项的点击状态和点击时间。
+     * 记录用户点开了推荐项，更新结果项的点击状态和点击时间。
      *
      * @param dto 推荐反馈DTO，包含推荐记录ID、结果项ID和景点ID
      */
@@ -54,7 +54,7 @@ public class RecommendFeedbackServiceImpl implements RecommendFeedbackService {
     }
 
     /**
-     * 记录推荐收藏事件，更新结果项的收藏状态。
+     * 记录用户收藏了推荐项，更新结果项的收藏状态。
      *
      * @param dto 推荐反馈DTO，包含推荐记录ID、结果项ID和景点ID
      */
@@ -77,7 +77,7 @@ public class RecommendFeedbackServiceImpl implements RecommendFeedbackService {
      */
     private RecommendResultItem validateFeedbackOwnership(RecommendFeedbackDTO dto) {
         Long userId = getCurrentUserIdRequired();
-        
+
         // 校验推荐记录属于当前用户
         RecommendRecord record = recommendRecordMapper.selectOne(new LambdaQueryWrapper<RecommendRecord>()
                 .eq(RecommendRecord::getId, dto.getRecommendRecordId())
