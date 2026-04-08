@@ -6,14 +6,25 @@ import com.travel.advisor.dto.scenic.ScenicImageCreateDTO;
 import com.travel.advisor.dto.scenic.ScenicQueryDTO;
 import com.travel.advisor.dto.scenic.ScenicStatusDTO;
 import com.travel.advisor.dto.scenic.ScenicUpdateDTO;
+import com.travel.advisor.entity.ScenicSpot;
 import com.travel.advisor.vo.scenic.ScenicDetailVO;
 import com.travel.advisor.vo.scenic.ScenicFilterOptionsVO;
 import com.travel.advisor.vo.scenic.ScenicImageVO;
 import com.travel.advisor.vo.scenic.ScenicListVO;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ScenicSpotService {
+
+    /**
+     * 根据 ID 列表和状态查询景点列表
+     *
+     * @param ids    景点 ID 集合
+     * @param status 景点状态（null 时不限制状态）
+     * @return 符合条件的景点列表
+     */
+    List<ScenicSpot> listByIdsWithStatus(Collection<Long> ids, Integer status);
 
     PageResult<ScenicListVO> page(ScenicQueryDTO dto);
 

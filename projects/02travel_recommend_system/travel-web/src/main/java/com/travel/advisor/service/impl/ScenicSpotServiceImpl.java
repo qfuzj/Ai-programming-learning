@@ -42,6 +42,19 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     private final RegionService regionService;
 
     @Override
+    public List<ScenicSpot> listByIdsWithStatus(Collection<Long> ids, Integer status) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // 始终在数据库层面完成过滤
+        return scenicSpotMapper.selectList(
+                new LambdaQueryWrapper<ScenicSpot>()
+                        .in(ScenicSpot::getId, ids)
+                        .eq(status != null, ScenicSpot::getStatus, status)
+        );
+    }
+
+    @Override
     public PageResult<ScenicListVO> page(ScenicQueryDTO dto) {
         ScenicQueryDTO query = dto == null ? new ScenicQueryDTO() : dto;
         LambdaQueryWrapper<ScenicSpot> queryWrapper = buildQueryWrapper(query);
@@ -74,7 +87,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .eq(ScenicSpot::getStatus, 1)
                 .eq(ScenicSpot::getIsDeleted, 0)
                 .orderByDesc(ScenicSpot::getFavoriteCount)
-                .orderByDesc(ScenicSpot::getRatingScore)
+                .orderByDesc(ScenicSpot::getScore)
                 .orderByDesc(ScenicSpot::getViewCount)
                 .last("limit 10");      // 热门榜单通常只取 Top 10
         return enrichList(scenicSpotMapper.selectList(queryWrapper));
@@ -208,7 +221,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .eq(query.getRegionId() != null, ScenicSpot::getRegionId, query.getRegionId())
                 .eq(StringUtils.hasText(query.getCategory()), ScenicSpot::getCategory, query.getCategory())
                 .eq(StringUtils.hasText(query.getLevel()), ScenicSpot::getLevel, query.getLevel())
-                .ge(query.getMinScore() != null, ScenicSpot::getRatingScore, query.getMinScore())
+                .ge(query.getMinScore() != null, ScenicSpot::getScore, query.getMinScore())
                 .eq(ScenicSpot::getIsDeleted, 0);
 
         // 关键词搜索：同时匹配景点名称和地址
@@ -236,7 +249,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         switch (orderField) {
             case "name" -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getName);
 
-            case "score" -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getRatingScore)
+            case "score" -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getScore)
                     .orderByDesc(ScenicSpot::getRatingCount);
 
             case "hot" -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getFavoriteCount)
@@ -269,7 +282,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             vo.setName(scenicSpot.getName());
             vo.setCoverImage(scenicSpot.getCoverImage());
             vo.setRegionName(regionNameMap.get(scenicSpot.getRegionId()));
-            vo.setScore(scenicSpot.getRatingScore());
+            vo.setScore(scenicSpot.getScore());
             vo.setLevel(scenicSpot.getLevel());
             vo.setTagList(tagNameMap.getOrDefault(scenicSpot.getId(), Collections.emptyList()));
             vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
@@ -294,7 +307,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         vo.setTicketPrice(scenicSpot.getTicketPrice());
         vo.setLevel(scenicSpot.getLevel());
         vo.setCategory(scenicSpot.getCategory());
-        vo.setRatingScore(scenicSpot.getRatingScore());
+        vo.setRatingScore(scenicSpot.getScore());
         vo.setRatingCount(scenicSpot.getRatingCount());
         vo.setViewCount(scenicSpot.getViewCount());
         vo.setFavoriteCount(scenicSpot.getFavoriteCount());
@@ -394,8 +407,8 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         if (scenicSpot.getIsRecommended() == null) {
             scenicSpot.setIsRecommended(0);
         }
-        if (scenicSpot.getRatingScore() == null) {
-            scenicSpot.setRatingScore(BigDecimal.ZERO);
+        if (scenicSpot.getScore() == null) {
+            scenicSpot.setScore(BigDecimal.ZERO);
         }
         if (scenicSpot.getRatingCount() == null) {
             scenicSpot.setRatingCount(0);
@@ -446,7 +459,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             return scenicImage;
         }).collect(Collectors.toList());
 
-        if(!CollectionUtils.isEmpty(scenicImages)) {
+        if (!CollectionUtils.isEmpty(scenicImages)) {
             scenicImageMapper.insertBatch(scenicImages);
         }
     }
@@ -472,6 +485,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
 
     /**
      * 获取对象中值为null的属性名称列表，供BeanUtils.copyProperties时忽略这些属性，避免覆盖原有值
+     *
      * @param source 源对象
      * @return 值为null的属性名称数组
      */

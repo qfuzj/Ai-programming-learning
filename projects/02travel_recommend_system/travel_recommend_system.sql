@@ -403,7 +403,7 @@ CREATE TABLE `scenic_spot` (
   `ticket_price` decimal(10,2) DEFAULT NULL COMMENT '门票价格（元）',
   `level` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '景区等级：5A/4A/3A 等',
   `category` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '自然风光' COMMENT '景点分类',
-  `rating_score` decimal(2,1) NOT NULL DEFAULT '0.0' COMMENT '综合评分（1‐5）',
+  `score` decimal(2,1) NOT NULL DEFAULT '0.0' COMMENT '综合评分（1‐5）',
   `rating_count` int NOT NULL DEFAULT '0' COMMENT '评分人数',
   `view_count` bigint NOT NULL DEFAULT '0' COMMENT '浏览次数',
   `favorite_count` int NOT NULL DEFAULT '0' COMMENT '收藏数',

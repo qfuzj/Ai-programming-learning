@@ -29,6 +29,7 @@ public class CaptchaServiceImpl implements CaptchaService {
     @Override
     public CaptchaVO createCaptcha(CaptchaQueryDTO dto) {
         String code = String.format(Locale.ROOT, "%04d", RANDOM.nextInt(10000));
+        System.out.println("验证码 ============= " + code);
         String captchaId = UUID.randomUUID().toString();
         redisUtils.set(CAPTCHA_PREFIX + captchaId, code, Duration.ofMinutes(5));
 

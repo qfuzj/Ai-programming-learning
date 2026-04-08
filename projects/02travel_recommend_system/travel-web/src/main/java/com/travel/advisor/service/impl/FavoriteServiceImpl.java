@@ -93,7 +93,7 @@ public class FavoriteServiceImpl implements FavoriteService {
             vo.setScenicId(scenicSpot.getId());
             vo.setScenicName(scenicSpot.getName());
             vo.setCoverImage(scenicSpot.getCoverImage());
-            vo.setScore(scenicSpot.getRatingScore());
+            vo.setScore(scenicSpot.getScore());
             vo.setFavoriteTime(item.getCreateTime());
             return vo;
         }).filter(Objects::nonNull).toList();
