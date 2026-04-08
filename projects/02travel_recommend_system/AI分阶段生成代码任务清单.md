@@ -313,41 +313,41 @@
 ## 阶段八：推荐系统模块
 
 ### 任务 19
-- 任务名称：生成推荐实体与记录模块（待实现）
+- 任务名称：生成推荐实体与记录模块（已完成）
 - 前置依赖：阶段五
 - 关键注意事项：
   - 推荐记录与结果项一对多映射清晰
 - 文件清单：
-  - `travel-model/entity/RecommendRecord.java`（待生成）
-  - `travel-model/entity/RecommendResultItem.java`（待生成）
-  - `travel-model/mapper/RecommendRecordMapper.java`（待生成）
-  - `travel-model/mapper/RecommendResultItemMapper.java`（待生成）
+  - `travel-model/entity/RecommendRecord.java`
+  - `travel-model/entity/RecommendResultItem.java`
+  - `travel-model/mapper/RecommendRecordMapper.java`
+  - `travel-model/mapper/RecommendResultItemMapper.java`
 
 ### 任务 20
-- 任务名称：生成推荐模块骨架代码（待实现）
+- 任务名称：生成推荐模块骨架代码（已完成）
 - 前置依赖：任务19
 - 关键注意事项：
   - 先实现可运行的规则推荐，再预留 LLM 精排
 - 文件清单：
-  - `travel-web/controller/user/RecommendController.java`（待生成）
-  - `travel-web/service/RecommendService.java`（待生成）
-  - `travel-web/service/impl/strategy/RecallStrategy.java`（待生成）
-  - `travel-web/service/impl/strategy/impl/HotRecallStrategy.java`（待生成）
-  - `travel-web/service/impl/strategy/impl/TagRecallStrategy.java`（待生成）
-  - `travel-web/service/impl/strategy/impl/GeoRecallStrategy.java`（待生成）
-  - `travel-web/recommend/RecommendRankService.java`（待生成）
-  - `travel-web/recommend/RecommendReasonBuilder.java`（待生成）
-  - `travel-web/vo/recommend/RecommendItemVO.java`（待生成）
+  - `travel-web/controller/user/RecommendController.java`
+  - `travel-web/service/RecommendService.java` + impl
+  - `travel-web/service/impl/strategy/RecallStrategy.java`
+  - `travel-web/service/impl/strategy/impl/HotRecallStrategy.java`
+  - `travel-web/service/impl/strategy/impl/TagRecallStrategy.java`
+  - `travel-web/service/impl/strategy/impl/GeoRecallStrategy.java`
+  - `travel-web/service/recommend/RecommendRankService.java`
+  - `travel-web/service/recommend/RecommendReasonBuilder.java`
+  - `travel-web/vo/recommend/RecommendItemVO.java`
 
 ### 任务 21
-- 任务名称：生成推荐反馈模块代码（待实现）
+- 任务名称：生成推荐反馈模块代码（已完成）
 - 前置依赖：任务20
 - 关键注意事项：
   - 覆盖曝光、点击、收藏反馈
   - 回写 recommend_result_item 或扩展统计逻辑
 - 文件清单：
-  - `travel-web/dto/recommend/RecommendFeedbackDTO.java`（待生成）
-  - `travel-web/service/RecommendFeedbackService.java`（待生成）
+  - `travel-web/dto/recommend/RecommendFeedbackDTO.java`
+  - `travel-web/service/RecommendFeedbackService.java`
 
 ---
 

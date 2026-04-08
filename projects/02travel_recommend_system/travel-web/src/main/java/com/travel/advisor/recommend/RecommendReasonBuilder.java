@@ -1,4 +1,4 @@
-package com.travel.advisor.service.recommend;
+package com.travel.advisor.recommend;
 
 import org.springframework.stereotype.Component;
 

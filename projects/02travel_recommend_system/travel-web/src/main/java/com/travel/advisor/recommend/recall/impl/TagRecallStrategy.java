@@ -1,7 +1,7 @@
-package com.travel.advisor.service.impl.strategy.impl;
+package com.travel.advisor.recommend.recall.impl;
 
 import com.travel.advisor.domain.recommend.RecallContext;
-import com.travel.advisor.service.impl.strategy.RecallStrategy;
+import com.travel.advisor.recommend.recall.RecallStrategy;
 import com.travel.advisor.domain.recommend.RecallCandidate;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;

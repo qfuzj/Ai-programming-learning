@@ -1,4 +1,4 @@
-package com.travel.advisor.service.recommend;
+package com.travel.advisor.recommend;
 
 import com.travel.advisor.domain.recommend.RankedRecommend;
 import com.travel.advisor.domain.recommend.RecallCandidate;

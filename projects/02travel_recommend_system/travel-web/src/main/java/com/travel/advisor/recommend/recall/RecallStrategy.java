@@ -1,4 +1,4 @@
-package com.travel.advisor.service.impl.strategy;
+package com.travel.advisor.recommend.recall;
 
 import com.travel.advisor.domain.recommend.RecallContext;
 import com.travel.advisor.domain.recommend.RecallCandidate;

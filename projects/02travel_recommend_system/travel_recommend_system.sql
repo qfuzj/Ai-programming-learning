@@ -204,7 +204,7 @@ CREATE TABLE `llm_message` (
   `extra_data` text COLLATE utf8mb4_unicode_ci COMMENT '附加数据（JSON，如推荐景点列表）',
   `tokens_used` int DEFAULT '0' COMMENT '消耗 tokens',
   `llm_call_log_id` bigint DEFAULT NULL COMMENT '关联调用日志 ID',
-  `is_sensitive` tinyint NOT NULL DEFAULT '0' COMMENT '是否敏感内容',
+  `is_sensitive` tinyint NOT NULL DEFAULT '0' COMMENT '是否敏感内容 0-非敏感，1-敏感内容',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_conversation_id` (`conversation_id`),
