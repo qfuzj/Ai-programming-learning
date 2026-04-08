@@ -331,10 +331,10 @@
 - 文件清单：
   - `travel-web/controller/user/RecommendController.java`（待生成）
   - `travel-web/service/RecommendService.java`（待生成）
-  - `travel-web/recommend/RecallStrategy.java`（待生成）
-  - `travel-web/recommend/HotRecallStrategy.java`（待生成）
-  - `travel-web/recommend/TagRecallStrategy.java`（待生成）
-  - `travel-web/recommend/GeoRecallStrategy.java`（待生成）
+  - `travel-web/service/impl/strategy/RecallStrategy.java`（待生成）
+  - `travel-web/service/impl/strategy/impl/HotRecallStrategy.java`（待生成）
+  - `travel-web/service/impl/strategy/impl/TagRecallStrategy.java`（待生成）
+  - `travel-web/service/impl/strategy/impl/GeoRecallStrategy.java`（待生成）
   - `travel-web/recommend/RecommendRankService.java`（待生成）
   - `travel-web/recommend/RecommendReasonBuilder.java`（待生成）
   - `travel-web/vo/recommend/RecommendItemVO.java`（待生成）
@@ -964,18 +964,27 @@
 
 ## 特别说明
 
-### 项目模块结构（2026-04-04 更新）
+### 项目模块结构（2026-04-08 更新）
 
 本项目已拆分为 Maven 多模块结构，生成代码时请将文件放在对应模块中：
 
 | 模块 | 路径前缀 | 放置内容 |
 |------|----------|----------|
-| travel-common | `travel-common/src/main/java/com/travel/advisor/` | Result, PageQuery, PageResult, 工具类, 异常, LoginUser, 注解 |
-| travel-model | `travel-model/src/main/java/com/travel/advisor/` | Entity, Mapper, XML mapper |
-| travel-web | `travel-web/src/main/java/com/travel/advisor/` | Controller, Service, DTO, VO, Security, Config, Filter, 业务推荐/LLM 组件 |
+| travel-common | `travel-common/src/main/java/com/travel/advisor/` | Result, PageQuery, PageResult, 工具类, 异常, LoginUser, 注解, 通用枚举（如 `common/enums/RecommendType`） |
+| travel-model | `travel-model/src/main/java/com/travel/advisor/` | Entity, Mapper, XML mapper, 推荐领域模型（如 `domain/recommend/RecallContext`、`RecallCandidate`、`RankedRecommend`） |
+| travel-web | `travel-web/src/main/java/com/travel/advisor/` | Controller, Service, DTO, VO, Security, Config, Filter, 推荐业务组件（如 `recommend/RecommendRankService`、`RecommendReasonBuilder`、`service/impl/strategy/**`） |
 | travel-app | `travel-app/src/main/` | 主启动类, application*.yml |
 
 跨模块依赖: travel-app → travel-web → travel-common + travel-model
+
+当前推荐模块相关目录（已落地）：
+
+- `travel-common/src/main/java/com/travel/advisor/common/enums/RecommendType.java`
+- `travel-model/src/main/java/com/travel/advisor/domain/recommend/`
+- `travel-web/src/main/java/com/travel/advisor/recommend/RecommendRankService.java`
+- `travel-web/src/main/java/com/travel/advisor/recommend/RecommendReasonBuilder.java`
+- `travel-web/src/main/java/com/travel/advisor/service/impl/strategy/RecallStrategy.java`
+- `travel-web/src/main/java/com/travel/advisor/service/impl/strategy/impl/`
 
 ### 关于 MinIO 文件模块
 
