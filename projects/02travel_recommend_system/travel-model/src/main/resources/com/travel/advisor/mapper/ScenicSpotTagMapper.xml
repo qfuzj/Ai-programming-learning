@@ -5,6 +5,17 @@
 
 <mapper namespace="com.travel.advisor.mapper.ScenicSpotTagMapper">
 
+    <select id="selectTagNamesByScenicSpotId" resultType="java.lang.String">
+        SELECT DISTINCT t.name
+        FROM scenic_spot_tag st
+                 INNER JOIN tag t ON t.id = st.tag_id
+        WHERE st.scenic_spot_id = #{scenicSpotId}
+          AND t.is_deleted = 0
+          AND t.name IS NOT NULL
+          AND t.name &lt;&gt; ''
+        ORDER BY t.sort_order ASC, t.id ASC
+    </select>
+
 
     <insert id="insertBatch" parameterType="list">
         INSERT INTO scenic_spot_tag (scenic_spot_id, tag_id, create_time)

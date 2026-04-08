@@ -2,8 +2,8 @@ package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.travel.advisor.common.enums.ContentAuditStatusEnum;
-import com.travel.advisor.common.enums.UserReviewStatusEnum;
+import com.travel.advisor.common.enums.ContentAuditStatus;
+import com.travel.advisor.common.enums.UserReviewStatus;
 import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
@@ -59,14 +59,14 @@ public class ReviewServiceImpl implements ReviewService {
         review.setLikeCount(0);
         review.setReplyCount(0);
         review.setIsAnonymous(dto.getIsAnonymous() == null ? 0 : dto.getIsAnonymous());
-        review.setStatus(UserReviewStatusEnum.PENDING.getCode());
+        review.setStatus(UserReviewStatus.PENDING.getCode());
         userReviewMapper.insert(review);
 
         ContentAudit audit = new ContentAudit();
         audit.setContentType("review");
         audit.setContentId(review.getId());
         audit.setSubmitUserId(userId);
-        audit.setAuditStatus(ContentAuditStatusEnum.PENDING.getCode());
+        audit.setAuditStatus(ContentAuditStatus.PENDING.getCode());
         audit.setContentSnapshot(JsonUtils.toJson(dto));
         contentAuditMapper.insert(audit);
 
@@ -118,7 +118,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         LambdaQueryWrapper<UserReview> wrapper = new LambdaQueryWrapper<UserReview>()
             .eq(UserReview::getScenicSpotId, scenicId)
-            .eq(UserReview::getStatus, UserReviewStatusEnum.APPROVED.getCode());
+            .eq(UserReview::getStatus, UserReviewStatus.APPROVED.getCode());
         applySort(wrapper, pageQuery.getSortBy());
 
         Page<UserReview> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());

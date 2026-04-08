@@ -2,8 +2,11 @@ package com.travel.advisor.common.enums;
 
 import lombok.Getter;
 
+/**
+ * 用户评论审核状态枚举，表示用户评论的审核状态。
+ */
 @Getter
-public enum UserReviewStatusEnum {
+public enum UserReviewStatus {
 
     PENDING(0, "待审核"),
     APPROVED(1, "审核通过"),
@@ -13,7 +16,7 @@ public enum UserReviewStatusEnum {
     private final int code;
     private final String desc;
 
-    UserReviewStatusEnum(int code, String desc) {
+    UserReviewStatus(int code, String desc) {
         this.code = code;
         this.desc = desc;
     }

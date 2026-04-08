@@ -354,46 +354,46 @@
 ## 阶段九：LLM与对话模块
 
 ### 任务 22
-- 任务名称：生成LLM调用网关基础封装（待实现）
+- 任务名称：生成LLM调用网关基础封装（已完成）
 - 前置依赖：阶段一
 - 关键注意事项：
   - 做统一网关抽象
   - 便于后续切换模型服务商
 - 文件清单：
-  - `travel-web/llm/LlmGateway.java`（待生成）
-  - `travel-web/llm/impl/DefaultLlmGateway.java`（待生成）
-  - `travel-web/llm/dto/LlmChatRequest.java`（待生成）
-  - `travel-web/llm/dto/LlmChatResponse.java`（待生成）
-  - `travel-web/llm/PromptBuilder.java`（待生成）
-  - `travel-web/llm/LlmProperties.java`（待生成）
+  - `travel-web/llm/LlmGateway.java`
+  - `travel-web/llm/impl/DefaultLlmGateway.java`
+  - `travel-web/dto/llm/LlmChatRequest.java`
+  - `travel-web/dto/llm/LlmChatResponse.java`
+  - `travel-web/llm/PromptBuilder.java`
+  - `travel-web/llm/LlmProperties.java`
 
 ### 任务 23
-- 任务名称：生成对话模块基础代码（待实现）
+- 任务名称：生成对话模块基础代码（已完成）
 - 前置依赖：任务22
 - 关键注意事项：
   - 支持创建会话、发送消息、查询历史、删除会话
 - 文件清单：
-  - `travel-model/entity/LlmConversation.java`（待生成）
-  - `travel-model/entity/LlmMessage.java`（待生成）
-  - `travel-model/entity/LlmCallLog.java`（待生成）
-  - `travel-model/mapper/LlmConversationMapper.java`（待生成）
-  - `travel-model/mapper/LlmMessageMapper.java`（待生成）
-  - `travel-model/mapper/LlmCallLogMapper.java`（待生成）
-  - `travel-web/controller/user/ChatController.java`（待生成）
-  - `travel-web/service/ConversationService.java`（待生成）
-  - `travel-web/service/MessageService.java`（待生成）
-  - `travel-web/service/LlmCallLogService.java`（待生成）
+  - `travel-model/entity/LlmConversation.java`
+  - `travel-model/entity/LlmMessage.java`
+  - `travel-model/entity/LlmCallLog.java`
+  - `travel-model/mapper/LlmConversationMapper.java`
+  - `travel-model/mapper/LlmMessageMapper.java`
+  - `travel-model/mapper/LlmCallLogMapper.java`
+  - `travel-web/controller/user/ChatController.java`
+  - `travel-web/service/ConversationService.java`
+  - `travel-web/service/MessageService.java`
+  - `travel-web/service/LlmCallLogService.java`
 
 ### 任务 24
-- 任务名称：生成上下文管理与Prompt注入逻辑（待实现）
+- 任务名称：生成上下文管理与Prompt注入逻辑（已完成）
 - 前置依赖：任务23
 - 关键注意事项：
   - 支持当前景点上下文注入
   - 支持消息截断与摘要预留
 - 文件清单：
-  - `travel-web/llm/ConversationContextManager.java`（待生成）
-  - `travel-web/llm/SensitiveFilterService.java`（待生成）
-  - `travel-web/llm/ChatFallbackService.java`（待生成）
+  - `travel-web/llm/ConversationContextManager.java`
+  - `travel-web/llm/SensitiveFilterService.java`
+  - `travel-web/llm/ChatFallbackService.java`
 
 ---
 

@@ -30,5 +30,7 @@ public interface ScenicSpotTagMapper extends BaseMapper<ScenicSpotTag> {
     @Delete("DELETE FROM scenic_spot_tag WHERE scenic_spot_id = #{scenicSpotId}")
     int deleteByScenicSpotId(@Param("scenicSpotId") Long scenicSpotId);
 
+    List<String> selectTagNamesByScenicSpotId(@Param("scenicSpotId") Long scenicSpotId);
+
     Integer insertBatch(@Param("list") List<ScenicSpotTag> list);
 }

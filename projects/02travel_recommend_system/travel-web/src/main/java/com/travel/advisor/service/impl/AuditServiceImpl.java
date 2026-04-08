@@ -2,8 +2,8 @@ package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.travel.advisor.common.enums.ContentAuditStatusEnum;
-import com.travel.advisor.common.enums.UserReviewStatusEnum;
+import com.travel.advisor.common.enums.ContentAuditStatus;
+import com.travel.advisor.common.enums.UserReviewStatus;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.audit.AuditActionDTO;
@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuditServiceImpl implements AuditService {
 
+    // 目前仅支持点评审核，后续可扩展其他内容类型（如图片、攻略等），建议使用枚举或常量管理内容类型
     private static final String REVIEW_CONTENT_TYPE = "review";
 
     private final ContentAuditMapper contentAuditMapper;
@@ -54,7 +55,7 @@ public class AuditServiceImpl implements AuditService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void approve(Long id, AuditActionDTO dto) {
-        updateAuditAndReview(id, ContentAuditStatusEnum.APPROVED.getCode(), UserReviewStatusEnum.APPROVED.getCode(), dto);
+        updateAuditAndReview(id, ContentAuditStatus.APPROVED.getCode(), UserReviewStatus.APPROVED.getCode(), dto);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -63,14 +64,14 @@ public class AuditServiceImpl implements AuditService {
         if (dto == null || !StringUtils.hasText(dto.getReason())) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "拒绝原因不能为空");
         }
-        updateAuditAndReview(id, ContentAuditStatusEnum.REJECTED.getCode(), UserReviewStatusEnum.REJECTED.getCode(), dto);
+        updateAuditAndReview(id, ContentAuditStatus.REJECTED.getCode(), UserReviewStatus.REJECTED.getCode(), dto);
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void hide(Long id, AuditActionDTO dto) {
         // content_audit 无“隐藏”状态，按“已审核通过”记录审核动作，实际隐藏落在 user_review.status=3
-        updateAuditAndReview(id, ContentAuditStatusEnum.APPROVED.getCode(), UserReviewStatusEnum.HIDDEN.getCode(), dto);
+        updateAuditAndReview(id, ContentAuditStatus.APPROVED.getCode(), UserReviewStatus.HIDDEN.getCode(), dto);
     }
 
     /**
