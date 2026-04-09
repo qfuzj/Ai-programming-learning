@@ -1,5 +1,6 @@
 package com.travel.advisor.llm;
 
+import com.travel.advisor.common.enums.ChatFallbackStrategy;
 import org.springframework.stereotype.Component;
 
 /**
@@ -8,7 +9,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class ChatFallbackService {
 
-    public String fallbackReply() {
-        return "当前服务繁忙，请稍后重试，或尝试简化你的问题。";
+    /**
+     * LLM 调用失败时返回兜底回复。
+     */
+    public String getFallbackReply(Exception ex) {
+        return ChatFallbackStrategy.fromException(ex).getReplyText();
     }
 }
