@@ -201,14 +201,6 @@ public class RecommendServiceImpl implements RecommendService {
 
     /**
      * 持久化推荐结果并构建返回给前端的VO对象列表，记录推荐请求的相关信息和推荐结果的详细数据，以便后续分析和优化推荐算法。
-     *
-     * @param userId         当前用户ID，表示进行推荐请求的用户，用于关联推荐记录和结果项的用户信息
-     * @param recommendType  推荐类型，1表示首页推荐，2表示景点相似推荐，用于区分不同场景下的推荐请求和结果
-     * @param scene          推荐场景，描述推荐发生的具体场景和上下文信息，供后续分析和优化使用
-     * @param ranked         推荐结果列表，包含经过排序的推荐项数据，供构建返回结果和记录推荐结果使用
-     * @param pageQuery      分页查询参数，包含页码和每页大小等信息，用于控制返回结果的分页展示和记录推荐请求的相关参数
-     * @param responseTimeMs 推荐响应时间，单位为毫秒，用于记录推荐请求的性能指标和优化推荐算法使用
-     * @return 推荐结果的VO对象列表，包含推荐记录ID、结果项ID、景点ID、景点名称、封面图片、评分、推荐理由、来源类型和排序分数等信息，供前端展示使用
      */
     private List<RecommendItemVO> persistAndBuildResult(Long userId,
                                                         RecommendType recommendType,

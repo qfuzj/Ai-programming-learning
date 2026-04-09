@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.travel.advisor.mapper.LlmCallLogMapper">
+
+    <select id="selectCallLogSummary" resultType="map">
+        SELECT
+            COUNT(*) AS totalCallCount,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS successCallCount,
+            SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) AS failCallCount,
+            COALESCE(SUM(total_tokens), 0) AS totalTokens,
+            COALESCE(SUM(cost_amount), 0) AS totalCostAmount
+        FROM llm_call_log
+    </select>
+
+</mapper>

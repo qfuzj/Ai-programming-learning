@@ -1,5 +1,6 @@
 package com.travel.advisor.controller.admin;
 
+import com.travel.advisor.annotation.OperationLog;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.user.UserQueryDTO;
@@ -28,6 +29,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}/status")
+    @OperationLog(module = "user", action = "update", description = "更新用户状态")
     public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody UserStatusDTO dto) {
         adminUserManageService.updateStatus(id, dto.getStatus());
         return Result.success();

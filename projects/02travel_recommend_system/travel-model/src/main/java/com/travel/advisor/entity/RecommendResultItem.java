@@ -9,6 +9,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 推荐结果项实体
+ */
 @Data
 @TableName("recommend_result_item")
 public class RecommendResultItem {
