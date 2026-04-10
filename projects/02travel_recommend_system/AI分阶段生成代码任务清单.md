@@ -440,17 +440,20 @@
 ## 阶段十一：文件资源预留模块
 
 ### 任务 28
-- 任务名称：生成文件资源模块预留代码（待实现）
+- 任务名称：完成文件资源模块实现（已完成）
 - 前置依赖：阶段一
 - 关键注意事项：
-  - 只做元数据登记与接口预留
-  - 不深度实现 MinIO 上传
+  - 实现文件上传凭证获取接口，支持业务类型和业务ID参数
+  - 集成 MinIO 对象存储，实现预签名URL生成
+  - 完成文件元数据登记、查询和删除功能
+  - 添加文件上传回调接口，自动同步文件信息到数据库
 - 文件清单：
-  - `travel-model/entity/FileResource.java`（待生成）
-  - `travel-model/mapper/FileResourceMapper.java`（待生成）
-  - `travel-web/controller/common/FileController.java`（待生成）
-  - `travel-web/service/FileService.java`（待生成）
-  - `travel-web/dto/file/FileUploadCallbackDTO.java`（待生成）
+  - `travel-model/entity/FileResource.java`
+  - `travel-model/mapper/FileResourceMapper.java`
+  - `travel-web/controller/common/FileController.java`
+  - `travel-web/service/FileService.java`
+  - `travel-web/service/impl/FileServiceImpl.java`
+  - `travel-web/dto/file/FileUploadCallbackDTO.java`
 
 ---
 

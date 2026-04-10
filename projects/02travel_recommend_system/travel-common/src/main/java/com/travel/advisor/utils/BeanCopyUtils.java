@@ -4,6 +4,7 @@ import org.springframework.beans.BeanUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class BeanCopyUtils {
 
@@ -24,13 +25,11 @@ public final class BeanCopyUtils {
     }
 
     public static <T> List<T> copyList(List<?> sourceList, Class<T> targetClass) {
-        List<T> list = new ArrayList<>();
         if (sourceList == null || sourceList.isEmpty()) {
-            return list;
+            return new ArrayList<>();
         }
-        for (Object source : sourceList) {
-            list.add(copy(source, targetClass));
-        }
-        return list;
+        return sourceList.stream()
+                .map(source -> copy(source, targetClass))
+                .collect(Collectors.toList());
     }
 }
