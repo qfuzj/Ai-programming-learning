@@ -400,40 +400,40 @@
 ## 阶段十：系统配置、日志、统计模块
 
 ### 任务 25
-- 任务名称：生成系统配置模块代码（待实现）
+- 任务名称：生成系统配置模块代码（已完成）
 - 前置依赖：阶段二
 - 关键注意事项：
   - 配置支持按 key 查询与更新
 - 文件清单：
-  - `travel-model/entity/SystemConfig.java`（待生成）
-  - `travel-model/mapper/SystemConfigMapper.java`（待生成）
-  - `travel-web/controller/admin/SystemConfigController.java`（待生成）
-  - `travel-web/service/SystemConfigService.java`（待生成）
+  - `travel-model/entity/SystemConfig.java`
+  - `travel-model/mapper/SystemConfigMapper.java`
+  - `travel-web/controller/admin/SystemConfigController.java`
+  - `travel-web/service/SystemConfigService.java`
 
 ### 任务 26
-- 任务名称：生成操作日志模块代码（待实现）
+- 任务名称：生成操作日志模块代码（已完成）
 - 前置依赖：阶段一
 - 关键注意事项：
   - 使用 AOP 记录管理员操作
 - 文件清单：
-  - `travel-model/entity/OperationLog.java`（待生成）
-  - `travel-model/mapper/OperationLogMapper.java`（待生成）
-  - `travel-web/controller/admin/OperationLogController.java`（待生成）
-  - `travel-web/aspect/OperationLogAspect.java`（待生成）
-  - `travel-web/annotation/OperationLog.java`（待生成，放在 travel-common 或 travel-web 中）
+  - `travel-model/entity/OperationLog.java`
+  - `travel-model/mapper/OperationLogMapper.java`
+  - `travel-web/controller/admin/OperationLogController.java`
+  - `travel-web/aspect/OperationLogAspect.java`
+  - `travel-web/annotation/OperationLog.java`
 
 ### 任务 27
-- 任务名称：生成统计看板模块代码（待实现）
+- 任务名称：生成统计看板模块代码（已完成）
 - 前置依赖：阶段八、阶段九、任务26
 - 关键注意事项：
   - 统计接口优先返回图表可直接消费的数据结构
 - 文件清单：
-  - `travel-model/entity/StatScenicDaily.java`（待生成）
-  - `travel-model/entity/StatPlatformDaily.java`（待生成）
-  - `travel-model/mapper/StatScenicDailyMapper.java`（待生成）
-  - `travel-model/mapper/StatPlatformDailyMapper.java`（待生成）
-  - `travel-web/controller/admin/DashboardController.java`（待生成）
-  - `travel-web/service/DashboardService.java`（待生成）
+  - `travel-model/entity/StatScenicDaily.java`
+  - `travel-model/entity/StatPlatformDaily.java`
+  - `travel-model/mapper/StatScenicDailyMapper.java`
+  - `travel-model/mapper/StatPlatformDailyMapper.java`
+  - `travel-web/controller/admin/DashboardController.java`
+  - `travel-web/service/DashboardService.java`
 
 ---
 

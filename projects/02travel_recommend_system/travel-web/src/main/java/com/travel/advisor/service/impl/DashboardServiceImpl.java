@@ -53,7 +53,7 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     /**
-     * 景点热度排行榜，统计最近30天内各景点的浏览量、独立访客数、收藏数、评论数、推荐展示和点击数，以及平均评分等指标，并返回热度排名前10的景点列表。
+     * 景点热度排行榜，近30天内PV最高的TOP10景区
      */
     @Override
     public List<ScenicHotRankVO> scenicHotRanking() {
