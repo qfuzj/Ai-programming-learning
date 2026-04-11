@@ -460,13 +460,14 @@
 ## 阶段十二：前端基础与页面开发
 
 ### 任务 29
-- 任务名称：生成 Vue3 前端基础工程结构
+- 任务名称：生成 Vue3 前端基础工程结构（已完成）
 - 目标模块：frontend base
 - 要生成的文件：
   - `main.ts`
   - `App.vue`
   - `router/index.ts`
-  - `router/guard.ts`
+  - `router/guards/auth.ts`
+  - `router/constants.ts`
   - `store/index.ts`
   - `utils/request.ts`
   - `layouts/UserLayout.vue`
@@ -477,18 +478,36 @@
   - 封装请求拦截器和 token 注入
 
 ### 任务 30
-- 任务名称：生成登录与认证页面
+- 任务名称：生成登录与认证页面（已完成）
 - 目标模块：frontend auth
 - 要生成的文件：
+  - `views/auth/UserLoginView.vue`
+  - `views/auth/RegisterView.vue`
+  - `views/auth/ResetPasswordView.vue`
+  - `views/auth/AdminLoginView.vue`
   - `views/auth/login.vue`
   - `views/auth/register.vue`
   - `views/auth/reset-password.vue`
   - `views/auth/admin-login.vue`
   - `api/auth.ts`
+  - `types/auth.ts`
+  - `store/modules/user.ts`
   - `store/modules/auth.ts`
 - 前置依赖：任务29
 - 关键注意事项：
   - 用户端与管理端登录页分离
+
+#### 任务30补充：认证模块完结状态（2026-04-11）
+
+| 文件 | 状态 |
+| ---- | ---- |
+| `types/auth.ts` | ✅ 类型完整，字段全部对齐 |
+| `api/auth.ts` | ✅ 接口路径正确，`normalizeLoginResponse` 完善 |
+| `utils/request.ts` | ✅ 拦截器逻辑正确，Token 刷新完善 |
+| `store/modules/user.ts` | ✅ 登录/登出/持久化完整 |
+| `store/modules/auth.ts` | ⚠️ 纯透传，后续可考虑删除 |
+| `router/guards/auth.ts` | ✅ 守卫逻辑正确 |
+| `router/constants.ts` | ✅ 路径常量统一管理 |
 
 ### 任务 31
 - 任务名称：生成景点相关页面
@@ -934,7 +953,7 @@
 ### 模板 10：生成 Vue3 前端页面骨架
 
 ```text
-请为 LLM-Travel-Advisor 生成 Vue3 + Vite + Naive UI 前端页面骨架，包含：
+请为 LLM-Travel-Advisor 生成 Vue3 + Vite + Element Plus 前端页面骨架，包含：
 用户端：
 - 首页
 - 景点列表页
@@ -958,7 +977,7 @@
 - store 模块基础结构
 要求：
 - 用户端与管理端路由分离
-- 页面使用 Naive UI
+- 页面使用 Element Plus
 - 代码风格统一
 - 可直接继续扩展联调
 ```

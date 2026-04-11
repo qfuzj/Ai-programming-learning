@@ -2,6 +2,7 @@ package com.travel.advisor.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
 /**
  * 用户登录 DTO
  */

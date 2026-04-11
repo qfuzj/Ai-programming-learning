@@ -6,15 +6,12 @@ import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.service.CaptchaService;
 import com.travel.advisor.utils.RedisUtils;
 import com.travel.advisor.vo.auth.CaptchaVO;
+import com.wf.captcha.SpecCaptcha;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Base64;
-import java.util.Locale;
-import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -22,20 +19,21 @@ import java.util.UUID;
 public class CaptchaServiceImpl implements CaptchaService {
 
     private static final String CAPTCHA_PREFIX = "auth:captcha:";
-    private static final Random RANDOM = new Random();
 
     private final RedisUtils redisUtils;
 
     @Override
     public CaptchaVO createCaptcha(CaptchaQueryDTO dto) {
-        String code = String.format(Locale.ROOT, "%04d", RANDOM.nextInt(10000));
-        System.out.println("验证码 ============= " + code);
+        SpecCaptcha specCaptcha = new SpecCaptcha(130, 48, 4);
+        specCaptcha.setCharType(SpecCaptcha.TYPE_DEFAULT);
+        String code = specCaptcha.text().toLowerCase();
+
         String captchaId = UUID.randomUUID().toString();
         redisUtils.set(CAPTCHA_PREFIX + captchaId, code, Duration.ofMinutes(5));
 
         CaptchaVO vo = new CaptchaVO();
         vo.setCaptchaId(captchaId);
-        vo.setCaptchaBase64(Base64.getEncoder().encodeToString(code.getBytes(StandardCharsets.UTF_8)));
+        vo.setCaptchaBase64(specCaptcha.toBase64());
         return vo;
     }
 
