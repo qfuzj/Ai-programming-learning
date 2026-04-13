@@ -20,7 +20,7 @@
         <el-table-column prop="status" label="状态" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-              {{ scope.row.status === 1 ? '上架' : '下架' }}
+              {{ scope.row.status === 1 ? "上架" : "下架" }}
             </el-tag>
           </template>
         </el-table-column>

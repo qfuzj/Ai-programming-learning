@@ -37,7 +37,7 @@ export const useUserStore = defineStore("user", () => {
     localStorage.setItem(TOKEN_KEY, nextToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, nextRefreshToken);
     localStorage.setItem(ROLE_KEY, nextRole);
-    token.value = nextToken;        // 响应式更新
+    token.value = nextToken; // 响应式更新
     refreshToken.value = nextRefreshToken;
     role.value = nextRole;
   }

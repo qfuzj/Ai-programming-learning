@@ -28,7 +28,7 @@
           <el-button type="primary" :loading="loading" @click="loadScenicList">查询</el-button>
         </el-form-item>
       </el-form>
-      <el-table :data="scenicList" v-loading="loading" @row-click="goDetail">
+      <el-table v-loading="loading" :data="scenicList" @row-click="goDetail">
         <el-table-column prop="name" label="景点名" />
         <el-table-column prop="regionName" label="地区" />
         <el-table-column prop="score" label="评分" width="100" />
@@ -56,11 +56,12 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { getRegionTree } from "@/api/common";
 import { getScenicPage, type ScenicItem, type ScenicQuery } from "@/api/scenic";
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
 const scenicList = ref<ScenicItem[]>([]);
 const total = ref(0);

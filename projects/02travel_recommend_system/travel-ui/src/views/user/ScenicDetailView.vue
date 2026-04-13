@@ -10,14 +10,25 @@
           <el-descriptions-item label="名称">{{ detail.name }}</el-descriptions-item>
           <el-descriptions-item label="地区">{{ detail.regionName }}</el-descriptions-item>
           <el-descriptions-item label="评分">{{ detail.score }}</el-descriptions-item>
-          <el-descriptions-item label="等级">{{ detail.level || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="门票">{{ detail.ticketPrice ?? '-' }}</el-descriptions-item>
-          <el-descriptions-item label="开放时间">{{ detail.openTime || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="地址">{{ detail.address || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="等级">{{ detail.level || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="门票">{{ detail.ticketPrice ?? "-" }}</el-descriptions-item>
+          <el-descriptions-item label="开放时间">{{ detail.openTime || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="地址">{{ detail.address || "-" }}</el-descriptions-item>
         </el-descriptions>
         <el-divider />
-        <el-image v-if="detail.coverImage" :src="detail.coverImage" fit="cover" class="cover-image" />
-        <el-alert v-if="detail.intro" :title="detail.intro" type="info" :closable="false" show-icon />
+        <el-image
+          v-if="detail.coverImage"
+          :src="detail.coverImage"
+          fit="cover"
+          class="cover-image"
+        />
+        <el-alert
+          v-if="detail.intro"
+          :title="detail.intro"
+          type="info"
+          :closable="false"
+          show-icon
+        />
       </template>
     </el-card>
   </div>

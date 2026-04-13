@@ -10,17 +10,17 @@
           <el-input v-model="form.username" placeholder="请输入用户名" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" />
+          <el-input
+            v-model="form.password"
+            type="password"
+            show-password
+            placeholder="请输入密码"
+          />
         </el-form-item>
         <el-form-item label="验证码">
           <div class="captcha-row">
             <el-input v-model="form.captchaCode" maxlength="6" placeholder="请输入验证码" />
-            <el-image
-              class="captcha-image"
-              :src="captchaImage"
-              fit="contain"
-              @click="loadCaptcha"
-            >
+            <el-image class="captcha-image" :src="captchaImage" fit="contain" @click="loadCaptcha">
               <template #error>
                 <div class="captcha-placeholder" @click="loadCaptcha">点击刷新</div>
               </template>
@@ -71,7 +71,8 @@ async function onSubmit(): Promise<void> {
   try {
     submitting.value = true;
     await userStore.loginAsUser(form);
-    const redirect = typeof route.query.redirect === "string" ? route.query.redirect : ROUTE_PATHS.USER_HOME;
+    const redirect =
+      typeof route.query.redirect === "string" ? route.query.redirect : ROUTE_PATHS.USER_HOME;
     await router.push(redirect);
   } catch {
     await loadCaptcha();
@@ -87,9 +88,9 @@ onMounted(() => {
 
 <style scoped>
 .login-page {
-  min-height: 100vh;
   display: grid;
   place-items: center;
+  min-height: 100vh;
 }
 
 .login-card {
@@ -105,18 +106,18 @@ onMounted(() => {
 .captcha-image {
   width: 130px;
   height: 48px;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
   cursor: pointer;
   background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
 }
 
 .captcha-placeholder {
-  width: 100%;
-  height: 100%;
   display: grid;
   place-items: center;
-  color: #909399;
+  width: 100%;
+  height: 100%;
   font-size: 12px;
+  color: #909399;
 }
 </style>

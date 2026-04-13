@@ -29,7 +29,12 @@
         <el-table-column label="状态" width="100">
           <template #default="scope">{{ statusText(scope.row.auditStatus) }}</template>
         </el-table-column>
-        <el-table-column prop="auditRemark" label="审核备注" min-width="180" show-overflow-tooltip />
+        <el-table-column
+          prop="auditRemark"
+          label="审核备注"
+          min-width="180"
+          show-overflow-tooltip
+        />
         <el-table-column prop="createTime" label="提交时间" width="180" />
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="scope">
@@ -72,7 +77,13 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { approveAudit, getAuditPage, hideAudit, rejectAudit, type AuditItem } from "@/api/admin-audit";
+import {
+  approveAudit,
+  getAuditPage,
+  hideAudit,
+  rejectAudit,
+  type AuditItem,
+} from "@/api/admin-audit";
 
 const loading = ref(false);
 const auditList = ref<AuditItem[]>([]);

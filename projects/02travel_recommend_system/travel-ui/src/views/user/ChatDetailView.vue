@@ -96,8 +96,8 @@ watch(
 
 .message-item {
   padding: 12px 14px;
-  border-radius: 12px;
   background: #f8fafc;
+  border-radius: 12px;
 }
 
 .message-item.assistant {
@@ -111,8 +111,8 @@ watch(
 }
 
 .message-content {
-  white-space: pre-wrap;
   word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .action-row {

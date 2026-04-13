@@ -1,9 +1,9 @@
 /* 全局基础样式：提供简洁布局基线。 */
 :root {
-  color-scheme: light;
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  line-height: 1.5;
   font-weight: 400;
+  line-height: 1.5;
+  color-scheme: light;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -16,10 +16,12 @@
 html,
 body,
 #app {
+  display: block; /* 覆盖 index.html 中的 flex 居中 */
   width: 100%;
-  height: 100%;
-  margin: 0;
+  min-height: 100%;
   padding: 0;
+  margin: 0;
+  scrollbar-gutter: stable;
   background: #f5f7fa;
 }
 

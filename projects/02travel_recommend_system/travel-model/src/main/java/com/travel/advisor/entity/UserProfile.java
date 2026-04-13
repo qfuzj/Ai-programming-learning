@@ -6,31 +6,24 @@ import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("user")
-public class User {
-
+@TableName("user_profile")
+public class UserProfile {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String username;
-    private String password;
-    private String nickname;
-    private String phone;
-    private String email;
-    private String avatar;
-    private Integer gender;
-    private LocalDate birthday;
-    private String signature;
-    private Long regionId;
-    private Integer status;
-    private LocalDateTime lastLoginTime;
-    private String lastLoginIp;
+    private Long userId;
+    private String travelStyle;
+    private Integer budgetLevel;
+    private String preferredSeason;
+    private String travelCompanion;
+    private String interestKeywords;
+    private String embeddingVector;
+    private Integer profileVersion;
+    private LocalDateTime lastAnalyzedAt;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
-
     @TableLogic
     private Integer isDeleted;
 }

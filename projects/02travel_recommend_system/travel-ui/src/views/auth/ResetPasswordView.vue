@@ -3,7 +3,9 @@
   <PageStub title="重置密码" description="后续接入 /api/user/auth/reset-password。">
     <el-form :model="form" label-position="top">
       <el-form-item label="手机号"><el-input v-model="form.phone" /></el-form-item>
-      <el-form-item label="新密码"><el-input v-model="form.newPassword" type="password" show-password /></el-form-item>
+      <el-form-item label="新密码">
+        <el-input v-model="form.newPassword" type="password" show-password />
+      </el-form-item>
       <el-button type="primary">提交重置</el-button>
     </el-form>
   </PageStub>

@@ -27,11 +27,10 @@
     body,
     #app {
       position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       width: 100%;
       height: 100%;
+      margin: 0;
+      padding: 0;
     }
 
     .loading-container {
@@ -40,6 +39,7 @@
       gap: 24px;
       align-items: center;
       justify-content: center;
+      height: 100vh; /* Make loading container take full height */
     }
 
     .loading-spinner {

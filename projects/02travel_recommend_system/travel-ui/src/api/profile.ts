@@ -27,6 +27,7 @@ export interface ProfilePortraitSummary {
   budgetLevel?: string;
   preferredTags?: string[];
   recentBrowsePreferences?: string[];
+  location?: string;
   summary?: string;
 }
 

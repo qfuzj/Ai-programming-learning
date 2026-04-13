@@ -5,7 +5,9 @@
       <template #header>工作台</template>
       <el-row :gutter="12">
         <el-col :span="8"><el-statistic title="用户总数" :value="overview.totalUsers" /></el-col>
-        <el-col :span="8"><el-statistic title="景点总数" :value="overview.totalScenicSpots" /></el-col>
+        <el-col :span="8">
+          <el-statistic title="景点总数" :value="overview.totalScenicSpots" />
+        </el-col>
         <el-col :span="8"><el-statistic title="点评总数" :value="overview.totalReviews" /></el-col>
       </el-row>
       <el-row :gutter="12" style="margin-top: 12px">

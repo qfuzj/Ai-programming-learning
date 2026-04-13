@@ -15,6 +15,9 @@ const __APP_INFO__ = {
   buildTimestamp: Date.now(),
 };
 
+import vueDevTools from "vite-plugin-vue-devtools";
+import { createHtmlPlugin } from "vite-plugin-html";
+
 // ESM 模式下使用 import.meta.dirname（Node 20.11+）
 const pathSrc = resolve(import.meta.dirname, "src");
 
@@ -49,6 +52,8 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
       },
     },
     plugins: [
+      vueDevTools(),
+      createHtmlPlugin({}),
       vue(),
       UnoCSS(),
       // API 自动导入

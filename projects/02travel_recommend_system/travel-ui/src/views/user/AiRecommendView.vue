@@ -3,7 +3,11 @@
   <div class="page-container">
     <el-card class="page-card">
       <template #header>AI 推荐</template>
-      <el-alert type="info" :closable="false" title="后续接入 /api/user/recommend/home 与反馈接口" />
+      <el-alert
+        type="info"
+        :closable="false"
+        title="后续接入 /api/user/recommend/home 与反馈接口"
+      />
       <el-table :data="[]" style="margin-top: 12px">
         <el-table-column prop="scenicName" label="景点" />
         <el-table-column prop="reason" label="推荐理由" />
