@@ -286,6 +286,8 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             vo.setLevel(scenicSpot.getLevel());
             vo.setTagList(tagNameMap.getOrDefault(scenicSpot.getId(), Collections.emptyList()));
             vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
+            vo.setStatus(scenicSpot.getStatus());
+            vo.setAddress(scenicSpot.getAddress());
             return vo;
         }).toList();
     }

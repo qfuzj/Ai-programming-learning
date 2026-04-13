@@ -34,7 +34,6 @@ public class UserProfileController {
         return Result.success(userProfileService.getMyPortrait());
     }
 
-    @PutMapping("/preference-tags")
     @GetMapping("/preference-tags")
     public Result<List<Tag>> getMyPreferenceTags() {
         return Result.success(userProfileService.getMyPreferenceTags());

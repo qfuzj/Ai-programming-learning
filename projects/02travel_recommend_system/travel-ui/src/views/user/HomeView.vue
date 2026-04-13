@@ -40,35 +40,6 @@
     </div>
 
     <div class="home-page">
-      <!-- 我的景区标签 -->
-      <div class="section-container">
-        <div class="section-header">
-          <h2 class="section-title">我的景区标签</h2>
-          <p class="section-subtitle">查找您感兴趣的标签，快速发现对应景点</p>
-        </div>
-
-        <el-skeleton v-if="loading" animated :rows="6" />
-        <el-empty v-else-if="tagList.length === 0" description="暂无标签" />
-
-        <!-- 横向滚动列表 -->
-        <div v-else class="horizontal-scroll-list">
-          <div
-            v-for="item in tagList"
-            :key="item.id"
-            class="scenic-card tag-card"
-            @click="goScenicListByTag(item.name)"
-          >
-            <div class="tag-cover" :style="{ backgroundColor: item.color || '#00e676' }">
-              <span class="tag-name-large">{{ item.name.substring(0, 2) }}</span>
-            </div>
-            <div class="scenic-body">
-              <div class="scenic-name">{{ item.name }}</div>
-              <div v-if="item.category" class="scenic-price">{{ item.category }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- 热门推荐部分：您可能会喜欢这些 -->
       <div class="section-container">
         <div class="section-header">
@@ -99,14 +70,14 @@
               <div class="scenic-name">{{ item.name }}</div>
               <div class="scenic-rating">
                 <span class="rating-number">
-                  {{ Math.min(5, Number((item.score / 2).toFixed(1))) }}
+                  {{ Math.min(5, Number(item.score.toFixed(1))) }}
                 </span>
                 <span class="rating-dots">
                   <span
                     v-for="n in 5"
                     :key="n"
                     class="dot"
-                    :class="{ 'is-active': n <= Math.round(item.score / 2) }"
+                    :class="{ 'is-active': n <= Math.round(item.score) }"
                   ></span>
                 </span>
                 <span class="review-count">({{ item.regionName || "未知" }})</span>
@@ -114,6 +85,38 @@
               <div v-if="item.tags && item.tags.length" class="scenic-price">
                 {{ item.tags.slice(0, 2).join(" · ") }}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+            <!-- 我的景区标签 -->
+      <div class="section-container">
+        <div class="section-header">
+          <h2 class="section-title">我的景区标签</h2>
+          <p class="section-subtitle">查找您感兴趣的标签，快速发现对应景点</p>
+        </div>
+
+        <el-skeleton v-if="loading" animated :rows="6" />
+        <el-empty v-else-if="tagList.length === 0" description="暂无标签" />
+
+        <!-- 横向滚动列表 -->
+        <div v-else class="horizontal-scroll-list">
+          <div
+            v-for="item in tagList"
+            :key="item.id"
+            class="scenic-card tag-card"
+            @click="goScenicListByTag(item.name)"
+          >
+            <div class="tag-cover">
+              <el-image v-if="item.icon" :src="item.icon" fit="cover" class="tag-image" />
+              <div v-else class="tag-placeholder" :style="{ backgroundColor: item.color || '#00e676' }">
+              <span class="tag-name-large">{{ item.name.substring(0, 2) }}</span>
+              </div>
+            </div>
+            <div class="scenic-body">
+              <div class="scenic-name">{{ item.name }}</div>
+              <div v-if="item.category" class="scenic-price">{{ item.category }}</div>
             </div>
           </div>
         </div>
@@ -129,6 +132,7 @@ import { ElMessage } from "element-plus";
 import { Search, House, OfficeBuilding, Camera, ForkSpoon, Star } from "@element-plus/icons-vue";
 import { getScenicHotList, type ScenicItem } from "@/api/scenic";
 import { getTagsByType, type CommonTagItem } from "@/api/common";
+import { getMyPreferenceTags } from "@/api/profile";
 
 const router = useRouter();
 
@@ -160,7 +164,11 @@ async function loadHomeData(): Promise<void> {
   loading.value = true;
   try {
     hotScenicList.value = await getScenicHotList();
-    tagList.value = await getTagsByType(1);
+    try {
+      tagList.value = await getMyPreferenceTags();
+    } catch (err) {
+      console.error(err);
+    }
   } catch {
     ElMessage.warning("景点加载失败，请稍后重试");
   } finally {
@@ -320,6 +328,21 @@ onMounted(() => {
 
 .tag-card:hover .tag-cover {
   transform: scale(1.02);
+}
+
+.tag-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.tag-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  color: white;
 }
 
 .tag-name-large {

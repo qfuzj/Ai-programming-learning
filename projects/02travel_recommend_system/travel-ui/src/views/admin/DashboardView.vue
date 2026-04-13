@@ -60,3 +60,9 @@ onMounted(() => {
   void loadDashboardData();
 });
 </script>
+
+<style scoped>
+.page-container {
+  padding: 0px;
+}
+</style>

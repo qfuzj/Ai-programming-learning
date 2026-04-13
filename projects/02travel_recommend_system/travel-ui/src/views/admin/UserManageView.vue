@@ -115,4 +115,8 @@ onMounted(() => {
   justify-content: flex-end;
   margin-top: 16px;
 }
+
+.page-container {
+  padding: 0px;
+}
 </style>

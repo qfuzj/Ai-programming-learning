@@ -50,4 +50,8 @@ public class ScenicListVO {
      * 是否是用户的收藏
      */
     private Boolean isFavorite;
+
+    private Integer status;
+
+    private String address;
 }

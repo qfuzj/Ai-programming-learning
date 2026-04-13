@@ -6,3 +6,9 @@
 </template>
 
 <script setup lang="ts"></script>
+
+<style scoped>
+.page-container {
+  padding: 0px;
+}
+</style>

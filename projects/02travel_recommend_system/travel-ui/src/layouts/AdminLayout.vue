@@ -75,4 +75,8 @@ async function onLogout(): Promise<void> {
   background: #fff;
   border-bottom: 1px solid #ebeef5;
 }
+
+.el-main {
+  padding: 4px;
+}
 </style>
