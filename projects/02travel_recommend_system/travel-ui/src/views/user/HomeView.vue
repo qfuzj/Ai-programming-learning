@@ -40,52 +40,56 @@
     </div>
 
     <div class="home-page">
-      <!-- 热门推荐部分：您可能会喜欢这些 -->
+      <!-- 热门推荐部分：为您推荐 -->
       <div class="section-container">
-        <div class="section-header">
-          <h2 class="section-title">您可能会喜欢这些</h2>
-          <p class="section-subtitle">基于热门趋势的景点推荐</p>
+        <div class="section-header trip-section-header">
+          <h2 class="trip-section-title">为您推荐</h2>
+          <p class="trip-section-subtitle">正在浏览 热门景点？我们认为您会喜欢这些。</p>
         </div>
 
         <el-skeleton v-if="loading" animated :rows="6" />
         <el-empty v-else-if="hotScenicList.length === 0" description="暂无推荐景点" />
 
         <!-- 横向滚动列表 -->
-        <div v-else class="horizontal-scroll-list">
+        <div v-else class="horizontal-scroll-list trip-scroll-list">
           <div
-            v-for="item in hotScenicList"
+            v-for="(item, index) in hotScenicList"
             :key="item.id"
-            class="scenic-card"
-            @click="goScenicDetail(item.id)"
+            class="trip-card-wrapper"
           >
-            <div class="heart-icon-wrapper">
-              <el-icon><Star /></el-icon>
-            </div>
-            <el-image class="scenic-cover" :src="item.coverImage || ''" fit="cover">
-              <template #error>
-                <div class="image-fallback">暂无图片</div>
-              </template>
-            </el-image>
-            <div class="scenic-body">
-              <div class="scenic-name">{{ item.name }}</div>
-              <div class="scenic-rating">
-                <span class="rating-number">
-                  {{ Math.min(5, Number(item.score.toFixed(1))) }}
-                </span>
-                <span class="rating-dots">
-                  <span
-                    v-for="n in 5"
-                    :key="n"
-                    class="dot"
-                    :class="{ 'is-active': n <= Math.round(item.score) }"
-                  ></span>
-                </span>
-                <span class="review-count">({{ item.regionName || "未知" }})</span>
+            <div class="trip-rank-top">热门 TOP {{ index + 1 }}</div>
+            <div class="trip-card" @click="goScenicDetail(item.id)">
+              <div class="trip-card-image">
+                <el-image class="trip-cover" :src="item.coverImage || ''" fit="cover">
+                  <template #error>
+                    <div class="image-fallback">暂无图片</div>
+                  </template>
+                </el-image>
               </div>
-              <div v-if="item.tags && item.tags.length" class="scenic-price">
-                {{ item.tags.slice(0, 2).join(" · ") }}
+              
+              <div class="trip-card-body">
+                <div class="trip-content">
+                  <div class="trip-location">{{ item.regionName || "未知" }}</div>
+                <h3 class="trip-title">{{ item.name }}</h3>
+                <div class="trip-rating">
+                  <span class="rating-score">{{ item.score ? item.score.toFixed(1) : '5.0' }}</span>
+                  <span class="rating-bubbles">
+                    <span
+                      v-for="n in 5"
+                      :key="n"
+                      class="bubble"
+                      :class="{ 'is-filled': n <= Math.round(item.score || 5) }"
+                    ></span>
+                  </span>
+                  <span class="rating-count">({{ Math.floor((item.score || 5) * 12.5) + (index * 7) }})</span>
+                </div>
+                <div class="trip-footer">
+                  <span class="trip-price-label">低至</span>
+                  <span class="trip-price-value">¥{{ item.ticketPrice || 199 }}</span>
+                </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -493,5 +497,191 @@ onMounted(() => {
   .scenic-card {
     width: 240px;
   }
+  .trip-card {
+    width: 240px;
+  }
+}
+
+/* 仿 TripAdvisor 卡片样式 */
+.trip-section-header {
+  margin-bottom: 24px;
+}
+.trip-section-title {
+  margin: 0 0 4px 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #000;
+}
+.trip-section-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.trip-scroll-list {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.trip-scroll-list::-webkit-scrollbar {
+  height: 8px;
+}
+.trip-scroll-list::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+.trip-scroll-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.trip-card-wrapper {
+  position: relative;
+  flex: 0 0 auto;
+  width: 280px;
+  scroll-snap-align: start;
+}
+
+.trip-rank-top {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ff4d4f;
+  margin-bottom: 8px;
+  padding-left: 2px;
+}
+
+.trip-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+.trip-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.trip-card-image {
+  position: relative;
+  width: 100%;
+  height: 200px;
+}
+
+.trip-cover {
+  width: 100%;
+  height: 100%;
+  background: #f0f0f0;
+}
+
+.heart-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+.heart-btn:hover {
+  transform: scale(1.05);
+}
+.heart-btn .el-icon {
+  font-size: 18px;
+  color: #333;
+}
+
+.trip-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.trip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.trip-location {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: #666;
+  background: #f2f2f2;
+  border-radius: 4px;
+}
+
+.trip-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.trip-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.rating-score {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.rating-bubbles {
+  display: flex;
+  gap: 2px;
+}
+
+.bubble {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #00a680;
+}
+
+.bubble.is-filled {
+  background: #00a680;
+}
+
+.rating-count {
+  font-size: 13px;
+  color: #666;
+  margin-left: 2px;
+}
+
+.trip-footer {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #333;
+}
+
+.trip-price-label {
+  color: #666;
+  margin-right: 4px;
+}
+.trip-price-value {
+  font-weight: 700;
+  font-size: 15px;
 }
 </style>

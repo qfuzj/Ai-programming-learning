@@ -29,12 +29,6 @@ export const userRoutes: RouteRecordRaw[] = [
         meta: { title: "景点详情", requiresAuth: false },
       },
       {
-        path: "favorites",
-        name: "Favorites",
-        component: () => import("@/views/user/FavoritesView.vue"),
-        meta: { title: "收藏页", requiresAuth: true, roles: ["USER"] },
-      },
-      {
         path: "history",
         name: "BrowseHistory",
         component: () => import("@/views/user/HistoryView.vue"),

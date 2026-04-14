@@ -1,8 +1,9 @@
-<!-- 操作日志页：基础检索与分页。 -->
 <template>
   <div class="page-container">
-    <el-card v-loading="loading" class="page-card">
-      <template #header>操作日志</template>
+    <el-card class="page-card">
+      <template #header>
+        <div class="card-header">操作日志</div>
+      </template>
 
       <el-form :inline="true" :model="query" class="filter-form">
         <el-form-item label="模块">
@@ -23,9 +24,12 @@
         <el-form-item>
           <el-button type="primary" @click="onSearch">查询</el-button>
         </el-form-item>
+        <el-form-item>
+          <el-button @click="onReset">重置</el-button>
+        </el-form-item>
       </el-form>
 
-      <el-table :data="logList">
+      <el-table v-loading="loading" :data="logList">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="module" label="模块" width="120" />
         <el-table-column prop="action" label="动作" width="120" />
@@ -41,6 +45,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="时间" width="180" />
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="scope">
+            <el-button link type="primary" @click="openDetail(scope.row.id)">详情</el-button>
+          </template>
+        </el-table-column>
       </el-table>
 
       <div class="pagination-row">
@@ -55,24 +64,57 @@
         />
       </div>
     </el-card>
+
+    <el-dialog v-model="detailVisible" title="日志详情" width="860px" destroy-on-close>
+      <el-descriptions v-if="detailData" :column="2" border>
+        <el-descriptions-item label="日志ID">{{ detailData.id }}</el-descriptions-item>
+        <el-descriptions-item label="管理员">{{ detailData.adminUsername || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="模块">{{ detailData.module || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="动作">{{ detailData.action || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="请求方法">{{ detailData.requestMethod || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="请求地址">{{ detailData.requestUrl || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="耗时(ms)">{{ detailData.executionTimeMs ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="状态">{{ detailData.status === 1 ? '成功' : '失败' }}</el-descriptions-item>
+        <el-descriptions-item label="IP地址">{{ detailData.ipAddress || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="时间">{{ detailData.createTime || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="描述" :span="2">{{ detailData.description || '-' }}</el-descriptions-item>
+      </el-descriptions>
+
+      <el-divider content-position="left">请求参数</el-divider>
+      <el-input :model-value="detailData?.requestParams || '-'" type="textarea" :rows="4" readonly />
+
+      <el-divider content-position="left">响应数据</el-divider>
+      <el-input :model-value="detailData?.responseData || '-'" type="textarea" :rows="4" readonly />
+
+      <el-divider content-position="left">错误信息</el-divider>
+      <el-input :model-value="detailData?.errorMessage || '-'" type="textarea" :rows="3" readonly />
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
-import { getOperationLogPage, type OperationLogItem } from "@/api/admin-log";
+import { ElMessage } from "element-plus";
+import {
+  getOperationLogDetail,
+  getOperationLogPage,
+  type OperationLogItem,
+  type OperationLogQuery,
+} from "@/api/log";
 
 const loading = ref(false);
 const total = ref(0);
 const logList = ref<OperationLogItem[]>([]);
+const detailVisible = ref(false);
+const detailData = ref<OperationLogItem | null>(null);
 
-const query = reactive({
+const query = reactive<OperationLogQuery>({
   pageNum: 1,
   pageSize: 10,
   module: "",
   action: "",
   adminUsername: "",
-  status: undefined as number | undefined,
+  status: undefined,
 });
 
 async function loadLogs(): Promise<void> {
@@ -88,6 +130,8 @@ async function loadLogs(): Promise<void> {
     });
     logList.value = page.records;
     total.value = page.total;
+  } catch {
+    ElMessage.error("操作日志加载失败");
   } finally {
     loading.value = false;
   }
@@ -98,9 +142,27 @@ function onSearch(): void {
   void loadLogs();
 }
 
+function onReset(): void {
+  query.module = "";
+  query.action = "";
+  query.adminUsername = "";
+  query.status = undefined;
+  query.pageNum = 1;
+  void loadLogs();
+}
+
 function onSizeChange(): void {
   query.pageNum = 1;
   void loadLogs();
+}
+
+async function openDetail(id: number): Promise<void> {
+  try {
+    detailData.value = await getOperationLogDetail(id);
+    detailVisible.value = true;
+  } catch {
+    ElMessage.error("日志详情加载失败");
+  }
 }
 
 onMounted(() => {
@@ -109,6 +171,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.card-header {
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .filter-form {
   margin-bottom: 12px;
 }

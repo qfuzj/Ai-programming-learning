@@ -4,6 +4,7 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.plan.TravelPlanCreateDTO;
+import com.travel.advisor.dto.plan.TravelPlanQueryDTO;
 import com.travel.advisor.dto.plan.TravelPlanItemCreateDTO;
 import com.travel.advisor.service.TravelPlanService;
 import com.travel.advisor.vo.plan.TravelPlanDetailVO;
@@ -31,7 +32,7 @@ public class TravelPlanController {
     }
 
     @GetMapping
-    public Result<PageResult<TravelPlanDetailVO>> pageMyPlans(PageQuery pageQuery) {
+    public Result<PageResult<TravelPlanDetailVO>> pageMyPlans(TravelPlanQueryDTO pageQuery) {
         return Result.success(travelPlanService.pageMyPlans(pageQuery));
     }
 

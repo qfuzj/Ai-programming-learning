@@ -1,6 +1,7 @@
 package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
@@ -35,17 +36,29 @@ public class FavoriteServiceImpl implements FavoriteService {
     public void addFavorite(Long scenicId) {
         Long userId = getCurrentUserIdRequired();
         ensureScenicExists(scenicId);
-        UserFavorite existing = userFavoriteMapper.selectOne(new LambdaQueryWrapper<UserFavorite>()
-            .eq(UserFavorite::getUserId, userId)
-            .eq(UserFavorite::getScenicSpotId, scenicId));
+        
+        // 连同逻辑删除的记录一起查询
+        UserFavorite existing = userFavoriteMapper.selectWithDeleted(userId, scenicId);
+        
         if (existing != null) {
-            throw new BusinessException(ResultCode.CONFLICT, "景点已收藏");
+            if (existing.getIsDeleted() != null && existing.getIsDeleted() == 0) {
+                throw new BusinessException(ResultCode.CONFLICT, "景点已收藏");
+            }
+            // 如果已经被逻辑删除了，我们走恢复逻辑
+            userFavoriteMapper.restoreDeleted(existing.getId());
+        } else {
+            // 否则走全新插入
+            UserFavorite userFavorite = new UserFavorite();
+            userFavorite.setUserId(userId);
+            userFavorite.setScenicSpotId(scenicId);
+            userFavorite.setFolderName("默认收藏");
+            userFavoriteMapper.insert(userFavorite);
         }
-        UserFavorite userFavorite = new UserFavorite();
-        userFavorite.setUserId(userId);
-        userFavorite.setScenicSpotId(scenicId);
-        userFavorite.setFolderName("默认收藏");
-        userFavoriteMapper.insert(userFavorite);
+        
+        // 更新景点的收藏数量
+        scenicSpotMapper.update(null, new LambdaUpdateWrapper<ScenicSpot>()
+                .eq(ScenicSpot::getId, scenicId)
+                .setSql("favorite_count = favorite_count + 1"));
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -58,6 +71,11 @@ public class FavoriteServiceImpl implements FavoriteService {
         if (affected == 0) {
             throw new BusinessException(ResultCode.NOT_FOUND, "收藏记录不存在");
         }
+        
+        // 更新景点的收藏数量
+        scenicSpotMapper.update(null, new LambdaUpdateWrapper<ScenicSpot>()
+                .eq(ScenicSpot::getId, scenicId)
+                .setSql("favorite_count = CASE WHEN favorite_count > 0 THEN favorite_count - 1 ELSE 0 END"));
     }
 
     @Override

@@ -26,7 +26,7 @@ export interface ProfilePortraitSummary {
   travelStyle?: string;
   budgetLevel?: string;
   preferredTags?: string[];
-  recentBrowsePreferences?: string[];
+  recentPreferences?: string[];
   location?: string;
   summary?: string;
 }

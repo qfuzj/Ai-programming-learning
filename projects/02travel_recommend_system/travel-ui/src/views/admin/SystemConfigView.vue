@@ -1,19 +1,26 @@
-<!-- 系统配置页：查询 + 编辑配置。 -->
 <template>
   <div class="page-container">
     <el-card v-loading="loading" class="page-card">
-      <template #header>系统配置</template>
+      <template #header>
+        <div class="card-header">系统配置</div>
+      </template>
 
       <el-form :inline="true" :model="query" class="filter-form">
+        <el-form-item label="配置键">
+          <el-input v-model="query.configKey" clearable placeholder="如 llm.model" />
+        </el-form-item>
         <el-form-item label="配置分组">
           <el-input v-model="query.configGroup" clearable placeholder="如 llm / recommend" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="onSearch">查询</el-button>
         </el-form-item>
+        <el-form-item>
+          <el-button @click="onReset">重置</el-button>
+        </el-form-item>
       </el-form>
 
-      <el-table :data="configList">
+      <el-table :data="filteredConfigList">
         <el-table-column prop="configKey" label="配置键" min-width="180" show-overflow-tooltip />
         <el-table-column prop="configValue" label="配置值" min-width="220" show-overflow-tooltip />
         <el-table-column prop="configType" label="类型" width="100" />
@@ -32,18 +39,6 @@
           </template>
         </el-table-column>
       </el-table>
-
-      <div class="pagination-row">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="loadConfigs"
-          @size-change="onSizeChange"
-        />
-      </div>
     </el-card>
 
     <el-dialog v-model="editDialogVisible" title="编辑配置" width="560px">
@@ -57,20 +52,17 @@
         <el-row :gutter="12">
           <el-col :span="12">
             <el-form-item label="配置类型">
-              <el-input v-model="editing.configType" />
+              <el-input v-model="editing.configType" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="配置分组">
-              <el-input v-model="editing.configGroup" />
+              <el-input v-model="editing.configGroup" disabled />
             </el-form-item>
           </el-col>
         </el-row>
         <el-form-item label="说明">
           <el-input v-model="editing.description" />
-        </el-form-item>
-        <el-form-item label="前端可见">
-          <el-switch v-model="editing.isPublic" :active-value="1" :inactive-value="0" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -82,24 +74,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import {
-  getSystemConfigDetail,
-  getSystemConfigPage,
+  getSystemConfigByKey,
+  getSystemConfigList,
   updateSystemConfig,
   type SystemConfigItem,
-} from "@/api/admin-config";
+} from "@/api/system-config";
 
 const loading = ref(false);
 const saving = ref(false);
-const total = ref(0);
 const configList = ref<SystemConfigItem[]>([]);
 const editDialogVisible = ref(false);
 
 const query = reactive({
-  pageNum: 1,
-  pageSize: 10,
+  configKey: "",
   configGroup: "",
 });
 
@@ -112,56 +102,68 @@ const editing = reactive({
   isPublic: 0,
 });
 
+const filteredConfigList = computed(() => {
+  const key = query.configKey.trim().toLowerCase();
+  const group = query.configGroup.trim().toLowerCase();
+  return configList.value.filter((item) => {
+    const itemKey = (item.configKey ?? "").toLowerCase();
+    const itemGroup = (item.configGroup ?? "").toLowerCase();
+    const matchKey = !key || itemKey.includes(key);
+    const matchGroup = !group || itemGroup.includes(group);
+    return matchKey && matchGroup;
+  });
+});
+
 async function loadConfigs(): Promise<void> {
   loading.value = true;
   try {
-    const page = await getSystemConfigPage({
-      pageNum: query.pageNum,
-      pageSize: query.pageSize,
-      configGroup: query.configGroup || undefined,
-    });
-    configList.value = page.records;
-    total.value = page.total;
+    configList.value = await getSystemConfigList();
+  } catch {
+    ElMessage.error("系统配置加载失败");
   } finally {
     loading.value = false;
   }
 }
 
 function onSearch(): void {
-  query.pageNum = 1;
-  void loadConfigs();
+  // 本地过滤，无需远程分页查询。
 }
 
-function onSizeChange(): void {
-  query.pageNum = 1;
-  void loadConfigs();
+function onReset(): void {
+  query.configKey = "";
+  query.configGroup = "";
 }
 
 async function onEdit(configKey: string): Promise<void> {
-  const detail = await getSystemConfigDetail(configKey);
-  editing.configKey = detail.configKey;
-  editing.configValue = detail.configValue;
-  editing.configType = detail.configType;
-  editing.configGroup = detail.configGroup;
-  editing.description = detail.description ?? "";
-  editing.isPublic = detail.isPublic;
-  editDialogVisible.value = true;
+  try {
+    const detail = await getSystemConfigByKey(configKey);
+    editing.configKey = detail.configKey ?? "";
+    editing.configValue = detail.configValue ?? "";
+    editing.configType = detail.configType ?? "string";
+    editing.configGroup = detail.configGroup ?? "default";
+    editing.description = detail.description ?? "";
+    editing.isPublic = detail.isPublic ?? 0;
+    editDialogVisible.value = true;
+  } catch {
+    ElMessage.error("配置详情加载失败");
+  }
 }
 
 async function onSave(): Promise<void> {
-  if (!editing.configKey) return;
+  if (!editing.configKey) {
+    return;
+  }
   saving.value = true;
   try {
     await updateSystemConfig(editing.configKey, {
       configValue: editing.configValue,
-      configType: editing.configType,
-      configGroup: editing.configGroup,
       description: editing.description,
-      isPublic: editing.isPublic,
     });
     ElMessage.success("配置已更新");
     editDialogVisible.value = false;
     await loadConfigs();
+  } catch {
+    ElMessage.error("配置更新失败");
   } finally {
     saving.value = false;
   }
@@ -173,14 +175,13 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.filter-form {
-  margin-bottom: 12px;
+.card-header {
+  font-size: 16px;
+  font-weight: 700;
 }
 
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+.filter-form {
+  margin-bottom: 12px;
 }
 
 .page-container {

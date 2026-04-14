@@ -8,18 +8,44 @@
 
       <el-form :inline="true" :model="query" class="filter-form">
         <el-form-item label="关键词">
-          <el-input v-model="query.keyword" placeholder="景点名" clearable style="width: 200px" @keyup.enter="onSearch" />
+          <el-input
+            v-model="query.keyword"
+            placeholder="景点名"
+            clearable
+            style="width: 200px"
+            @keyup.enter="onSearch"
+          />
         </el-form-item>
         <el-form-item label="省份">
-          <el-select v-model="query.provinceId" clearable placeholder="请选择省份" style="width: 160px"
-            @change="onProvinceChange">
-            <el-option v-for="item in provinceOptions" :key="item.id" :label="item.name" :value="item.id" />
+          <el-select
+            v-model="query.provinceId"
+            clearable
+            placeholder="请选择省份"
+            style="width: 160px"
+            @change="onProvinceChange"
+          >
+            <el-option
+              v-for="item in provinceOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="城市">
-          <el-select v-model="query.cityId" clearable placeholder="请选择城市" style="width: 160px"
-            :disabled="!query.provinceId">
-            <el-option v-for="item in cityOptions" :key="item.id" :label="item.name" :value="item.id" />
+          <el-select
+            v-model="query.cityId"
+            clearable
+            placeholder="请选择城市"
+            style="width: 160px"
+            :disabled="!query.provinceId"
+          >
+            <el-option
+              v-for="item in cityOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -37,8 +63,12 @@
         <el-table-column prop="name" label="景点名称" min-width="100" />
         <el-table-column label="封面" width="100">
           <template #default="{ row }">
-            <el-image v-if="row.coverImage" :src="row.coverImage" fit="cover"
-              style="width: 72px; height: 48px; border-radius: 6px" />
+            <el-image
+              v-if="row.coverImage"
+              :src="row.coverImage"
+              fit="cover"
+              style="width: 72px; height: 48px; border-radius: 6px"
+            />
             <span v-else class="text-muted">暂无</span>
           </template>
         </el-table-column>
@@ -89,8 +119,12 @@
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetailDialog(row)">查看详情</el-button>
             <el-button link type="primary" @click="openEditDialog(row)">编辑</el-button>
-            <el-popconfirm title="确认删除该景点吗？" confirm-button-text="确认" cancel-button-text="取消"
-              @confirm="handleDelete(row)">
+            <el-popconfirm
+              title="确认删除该景点吗？"
+              confirm-button-text="确认"
+              cancel-button-text="取消"
+              @confirm="handleDelete(row)"
+            >
               <template #reference>
                 <el-button link type="danger">删除</el-button>
               </template>
@@ -100,13 +134,25 @@
       </el-table>
 
       <div class="pagination-row">
-        <el-pagination v-model:current-page="query.pageNum" v-model:page-size="query.pageSize" :total="total"
-          :page-sizes="[10, 20, 50]" layout="total, sizes, prev, pager, next, jumper" @current-change="loadScenicList"
-          @size-change="onSizeChange" />
+        <el-pagination
+          v-model:current-page="query.pageNum"
+          v-model:page-size="query.pageSize"
+          :total="total"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="loadScenicList"
+          @size-change="onSizeChange"
+        />
       </div>
     </el-card>
 
-    <el-dialog v-model="detailVisible" title="景点详情" width="760px" :close-on-click-modal="true" destroy-on-close>
+    <el-dialog
+      v-model="detailVisible"
+      title="景点详情"
+      width="760px"
+      :close-on-click-modal="true"
+      destroy-on-close
+    >
       <el-card v-if="detailData" class="detail-card" shadow="never">
         <template #header>
           <div class="detail-title-row">
@@ -118,66 +164,287 @@
         </template>
 
         <el-row :gutter="16">
-          <el-col :span="10">
-            <el-image :src="detailData.coverImage || ''" fit="cover"
-              style="width: 100%; height: 190px; border-radius: 8px">
-              <template #error>
-                <div class="image-empty">暂无封面</div>
-              </template>
-            </el-image>
-          </el-col>
-          <el-col :span="14">
-            <div class="info-item"><span class="label">地区：</span>{{ detailData.regionName || "未知" }}</div>
-            <div class="info-item"><span class="label">评分：</span>{{ detailData.score ?? 0 }}</div>
-            <div class="info-item"><span class="label">等级：</span>{{ detailData.level || "未设置" }}</div>
-            <div class="info-item">
-              <span class="label">标签：</span>
-              <template v-if="detailData.tags?.length">
-                <el-tag v-for="tag in detailData.tags" :key="tag" size="small" class="tag-gap">{{ tag }}</el-tag>
-              </template>
-              <span v-else class="text-muted">暂无</span>
-            </div>
+          <el-col :span="24">
+            <el-descriptions :column="2" border>
+              <el-descriptions-item label="名称">{{ detailData.name || "-" }}</el-descriptions-item>
+              <el-descriptions-item label="地区">
+                {{ detailData.regionName || "-" }}
+              </el-descriptions-item>
+              <el-descriptions-item label="地址">
+                {{ detailData.address || "-" }}
+              </el-descriptions-item>
+              <el-descriptions-item label="等级">
+                {{ detailData.level || "-" }}
+              </el-descriptions-item>
+              <el-descriptions-item label="分类">
+                {{ detailData.category || "-" }}
+              </el-descriptions-item>
+              <el-descriptions-item label="经纬度">
+                {{ formatLngLat(detailData.longitude, detailData.latitude) }}
+              </el-descriptions-item>
+            </el-descriptions>
           </el-col>
         </el-row>
 
-        <el-divider />
+        <el-divider content-position="left">评价数据</el-divider>
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="评分">
+            {{ formatNumber(detailData.score) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="综合评分">
+            {{ formatNumber(detailData.ratingScore) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="评分人数">
+            {{ formatInteger(detailData.ratingCount) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="收藏数">
+            {{ formatInteger(detailData.favoriteCount) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="评论数">
+            {{ formatInteger(detailData.reviewCount) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="浏览数">
+            {{ formatInteger(detailData.viewCount) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="热度分">
+            {{ formatNumber(detailData.hotScore) }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-divider content-position="left">时间票务</el-divider>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="开放时间">
+            {{ detailData.openTime || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="票价">
+            {{ formatTicketPrice(detailData.ticketPrice) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="票务说明" :span="2">
+            {{ detailData.ticketInfo || "-" }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-divider content-position="left">内容介绍</el-divider>
         <div class="info-block">
           <div class="label">简介</div>
-          <div class="value">{{ detailData.intro || "暂无简介" }}</div>
+          <div class="value">{{ detailData.intro || "-" }}</div>
         </div>
         <div class="info-block">
-          <div class="label">地址</div>
-          <div class="value">{{ detailData.address || "暂无地址" }}</div>
+          <div class="label">详细内容</div>
+          <div class="value">{{ detailData.detailContent || "-" }}</div>
         </div>
+
+        <el-divider content-position="left">旅游建议</el-divider>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="最佳季节">
+            {{ detailData.bestSeason || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="建议游玩时长">
+            {{ formatHours(detailData.suggestedHours) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="游玩提示" :span="2">
+            {{ detailData.tips || "-" }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-divider content-position="left">配置信息</el-divider>
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="状态">
+            {{ detailData.status === 1 ? "上架" : "下架" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="排序值">
+            {{ formatInteger(detailData.sortOrder) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="是否推荐">
+            {{ detailData.isRecommended === 1 ? "是" : "否" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="是否收藏">
+            {{ detailData.isFavorite ? "是" : "否" }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <el-divider content-position="left">标签</el-divider>
+        <div class="info-item">
+          <template v-if="detailData.tags?.length">
+            <el-tag v-for="tag in detailData.tags" :key="tag" size="small" class="tag-gap">
+              {{ tag }}
+            </el-tag>
+          </template>
+          <span v-else class="text-muted">暂无</span>
+        </div>
+
+        <el-divider content-position="left">图片列表</el-divider>
+        <div v-if="detailData.images?.length" class="image-list">
+          <el-image
+            v-for="image in detailData.images"
+            :key="image.id"
+            :src="image.imageUrl"
+            fit="cover"
+            class="detail-image"
+          />
+        </div>
+        <div v-else class="text-muted">暂无图片</div>
       </el-card>
     </el-dialog>
 
-    <el-dialog v-model="formVisible" :title="isEdit ? '编辑景点' : '新增景点'" width="640px" :close-on-click-modal="false"
-      destroy-on-close>
+    <el-dialog
+      v-model="formVisible"
+      :title="isEdit ? '编辑景点' : '新增景点'"
+      width="640px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
       <el-form ref="formRef" :model="formModel" :rules="rules" label-width="100px">
         <el-form-item label="景点名称" prop="name">
           <el-input v-model="formModel.name" placeholder="请输入景点名称" />
         </el-form-item>
         <el-form-item label="地区" prop="regionId">
           <el-select v-model="formModel.regionId" placeholder="请选择地区" filterable>
-            <el-option v-for="item in regionOptions" :key="item.id" :label="item.name" :value="item.id" />
+            <el-option
+              v-for="item in regionOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
           </el-select>
+        </el-form-item>
+        <el-form-item label="地址" prop="address">
+          <el-input v-model="formModel.address" placeholder="请输入详细地址" />
+        </el-form-item>
+        <el-form-item label="经度">
+          <el-input-number
+            v-model="formModel.longitude"
+            :precision="6"
+            :step="0.000001"
+            :controls="false"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="纬度">
+          <el-input-number
+            v-model="formModel.latitude"
+            :precision="6"
+            :step="0.000001"
+            :controls="false"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="封面图URL" prop="coverImage">
           <el-input v-model="formModel.coverImage" placeholder="请输入封面图 URL" />
         </el-form-item>
         <el-form-item label="简介" prop="description">
-          <el-input v-model="formModel.description" type="textarea" :rows="3" placeholder="请输入简介" />
+          <el-input
+            v-model="formModel.description"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入简介"
+          />
+        </el-form-item>
+        <el-form-item label="详细内容">
+          <el-input
+            v-model="formModel.detailContent"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入详细内容"
+          />
+        </el-form-item>
+        <el-form-item label="开放时间">
+          <el-input v-model="formModel.openTime" placeholder="例如：08:00-17:30" />
+        </el-form-item>
+        <el-form-item label="票务说明">
+          <el-input
+            v-model="formModel.ticketInfo"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入票务说明"
+          />
+        </el-form-item>
+        <el-form-item label="票价">
+          <el-input-number
+            v-model="formModel.ticketPrice"
+            :min="0"
+            :precision="2"
+            :step="1"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="等级">
+          <el-input v-model="formModel.level" placeholder="例如：5A" />
+        </el-form-item>
+        <el-form-item label="分类">
+          <el-input v-model="formModel.category" placeholder="例如：自然风光" />
+        </el-form-item>
+        <el-form-item label="评分">
+          <el-input-number
+            v-model="formModel.ratingScore"
+            :min="0"
+            :max="5"
+            :precision="1"
+            :step="0.1"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="最佳季节">
+          <el-input v-model="formModel.bestSeason" placeholder="例如：春秋" />
+        </el-form-item>
+        <el-form-item label="建议时长(小时)">
+          <el-input-number
+            v-model="formModel.suggestedHours"
+            :min="0"
+            :precision="1"
+            :step="0.5"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="游玩提示">
+          <el-input
+            v-model="formModel.tips"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入游玩提示"
+          />
         </el-form-item>
         <el-form-item label="标签" prop="tagIds">
           <el-select v-model="formModel.tagIds" multiple placeholder="请选择标签" filterable>
-            <el-option v-for="item in tagOptions" :key="item.id" :label="item.name" :value="item.id" />
+            <el-option
+              v-for="item in tagOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="图片ID列表">
+          <el-select
+            v-model="imageIdTagValues"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            placeholder="输入数字后回车，可多选"
+            style="width: 100%"
+          >
+            <el-option v-for="item in imageIdTagValues" :key="item" :label="item" :value="item" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="formModel.status">
             <el-radio :value="1">上架</el-radio>
             <el-radio :value="0">下架</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="排序值">
+          <el-input-number
+            v-model="formModel.sortOrder"
+            :precision="0"
+            :step="1"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="是否推荐">
+          <el-radio-group v-model="formModel.isRecommended">
+            <el-radio :value="1">是</el-radio>
+            <el-radio :value="0">否</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -191,7 +458,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import {
   createAdminScenic,
@@ -221,9 +488,25 @@ interface ScenicFormModel {
   id?: number;
   name: string;
   regionId?: number;
+  address: string;
+  longitude?: number;
+  latitude?: number;
   coverImage: string;
   description: string;
+  detailContent: string;
+  openTime: string;
+  ticketInfo: string;
+  ticketPrice?: number;
+  level: string;
+  category: string;
+  ratingScore?: number;
+  bestSeason: string;
+  suggestedHours?: number;
+  tips: string;
+  sortOrder?: number;
+  isRecommended: number;
   tagIds: number[];
+  imageIds: number[];
   status: number;
 }
 
@@ -255,15 +538,46 @@ const query = reactive<SearchQuery>({
 const formModel = reactive<ScenicFormModel>({
   name: "",
   regionId: undefined,
+  address: "",
+  longitude: undefined,
+  latitude: undefined,
   coverImage: "",
   description: "",
+  detailContent: "",
+  openTime: "",
+  ticketInfo: "",
+  ticketPrice: undefined,
+  level: "",
+  category: "",
+  ratingScore: undefined,
+  bestSeason: "",
+  suggestedHours: undefined,
+  tips: "",
+  sortOrder: undefined,
+  isRecommended: 0,
   tagIds: [],
+  imageIds: [],
   status: 1,
+});
+
+const imageIdTagValues = computed<string[]>({
+  get: () => formModel.imageIds.map((id) => String(id)),
+  set: (values) => {
+    formModel.imageIds = Array.from(
+      new Set(
+        values
+          .map((item) => Number(item))
+          .filter((value) => Number.isFinite(value) && value > 0)
+          .map((value) => Math.trunc(value))
+      )
+    );
+  },
 });
 
 const rules: FormRules<ScenicFormModel> = {
   name: [{ required: true, message: "请输入景点名称", trigger: "blur" }],
   regionId: [{ required: true, message: "请选择地区", trigger: "change" }],
+  address: [{ required: true, message: "请输入地址", trigger: "blur" }],
 };
 
 function isOnlineStatus(status: unknown): boolean {
@@ -278,6 +592,34 @@ function formatTicketPrice(ticketPrice?: number): string {
     return "免费";
   }
   return `￥${Number(ticketPrice).toFixed(0)}`;
+}
+
+function formatNumber(value?: number): string {
+  if (value == null || Number.isNaN(Number(value))) {
+    return "-";
+  }
+  return String(value);
+}
+
+function formatInteger(value?: number): string {
+  if (value == null || Number.isNaN(Number(value))) {
+    return "-";
+  }
+  return String(Math.trunc(value));
+}
+
+function formatHours(value?: number): string {
+  if (value == null || Number.isNaN(Number(value))) {
+    return "-";
+  }
+  return `${value} 小时`;
+}
+
+function formatLngLat(longitude?: number, latitude?: number): string {
+  if (longitude == null || latitude == null) {
+    return "-";
+  }
+  return `${longitude}, ${latitude}`;
 }
 
 function flattenRegions(list: CommonRegionNode[]): OptionItem[] {
@@ -298,9 +640,25 @@ function resetFormModel(): void {
   formModel.id = undefined;
   formModel.name = "";
   formModel.regionId = undefined;
+  formModel.address = "";
+  formModel.longitude = undefined;
+  formModel.latitude = undefined;
   formModel.coverImage = "";
   formModel.description = "";
+  formModel.detailContent = "";
+  formModel.openTime = "";
+  formModel.ticketInfo = "";
+  formModel.ticketPrice = undefined;
+  formModel.level = "";
+  formModel.category = "";
+  formModel.ratingScore = undefined;
+  formModel.bestSeason = "";
+  formModel.suggestedHours = undefined;
+  formModel.tips = "";
+  formModel.sortOrder = undefined;
+  formModel.isRecommended = 0;
   formModel.tagIds = [];
+  formModel.imageIds = [];
   formModel.status = 1;
 }
 
@@ -338,7 +696,9 @@ function onSearch(): void {
 }
 
 function onProvinceChange(provinceId?: number): void {
-  const currentProvince = provinceOptions.value.find((item) => Number(item.id) === Number(provinceId));
+  const currentProvince = provinceOptions.value.find(
+    (item) => Number(item.id) === Number(provinceId)
+  );
   cityOptions.value = currentProvince?.children ?? [];
   query.cityId = undefined;
 }
@@ -382,12 +742,30 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.id = row.id;
     formModel.name = detail.name;
     formModel.regionId = detail.regionId;
+    formModel.address = detail.address || "";
+    formModel.longitude = detail.longitude;
+    formModel.latitude = detail.latitude;
     formModel.coverImage = detail.coverImage || "";
     formModel.description = detail.intro || "";
+    formModel.detailContent = detail.detailContent || "";
+    formModel.openTime = detail.openTime || "";
+    formModel.ticketInfo = detail.ticketInfo || "";
+    formModel.ticketPrice = detail.ticketPrice;
+    formModel.level = detail.level || "";
+    formModel.category = detail.category || "";
+    formModel.ratingScore = detail.ratingScore;
+    formModel.bestSeason = detail.bestSeason || "";
+    formModel.suggestedHours = detail.suggestedHours;
+    formModel.tips = detail.tips || "";
+    formModel.sortOrder = detail.sortOrder;
+    formModel.isRecommended = detail.isRecommended ?? 0;
     formModel.status = detail.status ?? 1;
     formModel.tagIds = tagOptions.value
       .filter((item) => tagNameSet.has(item.name))
       .map((item) => item.id);
+    formModel.imageIds = (detail.images ?? [])
+      .map((item) => Number(item.id))
+      .filter((id) => Number.isFinite(id));
     formVisible.value = true;
   } catch {
     ElMessage.error("加载编辑数据失败");
@@ -399,18 +777,29 @@ async function submitForm(): Promise<void> {
   const valid = await formRef.value.validate().catch(() => false);
   if (!valid) return;
 
-  const regionName =
-    regionOptions.value.find((item) => item.id === formModel.regionId)?.name || formModel.name;
-
   const payload: ScenicCreatePayload = {
     name: formModel.name,
     regionId: Number(formModel.regionId),
+    address: formModel.address,
+    longitude: formModel.longitude,
+    latitude: formModel.latitude,
     coverImage: formModel.coverImage || undefined,
     description: formModel.description || undefined,
+    detailContent: formModel.detailContent || undefined,
+    openTime: formModel.openTime || undefined,
+    ticketInfo: formModel.ticketInfo || undefined,
+    ticketPrice: formModel.ticketPrice,
+    level: formModel.level || undefined,
+    category: formModel.category || undefined,
+    ratingScore: formModel.ratingScore,
+    bestSeason: formModel.bestSeason || undefined,
+    suggestedHours: formModel.suggestedHours,
+    tips: formModel.tips || undefined,
+    sortOrder: formModel.sortOrder,
+    isRecommended: formModel.isRecommended,
     tagIds: formModel.tagIds,
+    imageIds: formModel.imageIds,
     status: formModel.status,
-    // 后端新增接口要求地址必填，当前页面未单独暴露地址字段，采用地区名兜底。
-    address: regionName,
   };
 
   submitLoading.value = true;
@@ -525,6 +914,19 @@ onMounted(async () => {
 
 .value {
   color: #606266;
+}
+
+.image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.detail-image {
+  width: 120px;
+  height: 80px;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
 }
 
 .page-container {

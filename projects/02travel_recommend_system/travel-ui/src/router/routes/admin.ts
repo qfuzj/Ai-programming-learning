@@ -24,10 +24,10 @@ export const adminRoutes: RouteRecordRaw[] = [
         meta: { title: "景点管理" },
       },
       {
-        path: "review",
-        name: "AdminReview",
-        component: () => import("@/views/admin/ReviewManageView.vue"),
-        meta: { title: "评论审核" },
+        path: "audit",
+        name: "AdminAudit",
+        component: () => import("@/views/admin/AuditManageView.vue"),
+        meta: { title: "审核管理" },
       },
       {
         path: "user",

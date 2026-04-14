@@ -6,7 +6,7 @@
       <el-menu :default-active="activePath" router>
         <el-menu-item index="/admin/dashboard">工作台</el-menu-item>
         <el-menu-item index="/admin/scenic">景点管理</el-menu-item>
-        <el-menu-item index="/admin/review">评论审核</el-menu-item>
+        <el-menu-item index="/admin/audit">审核管理</el-menu-item>
         <el-menu-item index="/admin/user">用户管理</el-menu-item>
         <el-menu-item index="/admin/regions">地区管理</el-menu-item>
         <el-menu-item index="/admin/tags">标签管理</el-menu-item>

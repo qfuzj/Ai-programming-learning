@@ -3,6 +3,7 @@ package com.travel.advisor.service;
 import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.dto.tag.TagCreateDTO;
+import com.travel.advisor.dto.tag.TagQueryDTO;
 import com.travel.advisor.dto.tag.TagUpdateDTO;
 import com.travel.advisor.entity.Tag;
 
@@ -18,7 +19,7 @@ public interface TagService {
     /**
      * 管理端分页查询标签
      */
-    PageResult<Tag> page(TagCreateDTO dto, PageQuery pageQuery);
+    PageResult<Tag> page(TagQueryDTO dto, PageQuery pageQuery);
 
     /**
      * 新增标签

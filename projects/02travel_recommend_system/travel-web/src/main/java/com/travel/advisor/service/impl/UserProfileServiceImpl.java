@@ -5,12 +5,20 @@ import com.travel.advisor.dto.user.UserPreferenceTagsUpdateDTO;
 import com.travel.advisor.dto.user.UserProfileUpdateDTO;
 import com.travel.advisor.entity.Tag;
 import com.travel.advisor.entity.User;
+import com.travel.advisor.entity.UserBrowseHistory;
+import com.travel.advisor.entity.UserFavorite;
 import com.travel.advisor.entity.UserPreferenceTag;
 import com.travel.advisor.entity.UserProfile;
+import com.travel.advisor.entity.UserReview;
+import com.travel.advisor.entity.ScenicSpotTag;
+import com.travel.advisor.mapper.ScenicSpotTagMapper;
 import com.travel.advisor.mapper.TagMapper;
+import com.travel.advisor.mapper.UserBrowseHistoryMapper;
+import com.travel.advisor.mapper.UserFavoriteMapper;
 import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.mapper.UserPreferenceTagMapper;
 import com.travel.advisor.mapper.UserProfileMapper;
+import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.security.LoginUser;
 import com.travel.advisor.service.UserProfileService;
 import com.travel.advisor.utils.BeanCopyUtils;
@@ -22,7 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +44,16 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserProfileMapper userProfileMapper;
     private final UserPreferenceTagMapper userPreferenceTagMapper;
     private final TagMapper tagMapper;
+    private final UserBrowseHistoryMapper userBrowseHistoryMapper;
+    private final UserFavoriteMapper userFavoriteMapper;
+    private final UserReviewMapper userReviewMapper;
+    private final ScenicSpotTagMapper scenicSpotTagMapper;
+
+    private static final int RECENT_BROWSE_LIMIT = 30;
+    private static final int RECENT_PREFERENCES_TOP_N = 5;
+    private static final double BROWSE_WEIGHT = 1D;
+    private static final double FAVORITE_WEIGHT = 3D;
+    private static final double REVIEW_WEIGHT = 5D;
 
     @Override
     public UserProfileVO getMyProfile() {
@@ -84,9 +105,103 @@ public class UserProfileServiceImpl implements UserProfileService {
             vo.setPreferredTags(new ArrayList<>());
         }
         
-        vo.setRecentPreferences(new ArrayList<>());
+        vo.setRecentPreferences(buildRecentPreferences(userId));
         vo.setLocation("未知地区");
         return vo;
+    }
+
+    private List<String> buildRecentPreferences(Long userId) {
+        // 1) 浏览：仅取最近30条，按景点聚合次数
+        List<UserBrowseHistory> recentBrowseList = userBrowseHistoryMapper.selectList(
+                Wrappers.<UserBrowseHistory>lambdaQuery()
+                        .eq(UserBrowseHistory::getUserId, userId)
+                        .isNotNull(UserBrowseHistory::getScenicSpotId)
+                        .orderByDesc(UserBrowseHistory::getCreateTime)
+                        .orderByDesc(UserBrowseHistory::getId)
+                        .last("LIMIT " + RECENT_BROWSE_LIMIT)
+        );
+
+        Map<Long, Long> scenicBrowseCountMap = recentBrowseList.stream()
+                .collect(Collectors.groupingBy(UserBrowseHistory::getScenicSpotId, Collectors.counting()));
+
+        // 2) 收藏：按景点聚合次数（同景点多收藏夹也能正确累加）
+        List<UserFavorite> favoriteList = userFavoriteMapper.selectList(
+                Wrappers.<UserFavorite>lambdaQuery()
+                        .eq(UserFavorite::getUserId, userId)
+                        .isNotNull(UserFavorite::getScenicSpotId)
+        );
+        Map<Long, Long> scenicFavoriteCountMap = favoriteList.stream()
+                .collect(Collectors.groupingBy(UserFavorite::getScenicSpotId, Collectors.counting()));
+
+        // 3) 评论：按景点聚合次数
+        List<UserReview> reviewList = userReviewMapper.selectList(
+                Wrappers.<UserReview>lambdaQuery()
+                        .eq(UserReview::getUserId, userId)
+                        .isNotNull(UserReview::getScenicSpotId)
+        );
+        Map<Long, Long> scenicReviewCountMap = reviewList.stream()
+                .collect(Collectors.groupingBy(UserReview::getScenicSpotId, Collectors.counting()));
+
+        // 4) 先聚合到景点分：scenicScore = browse*1 + favorite*3 + review*5
+        Map<Long, Double> scenicScoreMap = new HashMap<>();
+        scenicBrowseCountMap.forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * BROWSE_WEIGHT, Double::sum));
+        scenicFavoriteCountMap.forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * FAVORITE_WEIGHT, Double::sum));
+        scenicReviewCountMap.forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * REVIEW_WEIGHT, Double::sum));
+
+        if (scenicScoreMap.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 5) 批量查询景点-标签关系，避免 N+1
+        List<Long> scenicIds = new ArrayList<>(scenicScoreMap.keySet());
+        List<ScenicSpotTag> scenicSpotTags = scenicSpotTagMapper.selectByScenicSpotIds(scenicIds);
+        if (scenicSpotTags == null || scenicSpotTags.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 6) 按标签聚合最终分值：tagScore = ∑ scenicScore
+        Map<Long, Double> tagScoreMap = new HashMap<>();
+        for (ScenicSpotTag scenicSpotTag : scenicSpotTags) {
+            Long scenicId = scenicSpotTag.getScenicSpotId();
+            Long tagId = scenicSpotTag.getTagId();
+            if (scenicId == null || tagId == null) {
+                continue;
+            }
+            Double scenicScore = scenicScoreMap.getOrDefault(scenicId, 0D);
+            if (scenicScore <= 0D) {
+                continue;
+            }
+            tagScoreMap.merge(tagId, scenicScore, Double::sum);
+        }
+
+        if (tagScoreMap.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 7) 取标签 Top5（分值降序）
+        List<Long> topTagIds = tagScoreMap.entrySet().stream()
+                .sorted(Map.Entry.<Long, Double>comparingByValue(Comparator.reverseOrder()))
+                .limit(RECENT_PREFERENCES_TOP_N)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        if (topTagIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 8) 批量查标签名并保持 Top 排序
+        List<Tag> tags = tagMapper.selectBatchIds(topTagIds);
+        if (tags == null || tags.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Map<Long, String> tagNameMap = tags.stream()
+                .filter(tag -> tag.getId() != null && tag.getName() != null && !tag.getName().isBlank())
+                .collect(Collectors.toMap(Tag::getId, Tag::getName, (a, b) -> a));
+
+        return topTagIds.stream()
+                .map(tagNameMap::get)
+                .filter(name -> name != null && !name.isBlank())
+                .collect(Collectors.toList());
     }
 
     @Override

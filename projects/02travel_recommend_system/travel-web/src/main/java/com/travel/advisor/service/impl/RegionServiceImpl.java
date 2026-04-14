@@ -6,6 +6,7 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.region.RegionCreateDTO;
+import com.travel.advisor.dto.region.RegionQueryDTO;
 import com.travel.advisor.dto.region.RegionUpdateDTO;
 import com.travel.advisor.entity.Region;
 import com.travel.advisor.exception.BusinessException;
@@ -68,15 +69,26 @@ public class RegionServiceImpl implements RegionService {
     }
 
     @Override
-    public PageResult<Region> page(RegionCreateDTO dto, PageQuery pageQuery) {
+    public PageResult<Region> page(RegionQueryDTO dto, PageQuery pageQuery) {
         LambdaQueryWrapper<Region> queryWrapper = new LambdaQueryWrapper<Region>();
         queryWrapper.orderByAsc(Region::getLevel)
                 .orderByAsc(Region::getSortOrder);
-        if (dto != null && dto.getLevel() != null) {
-            queryWrapper.eq(Region::getLevel, dto.getLevel());
-        }
-        if (dto != null && StringUtils.hasText(dto.getName())) {
-            queryWrapper.like(Region::getName, dto.getName());
+        if (dto != null) {
+            if (dto.getLevel() != null) {
+                queryWrapper.eq(Region::getLevel, dto.getLevel());
+            }
+            if (StringUtils.hasText(dto.getName())) {
+                queryWrapper.like(Region::getName, dto.getName());
+            }
+            if (StringUtils.hasText(dto.getCode())) {
+                queryWrapper.eq(Region::getCode, dto.getCode());
+            }
+            if (dto.getIsHot() != null) {
+                queryWrapper.eq(Region::getIsHot, dto.getIsHot());
+            }
+            if (dto.getParentId() != null) {
+                queryWrapper.eq(Region::getParentId, dto.getParentId());
+            }
         }
 
         Page<Region> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());

@@ -30,9 +30,7 @@ export interface OperationLogQuery extends PageQuery {
   adminUsername?: string;
 }
 
-export function getOperationLogPage(
-  query: OperationLogQuery
-): Promise<PageResult<OperationLogItem>> {
+export function getOperationLogPage(query: OperationLogQuery): Promise<PageResult<OperationLogItem>> {
   return http.get("/api/admin/operation-logs", { params: query });
 }
 

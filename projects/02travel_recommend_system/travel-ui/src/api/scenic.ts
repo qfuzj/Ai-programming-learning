@@ -10,6 +10,9 @@ export interface ScenicItem {
   name: string;
   coverImage?: string;
   regionName: string;
+  category?: string;
+  longitude?: number;
+  latitude?: number;
   tags: string[];
   tagList?: string[];
   score: number;
@@ -19,6 +22,7 @@ export interface ScenicItem {
   address?: string;
   openTime?: string;
   ticketPrice?: number;
+  isFavorite?: boolean;
 }
 
 export interface ScenicDetail extends ScenicItem {
@@ -107,6 +111,9 @@ interface ScenicItemRaw {
   name: string;
   coverImage?: string;
   regionName?: string;
+  category?: string;
+  longitude?: number;
+  latitude?: number;
   score?: number;
   ratingScore?: number;
   level?: string;
@@ -116,6 +123,7 @@ interface ScenicItemRaw {
   openTime?: string;
   ticketPrice?: number;
   tagList?: string[];
+  isFavorite?: boolean;
 }
 
 interface ScenicDetailRaw extends ScenicItemRaw {
@@ -145,6 +153,9 @@ function normalizeScenicItem(raw: ScenicItemRaw): ScenicItem {
     name: raw.name,
     coverImage: raw.coverImage,
     regionName: raw.regionName ?? "",
+    category: raw.category,
+    longitude: raw.longitude,
+    latitude: raw.latitude,
     tags: raw.tagList ?? [],
     tagList: raw.tagList ?? [],
     score: Number.isFinite(resolvedScore) ? resolvedScore : 0,
@@ -154,6 +165,7 @@ function normalizeScenicItem(raw: ScenicItemRaw): ScenicItem {
     address: raw.address,
     openTime: raw.openTime,
     ticketPrice: raw.ticketPrice,
+    isFavorite: !!raw.isFavorite,
   };
 }
 

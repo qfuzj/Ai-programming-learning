@@ -66,6 +66,23 @@ export const useUserStore = defineStore("user", () => {
     };
   }
 
+  async function fetchProfile(): Promise<void> {
+    // Dynamically import to avoid circular dependency in stores/api calls
+    const { getProfileInfo } = await import("@/api/profile");
+    try {
+      const res = await getProfileInfo();
+      profile.value = {
+        id: res.id,
+        username: res.username,
+        nickname: res.nickname,
+        avatar: res.avatar || "",
+        role: (res.role || role.value) as UserRole,
+      };
+    } catch (e) {
+      console.warn("Could not fetch user profile", e);
+    }
+  }
+
   async function logout(): Promise<void> {
     try {
       // 调用后端登出接口（可能失败，比如token已经过期）
@@ -88,6 +105,7 @@ export const useUserStore = defineStore("user", () => {
     clearAuth,
     loginAsUser,
     loginAsAdmin,
+    fetchProfile,
     logout,
   };
 });

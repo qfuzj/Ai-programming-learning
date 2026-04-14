@@ -1,6 +1,7 @@
 package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
@@ -11,6 +12,7 @@ import com.travel.advisor.mapper.*;
 import com.travel.advisor.service.RegionService;
 import com.travel.advisor.service.ScenicSpotService;
 import com.travel.advisor.utils.SecurityUtils;
+import com.travel.advisor.vo.region.RegionTreeVO;
 import com.travel.advisor.vo.scenic.ScenicDetailVO;
 import com.travel.advisor.vo.scenic.ScenicFilterOptionsVO;
 import com.travel.advisor.vo.scenic.ScenicImageVO;
@@ -34,12 +36,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ScenicSpotServiceImpl implements ScenicSpotService {
 
+    private static final int REVIEW_STATUS_APPROVED = 1;
+
     private final ScenicSpotMapper scenicSpotMapper;
     private final ScenicImageMapper scenicImageMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
     private final TagMapper tagMapper;
     private final RegionMapper regionMapper;
     private final RegionService regionService;
+    private final UserReviewMapper userReviewMapper;
 
     @Override
     public List<ScenicSpot> listByIdsWithStatus(Collection<Long> ids, Integer status) {
@@ -78,6 +83,13 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         ScenicDetailVO vo = buildDetailVO(scenicSpot);
         Long currentUserId = SecurityUtils.getCurrentUserId();
         vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
+        
+        // 增加浏览量记录
+        LambdaUpdateWrapper<ScenicSpot> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(ScenicSpot::getId, id)
+                .setSql("view_count = view_count + 1");
+        scenicSpotMapper.update(null, updateWrapper);
+        
         return vo;
     }
 
@@ -209,6 +221,50 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         scenicImageMapper.deleteById(imageId);
     }
 
+    private void collectAllIds(RegionTreeVO node, Set<Long> ids) {
+        if (node == null) return;
+        ids.add(node.getId());
+        if (node.getChildren() != null) {
+            for (RegionTreeVO child : node.getChildren()) {
+                collectAllIds(child, ids);
+            }
+        }
+    }
+
+    private RegionTreeVO findNode(List<RegionTreeVO> tree, Long targetId) {
+        if (tree == null) return null;
+        for (RegionTreeVO node : tree) {
+            if (node.getId().equals(targetId)) {
+                return node;
+            }
+            RegionTreeVO found = findNode(node.getChildren(), targetId);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定地区及其所有子地区的ID集合，供查询使用，避免在数据库层面进行递归查询
+     * @param regionId
+     * @return
+     */
+    private Set<Long> getAllDescendantRegionIds(Long regionId) {
+        Set<Long> ids = new HashSet<>();
+        if (regionId == null) return ids;
+
+        List<RegionTreeVO> tree = regionService.getTree();
+        RegionTreeVO targetNode = findNode(tree, regionId);
+
+        if (targetNode != null) {
+            collectAllIds(targetNode, ids);
+        } else {
+            ids.add(regionId);
+        }
+        return ids;
+    }
+
     /**
      * 构建查询条件 支持根据状态、地区、分类、等级、评分等多维度过滤，并且支持关键词搜索（同时匹配景点名称和地址）
      *
@@ -217,9 +273,13 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
      */
     private LambdaQueryWrapper<ScenicSpot> buildQueryWrapper(ScenicQueryDTO query) {
         LambdaQueryWrapper<ScenicSpot> queryWrapper = new LambdaQueryWrapper<ScenicSpot>()
-                .eq(query.getStatus() != null, ScenicSpot::getStatus, query.getStatus())
-                .eq(query.getRegionId() != null, ScenicSpot::getRegionId, query.getRegionId())
-                .eq(StringUtils.hasText(query.getCategory()), ScenicSpot::getCategory, query.getCategory())
+                .eq(query.getStatus() != null, ScenicSpot::getStatus, query.getStatus());
+
+        if (query.getRegionId() != null) {
+            queryWrapper.in(ScenicSpot::getRegionId, getAllDescendantRegionIds(query.getRegionId()));
+        }
+
+        queryWrapper.eq(StringUtils.hasText(query.getCategory()), ScenicSpot::getCategory, query.getCategory())
                 .eq(StringUtils.hasText(query.getLevel()), ScenicSpot::getLevel, query.getLevel())
                 .ge(query.getMinScore() != null, ScenicSpot::getScore, query.getMinScore())
                 .eq(ScenicSpot::getIsDeleted, 0);
@@ -283,11 +343,16 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             vo.setCoverImage(scenicSpot.getCoverImage());
             vo.setRegionName(regionNameMap.get(scenicSpot.getRegionId()));
             vo.setScore(scenicSpot.getScore());
+            vo.setCategory(scenicSpot.getCategory());
+            vo.setLongitude(scenicSpot.getLongitude());
+            vo.setLatitude(scenicSpot.getLatitude());
             vo.setLevel(scenicSpot.getLevel());
             vo.setTagList(tagNameMap.getOrDefault(scenicSpot.getId(), Collections.emptyList()));
             vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
             vo.setStatus(scenicSpot.getStatus());
             vo.setAddress(scenicSpot.getAddress());
+            vo.setOpenTime(scenicSpot.getOpenTime());
+            vo.setTicketPrice(scenicSpot.getTicketPrice());
             return vo;
         }).toList();
     }
@@ -309,10 +374,20 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         vo.setTicketPrice(scenicSpot.getTicketPrice());
         vo.setLevel(scenicSpot.getLevel());
         vo.setCategory(scenicSpot.getCategory());
+        vo.setScore(scenicSpot.getScore());
         vo.setRatingScore(scenicSpot.getScore());
         vo.setRatingCount(scenicSpot.getRatingCount());
         vo.setViewCount(scenicSpot.getViewCount());
-        vo.setFavoriteCount(scenicSpot.getFavoriteCount());
+        
+        Long realFavCount = scenicSpotMapper.countAllFavorite(scenicSpot.getId());
+        vo.setFavoriteCount(realFavCount != null ? realFavCount.intValue() : 0);
+        
+        Integer reviewCount = queryApprovedReviewCount(scenicSpot.getId());
+        vo.setReviewCount(reviewCount);
+        
+        vo.setHotScore(BigDecimal.valueOf(vo.getFavoriteCount())
+            .add(BigDecimal.valueOf(scenicSpot.getViewCount() == null ? 0 : scenicSpot.getViewCount()))
+            .add(BigDecimal.valueOf(reviewCount)));
         vo.setBestSeason(scenicSpot.getBestSeason());
         vo.setSuggestedHours(scenicSpot.getSuggestedHours());
         vo.setTips(scenicSpot.getTips());
@@ -322,6 +397,14 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         vo.setTagList(loadTagNameMap(List.of(scenicSpot)).getOrDefault(scenicSpot.getId(), Collections.emptyList()));
         vo.setImages(listImages(scenicSpot.getId()));
         return vo;
+    }
+
+    private Integer queryApprovedReviewCount(Long scenicSpotId) {
+        Long count = userReviewMapper.selectCount(new LambdaQueryWrapper<UserReview>()
+                .eq(UserReview::getScenicSpotId, scenicSpotId)
+            .eq(UserReview::getStatus, REVIEW_STATUS_APPROVED)
+                .eq(UserReview::getIsDeleted, 0));
+        return count == null ? 0 : Math.toIntExact(count);
     }
 
     /**

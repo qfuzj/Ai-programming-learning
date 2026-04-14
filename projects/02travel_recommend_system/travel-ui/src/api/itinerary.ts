@@ -25,6 +25,8 @@ export interface ItineraryItem {
 
 export interface ItineraryQuery extends PageQuery {
   status?: number;
+  keyword?: string;
+  isPublic?: number;
 }
 
 export interface ItineraryCreatePayload {
@@ -114,6 +116,6 @@ export function generateItineraryByAi(payload: {
   travelStyle?: string;
   preferredTags?: string[];
 }): Promise<unknown> {
-  // 目前后端 Controller 尚未提供 /api/user/travel-plans/ai-generate，先保留占位封装。
-  return http.post("/api/user/travel-plans/ai-generate", payload);
+  void payload;
+  return Promise.reject(new Error("后端暂未提供 /api/user/travel-plans/ai-generate 接口"));
 }

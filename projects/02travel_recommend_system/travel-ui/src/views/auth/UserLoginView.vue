@@ -28,13 +28,17 @@
           </div>
         </el-form-item>
         <el-button type="primary" :loading="submitting" @click="onSubmit">登录</el-button>
+        <div class="auth-links">
+          <el-button text @click="goRegister">没有账号？去注册</el-button>
+          <el-button text @click="goResetPassword">忘记密码</el-button>
+        </div>
       </el-form>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { nextTick, onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/store";
@@ -63,6 +67,9 @@ async function loadCaptcha(): Promise<void> {
 }
 
 async function onSubmit(): Promise<void> {
+  form.username = form.username.trim();
+  form.captchaCode = form.captchaCode.trim();
+
   if (!form.captchaId || !form.captchaCode) {
     ElMessage.warning("请先输入验证码");
     return;
@@ -71,6 +78,8 @@ async function onSubmit(): Promise<void> {
   try {
     submitting.value = true;
     await userStore.loginAsUser(form);
+    ElMessage.success("登录成功");
+    await new Promise((resolve) => setTimeout(resolve, 500));
     const redirect =
       typeof route.query.redirect === "string" ? route.query.redirect : ROUTE_PATHS.USER_HOME;
     await router.push(redirect);
@@ -82,8 +91,32 @@ async function onSubmit(): Promise<void> {
 }
 
 onMounted(() => {
+  const prefillUsername = sessionStorage.getItem("auth_prefill_username");
+  if (prefillUsername) {
+    form.username = prefillUsername;
+    sessionStorage.removeItem("auth_prefill_username");
+  }
+
+  void nextTick(() => {
+    if (route.query.registered === "1") {
+      const username = typeof route.query.username === "string" ? route.query.username : "";
+      ElMessage.success(username ? `注册成功，欢迎 ${username}，请登录` : "注册成功，请登录");
+    }
+    if (route.query.reset === "1") {
+      ElMessage.success("密码重置成功，请使用新密码登录");
+    }
+  });
+
   void loadCaptcha();
 });
+
+function goRegister(): void {
+  void router.push("/register");
+}
+
+function goResetPassword(): void {
+  void router.push("/reset-password");
+}
 </script>
 
 <style scoped>
@@ -119,5 +152,11 @@ onMounted(() => {
   height: 100%;
   font-size: 12px;
   color: #909399;
+}
+
+.auth-links {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
 }
 </style>

@@ -4,6 +4,7 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.region.RegionCreateDTO;
+import com.travel.advisor.dto.region.RegionQueryDTO;
 import com.travel.advisor.dto.region.RegionUpdateDTO;
 import com.travel.advisor.entity.Region;
 import com.travel.advisor.service.RegionService;
@@ -27,7 +28,7 @@ public class AdminRegionController {
 
     @GetMapping
     public Result<PageResult<Region>> page(
-            @Valid RegionCreateDTO dto,
+            RegionQueryDTO dto,
             PageQuery pageQuery) {
         return Result.success(regionService.page(dto, pageQuery));
     }

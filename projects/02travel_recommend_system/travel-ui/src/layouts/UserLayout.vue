@@ -14,7 +14,8 @@
           >
             <el-menu-item index="/">发现</el-menu-item>
             <el-menu-item index="/scenic">景点</el-menu-item>
-            <el-menu-item index="/my-reviews">点评</el-menu-item>
+            <el-menu-item index="/ai/recommend">AI 推荐</el-menu-item>
+              <el-menu-item index="/ai/chat">AI 聊天</el-menu-item>
           </el-menu>
         </div>
         <div class="header-right">
@@ -22,24 +23,19 @@
             <div class="user-dropdown">
               <el-avatar
                 :size="32"
-                :src="
-                  userStore.profile?.avatar ||
-                  'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png'
-                "
-              />
+                :src="displayAvatar"
+              >
+                {{ displayUserName.charAt(0) }}
+              </el-avatar>
               <span class="user-name">
-                {{ userStore.profile?.nickname || userStore.profile?.username || "个人中心" }}
+                {{ displayUserName }}
               </span>
               <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="/profile">个人中心</el-dropdown-item>
-                <el-dropdown-item command="/favorites">我的收藏</el-dropdown-item>
-                <el-dropdown-item command="/history">浏览历史</el-dropdown-item>
                 <el-dropdown-item command="/itinerary">我的行程</el-dropdown-item>
-                <el-dropdown-item command="/ai/recommend">AI 推荐</el-dropdown-item>
-                <el-dropdown-item command="/ai/chat">AI 聊天</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -72,7 +68,22 @@ import { ArrowDown } from "@element-plus/icons-vue";
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
-const USER_MENU_INDEXES = [ROUTE_PATHS.USER_HOME, "/scenic", "/my-reviews"] as const;
+const USER_MENU_INDEXES = [ROUTE_PATHS.USER_HOME, "/scenic", "/ai/recommend", "/ai/chat"] as const;
+const DEFAULT_AVATAR = "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
+
+const displayAvatar = computed(() => {
+  const avatar = userStore.profile?.avatar;
+  if (!avatar) return DEFAULT_AVATAR;
+  const trimmed = avatar.trim();
+  if (!trimmed || trimmed === "null" || trimmed === "undefined") {
+    return DEFAULT_AVATAR;
+  }
+  return trimmed;
+});
+
+const displayUserName = computed(() => {
+  return userStore.profile?.nickname || userStore.profile?.username || "个人中心";
+});
 
 const activePath = computed(() => {
   const currentPath = route.path;

@@ -7,6 +7,7 @@ import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.plan.TravelPlanCreateDTO;
 import com.travel.advisor.dto.plan.TravelPlanItemCreateDTO;
+import com.travel.advisor.dto.plan.TravelPlanQueryDTO;
 import com.travel.advisor.entity.TravelPlan;
 import com.travel.advisor.entity.TravelPlanItem;
 import com.travel.advisor.exception.BusinessException;
@@ -51,13 +52,29 @@ public class TravelPlanServiceImpl implements TravelPlanService {
     }
 
     @Override
-    public PageResult<TravelPlanDetailVO> pageMyPlans(PageQuery pageQuery) {
+    public PageResult<TravelPlanDetailVO> pageMyPlans(TravelPlanQueryDTO pageQuery) {
         Long userId = getCurrentUserIdRequired();
 
         Page<TravelPlan> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());
-        Page<TravelPlan> result = travelPlanMapper.selectPage(page, new LambdaQueryWrapper<TravelPlan>()
-                .eq(TravelPlan::getUserId, userId)
-                .orderByDesc(TravelPlan::getCreateTime));
+        LambdaQueryWrapper<TravelPlan> wrapper = new LambdaQueryWrapper<TravelPlan>()
+                .eq(TravelPlan::getUserId, userId);
+                
+        if (pageQuery.getStatus() != null) {
+            wrapper.eq(TravelPlan::getStatus, pageQuery.getStatus());
+        }
+        if (pageQuery.getIsPublic() != null) {
+            wrapper.eq(TravelPlan::getIsPublic, pageQuery.getIsPublic());
+        }
+        if (pageQuery.getKeyword() != null && !pageQuery.getKeyword().trim().isEmpty()) {
+            String keyword = pageQuery.getKeyword().trim();
+            wrapper.and(w -> w.like(TravelPlan::getTitle, keyword)
+                            .or()
+                            .like(TravelPlan::getDescription, keyword));
+        }
+        
+        wrapper.orderByDesc(TravelPlan::getCreateTime);
+
+        Page<TravelPlan> result = travelPlanMapper.selectPage(page, wrapper);
 
         List<TravelPlanDetailVO> records = result.getRecords().stream().map(plan -> {
             TravelPlanDetailVO vo = new TravelPlanDetailVO();

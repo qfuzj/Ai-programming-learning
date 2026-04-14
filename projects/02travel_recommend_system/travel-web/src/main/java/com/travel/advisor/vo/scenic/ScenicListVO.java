@@ -37,6 +37,21 @@ public class ScenicListVO {
     private BigDecimal score;
 
     /**
+     * 景点分类
+     */
+    private String category;
+
+    /**
+     * 经度
+     */
+    private BigDecimal longitude;
+
+    /**
+     * 纬度
+     */
+    private BigDecimal latitude;
+
+    /**
      * 景点级别
      */
     private String level;
@@ -54,4 +69,8 @@ public class ScenicListVO {
     private Integer status;
 
     private String address;
+
+    private String openTime;
+
+    private BigDecimal ticketPrice;
 }

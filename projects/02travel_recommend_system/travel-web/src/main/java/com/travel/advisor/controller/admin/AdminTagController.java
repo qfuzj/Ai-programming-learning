@@ -4,6 +4,7 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.tag.TagCreateDTO;
+import com.travel.advisor.dto.tag.TagQueryDTO;
 import com.travel.advisor.dto.tag.TagUpdateDTO;
 import com.travel.advisor.entity.Tag;
 import com.travel.advisor.service.TagService;
@@ -27,7 +28,7 @@ public class AdminTagController {
 
     @GetMapping
     public Result<PageResult<Tag>> page(
-            @Valid TagCreateDTO dto,
+            TagQueryDTO dto,
             PageQuery pageQuery) {
         return Result.success(tagService.page(dto, pageQuery));
     }

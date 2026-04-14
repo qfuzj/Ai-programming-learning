@@ -6,6 +6,7 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.tag.TagCreateDTO;
+import com.travel.advisor.dto.tag.TagQueryDTO;
 import com.travel.advisor.dto.tag.TagUpdateDTO;
 import com.travel.advisor.entity.Tag;
 import com.travel.advisor.exception.BusinessException;
@@ -36,7 +37,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public PageResult<Tag> page(TagCreateDTO dto, PageQuery pageQuery) {
+    public PageResult<Tag> page(TagQueryDTO dto, PageQuery pageQuery) {
         LambdaQueryWrapper<Tag> queryWrapper = new LambdaQueryWrapper<Tag>()
                 .orderByAsc(Tag::getSortOrder);
         if (dto != null && dto.getType() != null) {

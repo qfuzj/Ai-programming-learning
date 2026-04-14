@@ -57,6 +57,7 @@ function normalizeLoginResponse(
   };
 }
 
+// 获取验证码
 export function getCaptcha(
   bizType: "login" | "register" | "reset_password" = "login"
 ): Promise<CaptchaResponse> {
