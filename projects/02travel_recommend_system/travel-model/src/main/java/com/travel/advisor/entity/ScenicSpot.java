@@ -78,7 +78,7 @@ public class ScenicSpot {
     /**
      * 综合评分（1-5）
      */
-    private BigDecimal score;
+    private Double score;
 
     /**
      * 评分人数

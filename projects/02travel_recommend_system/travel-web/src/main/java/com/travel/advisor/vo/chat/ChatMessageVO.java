@@ -5,12 +5,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * LLM 消息VO类，用于前端展示和交互，包含消息的基本信息和相关联的LLM调用日志ID，便于前端根据需要展示消息内容和调用日志详情
+ * LLM消息VO类，用于前端展示和交互，包含消息的基本信息和相关联的LLM调用日志ID，便于前端根据需要展示消息内容和调用日志详情
  */
 @Data
 public class ChatMessageVO {
 
-    private Long id;
+    private Long messageId;
 
     /**
      * 消息角色，如 "user"、"assistant"、"system" 等，便于前端根据角色区分消息来源和展示样式
@@ -37,5 +37,5 @@ public class ChatMessageVO {
      */
     private Long llmCallLogId;
 
-    private LocalDateTime createTime;
+    private LocalDateTime createdAt;
 }

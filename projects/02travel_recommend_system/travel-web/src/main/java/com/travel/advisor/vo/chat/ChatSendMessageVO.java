@@ -3,7 +3,7 @@ package com.travel.advisor.vo.chat;
 import lombok.Data;
 
 /**
- * ChatSendMessageVO类用于封装LLM回复消息的相关信息，包含用户输入消息ID、LLM回复消息ID、回复内容、消耗的token数量和模型名称等字段，便于前端展示和后续分析优化。
+ * 发送消息接口响应DTO
  */
 @Data
 public class ChatSendMessageVO {

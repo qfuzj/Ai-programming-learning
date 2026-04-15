@@ -34,7 +34,7 @@ public class ScenicListVO {
     /**
      * 景点评分
      */
-    private BigDecimal score;
+    private Double score;
 
     /**
      * 景点分类

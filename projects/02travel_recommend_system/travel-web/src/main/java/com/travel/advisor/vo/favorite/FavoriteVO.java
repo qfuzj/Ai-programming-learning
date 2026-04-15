@@ -2,7 +2,6 @@ package com.travel.advisor.vo.favorite;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,7 +13,7 @@ public class FavoriteVO {
 
     private String coverImage;
 
-    private BigDecimal score;
+    private Double score;
 
     private LocalDateTime favoriteTime;
 }

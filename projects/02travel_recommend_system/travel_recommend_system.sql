@@ -878,4 +878,34 @@ INSERT INTO `user_review` (`id`, `user_id`, `scenic_spot_id`, `rating`, `content
 INSERT INTO `user_review` (`id`, `user_id`, `scenic_spot_id`, `rating`, `content`, `images`, `visit_date`, `travel_type`, `like_count`, `reply_count`, `is_anonymous`, `status`, `audit_remark`, `ip_address`, `create_time`, `update_time`, `is_deleted`) VALUES (4, 2, 5, 2, '大理古城商业化太严重了，到处都是卖丝巾和银饰的。', NULL, NULL, NULL, 0, 0, 0, 1, NULL, NULL, '2026-04-03 14:30:08', '2026-04-03 14:30:08', 0);
 COMMIT;
 
+-- ----------------------------
+-- Table structure for review_like
+-- ----------------------------
+DROP TABLE IF EXISTS `review_like`;
+CREATE TABLE `review_like` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `review_id` bigint(20) NOT NULL COMMENT '点评ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_review_user` (`review_id`,`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评点赞表';
+
+-- ----------------------------
+-- Table structure for review_reply
+-- ----------------------------
+DROP TABLE IF EXISTS `review_reply`;
+CREATE TABLE `review_reply` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `review_id` bigint(20) NOT NULL COMMENT '点评ID',
+  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
+  `content` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '回复内容',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_review_id` (`review_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评回复表';
+
 SET FOREIGN_KEY_CHECKS = 1;

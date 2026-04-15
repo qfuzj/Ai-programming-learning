@@ -9,12 +9,21 @@ import lombok.Data;
 @Data
 public class RecommendFeedbackDTO {
 
+    /**
+     * 推荐记录ID
+     */
     @NotNull(message = "recommendRecordId不能为空")
     private Long recommendRecordId;
 
+    /**
+     * 推荐结果项ID
+     */
     @NotNull(message = "resultItemId不能为空")
     private Long resultItemId;
 
+    /**
+     * 景点ID
+     */
     @NotNull(message = "scenicId不能为空")
     private Long scenicId;
 }

@@ -89,12 +89,12 @@ public class ScenicDetailVO {
     /**
      * 综合评分（与列表中的 score 保持一致）
      */
-    private BigDecimal score;
+    private Double score;
 
     /**
      * 评分得分
      */
-    private BigDecimal ratingScore;
+    private Double ratingScore;
 
     /**
      * 评分人数

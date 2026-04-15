@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -37,7 +36,7 @@ public class RecommendResultItem {
     /**
      * 推荐算法计算出的得分，数值越大表示推荐结果越相关，范围通常在0到1之间
      */
-    private BigDecimal score;
+    private Double score;
 
     /**
      * 推荐理由，简要说明为什么这个景点被推荐给用户，可以是算法生成的文本或者预定义的模板内容
