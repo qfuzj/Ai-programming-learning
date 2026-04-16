@@ -2,8 +2,8 @@ package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
+import com.travel.advisor.common.enums.TravelPlanItemType;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.plan.TravelPlanCreateDTO;
 import com.travel.advisor.dto.plan.TravelPlanItemCreateDTO;
@@ -26,19 +26,25 @@ import java.util.*;
 @RequiredArgsConstructor
 public class TravelPlanServiceImpl implements TravelPlanService {
 
+    // 来源：1 用户创建 2 LLM 生成 3 系统推荐
     private static final int PLAN_SOURCE_USER = 1;
+    // 0 草稿 1 正常 2 已完成
     private static final int PLAN_STATUS_NORMAL = 1;
+    private static final int ITEM_TYPE_CUSTOM = TravelPlanItemType.CUSTOM.getCode();
 
     private final TravelPlanMapper travelPlanMapper;
     private final TravelPlanItemMapper travelPlanItemMapper;
 
+    /**
+     * 创建行程计划，首先获取当前用户ID，并验证用户是否登录。然后根据传入的TravelPlanCreateDTO对象创建一个新的TravelPlan实体对象，并将相关字段值填充到该对象中。接着设置行程计划的来源为用户创建，默认状态为正常，并初始化浏览量和点赞数为0。最后将行程计划保存到数据库中，并返回新创建的行程计划ID。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Long createPlan(TravelPlanCreateDTO dto) {
         Long userId = getCurrentUserIdRequired();
 
         TravelPlan plan = new TravelPlan();
-        fillPlanFields(plan, dto);
+        fillPlanFieldsForCreate(plan, dto);
         plan.setUserId(userId);
         plan.setSource(PLAN_SOURCE_USER);
         if (plan.getStatus() == null) {
@@ -51,14 +57,75 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         return plan.getId();
     }
 
+    /**
+     * 创建行程计划及其行程项，首先获取当前用户ID，并验证用户是否登录。
+     * 然后根据传入的TravelPlanCreateDTO对象创建一个新的TravelPlan实体对象，
+     * 并将相关字段值填充到该对象中。接着设置行程计划的来源为用户创建，默认状态为正常，
+     * 并初始化浏览量和点赞数为0。将行程计划保存到数据库中后，如果传入的行程项列表不为空，
+     * 则遍历该列表，为每个行程项创建一个TravelPlanItem实体对象，并将相关字段值填充到该对象中，
+     * 包括关联的行程计划ID、天数、排序顺序等信息。最后将每个行程项保存到数据库中，并返回新创建的行程计划ID。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Long createPlanWithItems(TravelPlanCreateDTO dto, List<TravelPlanItemCreateDTO> items) {
+        Long userId = getCurrentUserIdRequired();
+
+        TravelPlan plan = new TravelPlan();
+        fillPlanFieldsForCreate(plan, dto);
+        plan.setUserId(userId);
+        plan.setSource(PLAN_SOURCE_USER);
+        if (plan.getStatus() == null) {
+            plan.setStatus(PLAN_STATUS_NORMAL);
+        }
+        plan.setViewCount(0);
+        plan.setLikeCount(0);
+        travelPlanMapper.insert(plan);
+
+        if (items == null || items.isEmpty()) {
+            return plan.getId();
+        }
+
+        for (TravelPlanItemCreateDTO itemDto : items) {
+            validateDayNoInRange(plan, itemDto.getDayNo());
+            Integer itemType = resolveItemType(itemDto.getItemType());
+            TravelPlanItem item = new TravelPlanItem();
+            item.setTravelPlanId(plan.getId());
+            item.setScenicSpotId(itemDto.getScenicSpotId());
+            item.setDayNo(itemDto.getDayNo());
+            item.setSortOrder(itemDto.getSortOrder() == null ? 0 : itemDto.getSortOrder());
+            item.setItemType(itemType);
+            item.setTitle(itemDto.getTitle());
+            item.setDescription(itemDto.getDescription());
+            item.setStartTime(itemDto.getStartTime());
+            item.setEndTime(itemDto.getEndTime());
+            item.setLocation(itemDto.getLocation());
+            item.setLongitude(itemDto.getLongitude());
+            item.setLatitude(itemDto.getLatitude());
+            item.setEstimatedCost(itemDto.getEstimatedCost());
+            item.setNotes(itemDto.getNotes());
+            travelPlanItemMapper.insert(item);
+        }
+
+        return plan.getId();
+    }
+
+    /**
+     * 分页查询当前用户的行程计划
+     * 首先获取当前用户ID，并验证用户是否登录。
+     * 然后根据传入的TravelPlanQueryDTO对象构建一个分页查询条件，包括行程计划的状态、公开性和关键词等信息。
+     * 接着使用MyBatis-Plus的分页查询功能从数据库中查询符合条件的行程计划列表，
+     * 并将查询结果转换为TravelPlanDetailVO对象列表。
+     * 最后将转换后的VO对象列表封装到PageResult对象中，并返回给调用方，以便在前端页面上展示分页后的行程计划数据。
+     */
     @Override
     public PageResult<TravelPlanDetailVO> pageMyPlans(TravelPlanQueryDTO pageQuery) {
         Long userId = getCurrentUserIdRequired();
+        validatePageSize(pageQuery.getPageSize());
 
         Page<TravelPlan> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());
         LambdaQueryWrapper<TravelPlan> wrapper = new LambdaQueryWrapper<TravelPlan>()
                 .eq(TravelPlan::getUserId, userId);
-                
+
         if (pageQuery.getStatus() != null) {
             wrapper.eq(TravelPlan::getStatus, pageQuery.getStatus());
         }
@@ -68,34 +135,21 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         if (pageQuery.getKeyword() != null && !pageQuery.getKeyword().trim().isEmpty()) {
             String keyword = pageQuery.getKeyword().trim();
             wrapper.and(w -> w.like(TravelPlan::getTitle, keyword)
-                            .or()
-                            .like(TravelPlan::getDescription, keyword));
+                    .or()
+                    .like(TravelPlan::getDescription, keyword));
         }
-        
+
         wrapper.orderByDesc(TravelPlan::getCreateTime);
 
         Page<TravelPlan> result = travelPlanMapper.selectPage(page, wrapper);
 
-        List<TravelPlanDetailVO> records = result.getRecords().stream().map(plan -> {
-            TravelPlanDetailVO vo = new TravelPlanDetailVO();
-            vo.setId(plan.getId());
-            vo.setTitle(plan.getTitle());
-            vo.setCoverImage(plan.getCoverImage());
-            vo.setStartDate(plan.getStartDate());
-            vo.setEndDate(plan.getEndDate());
-            vo.setTotalDays(plan.getTotalDays());
-            vo.setDestinationRegionId(plan.getDestinationRegionId());
-            vo.setDescription(plan.getDescription());
-            vo.setEstimatedBudget(plan.getEstimatedBudget());
-            vo.setTravelCompanion(plan.getTravelCompanion());
-            vo.setIsPublic(plan.getIsPublic());
-            vo.setSource(plan.getSource());
-            vo.setStatus(plan.getStatus());
-            vo.setCreateTime(plan.getCreateTime());
-            vo.setUpdateTime(plan.getUpdateTime());
-            vo.setDays(Collections.emptyList());
-            return vo;
-        }).toList();
+        List<TravelPlanDetailVO> records = result.getRecords().stream()
+                .map(plan -> {
+                    TravelPlanDetailVO vo = new TravelPlanDetailVO();
+                    fillBaseInfo(plan, vo);
+                    vo.setDays(Collections.emptyList());
+                    return vo;
+                }).toList();
 
         return PageResult.<TravelPlanDetailVO>builder()
                 .records(records)
@@ -106,6 +160,9 @@ public class TravelPlanServiceImpl implements TravelPlanService {
                 .build();
     }
 
+    /**
+     * 获取当前用户ID，并验证用户是否登录。如果用户未登录，则抛出一个业务异常，提示用户需要登录才能进行相关操作。该方法通常在需要获取当前用户信息的服务方法中调用，以确保只有登录用户才能访问和操作与其相关的数据。
+     */
     @Override
     public TravelPlanDetailVO getPlanDetail(Long id) {
         Long userId = getCurrentUserIdRequired();
@@ -120,6 +177,11 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         return toDetailVO(plan, items);
     }
 
+    /**
+     * 获取当前用户ID，并验证用户是否登录。
+     * 如果用户未登录，则抛出一个业务异常，提示用户需要登录才能进行相关操作。
+     * 该方法通常在需要获取当前用户信息的服务方法中调用，以确保只有登录用户才能访问和操作与其相关的数据。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void updatePlan(Long id, TravelPlanCreateDTO dto) {
@@ -128,33 +190,49 @@ public class TravelPlanServiceImpl implements TravelPlanService {
 
         TravelPlan update = new TravelPlan();
         update.setId(existing.getId());
-        fillPlanFields(update, dto);
+        fillPlanFieldsForUpdate(update, dto);
         travelPlanMapper.updateById(update);
     }
 
+    /**
+     * 删除行程计划，首先获取当前用户ID，并验证用户是否登录。
+     * 然后根据行程计划ID和用户ID查询行程计划，确保该行程计划属于当前用户。
+     * 如果查询结果为空，则抛出一个业务异常，提示行程计划不存在。
+     * 接着删除与该行程计划关联的所有行程项，最后删除行程计划本身。
+     * 该方法通过事务管理确保在删除过程中数据的一致性和完整性，如果在删除过程中发生任何异常，事务将会回滚，避免数据出现不一致的情况。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void deletePlan(Long id) {
         Long userId = getCurrentUserIdRequired();
         TravelPlan existing = getPlanByIdAndUser(id, userId);
 
-        travelPlanMapper.deleteById(existing.getId());
         travelPlanItemMapper.delete(new LambdaQueryWrapper<TravelPlanItem>()
                 .eq(TravelPlanItem::getTravelPlanId, existing.getId()));
+        travelPlanMapper.deleteById(existing.getId());
     }
 
+    /**
+     * 添加行程项，首先获取当前用户ID，并验证用户是否登录。
+     * 然后根据行程计划ID和用户ID查询行程计划，确保该行程计划属于当前用户。
+     * 接着验证行程项的dayNo字段是否在行程计划的总天数范围内，如果不在范围内，则抛出一个业务异常，提示dayNo无效。
+     * 然后根据传入的TravelPlanItemCreateDTO对象创建一个新的TravelPlanItem实体对象，并将相关字段值填充到该对象中，包括关联的行程计划ID、天数、排序顺序等信息。
+     * 最后将行程项保存到数据库中，并返回新创建的行程项ID。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Long addPlanItem(Long planId, TravelPlanItemCreateDTO dto) {
         Long userId = getCurrentUserIdRequired();
-        getPlanByIdAndUser(planId, userId);
+        TravelPlan plan = getPlanByIdAndUser(planId, userId);
+        validateDayNoInRange(plan, dto.getDayNo());
+        Integer itemType = resolveItemType(dto.getItemType());
 
         TravelPlanItem item = new TravelPlanItem();
         item.setTravelPlanId(planId);
         item.setScenicSpotId(dto.getScenicSpotId());
         item.setDayNo(dto.getDayNo());
         item.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
-        item.setItemType(dto.getItemType() == null ? 5 : dto.getItemType());
+        item.setItemType(itemType);
         item.setTitle(dto.getTitle());
         item.setDescription(dto.getDescription());
         item.setStartTime(dto.getStartTime());
@@ -169,6 +247,9 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         return item.getId();
     }
 
+    /**
+     * 删除行程项，首先获取当前用户ID，并验证用户是否登录。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void deletePlanItem(Long planId, Long itemId) {
@@ -183,6 +264,11 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         }
     }
 
+    /**
+     * 根据行程计划ID和用户ID查询行程计划，确保该行程计划属于当前用户。
+     * 如果查询结果为空，则抛出一个业务异常，提示行程计划不存在。
+     * 该方法通常在需要验证用户对行程计划的访问权限时调用，以确保用户只能访问和操作属于自己的行程计划数据。
+     */
     private TravelPlan getPlanByIdAndUser(Long id, Long userId) {
         TravelPlan plan = travelPlanMapper.selectOne(new LambdaQueryWrapper<TravelPlan>()
                 .eq(TravelPlan::getId, id)
@@ -202,6 +288,12 @@ public class TravelPlanServiceImpl implements TravelPlanService {
      */
     private TravelPlanDetailVO toDetailVO(TravelPlan plan, List<TravelPlanItem> items) {
         TravelPlanDetailVO vo = new TravelPlanDetailVO();
+        fillBaseInfo(plan, vo);
+        vo.setDays(groupByDay(items));
+        return vo;
+    }
+
+    private void fillBaseInfo(TravelPlan plan, TravelPlanDetailVO vo) {
         vo.setId(plan.getId());
         vo.setTitle(plan.getTitle());
         vo.setCoverImage(plan.getCoverImage());
@@ -215,10 +307,8 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         vo.setIsPublic(plan.getIsPublic());
         vo.setSource(plan.getSource());
         vo.setStatus(plan.getStatus());
-        vo.setCreateTime(plan.getCreateTime());
-        vo.setUpdateTime(plan.getUpdateTime());
-        vo.setDays(groupByDay(items));
-        return vo;
+        vo.setCreatedAt(plan.getCreateTime());
+        vo.setUpdatedAt(plan.getUpdateTime());
     }
 
     /**
@@ -269,7 +359,7 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         itemVO.setLatitude(item.getLatitude());
         itemVO.setEstimatedCost(item.getEstimatedCost());
         itemVO.setNotes(item.getNotes());
-        itemVO.setCreateTime(item.getCreateTime());
+        itemVO.setCreatedAt(item.getCreateTime());
         return itemVO;
     }
 
@@ -279,7 +369,7 @@ public class TravelPlanServiceImpl implements TravelPlanService {
      * @param plan 需要填充字段的TravelPlan实体对象，通常是在创建或更新行程时使用。该对象会被赋值DTO中的字段值，并最终保存到数据库中。
      * @param dto  包含行程信息的TravelPlanCreateDTO对象，用户通过API请求提交的行程数据会被封装在该DTO中。该方法会从DTO中提取字段值，并将其赋值给TravelPlan实体对象的相应属性。
      */
-    private void fillPlanFields(TravelPlan plan, TravelPlanCreateDTO dto) {
+    private void fillPlanFieldsForCreate(TravelPlan plan, TravelPlanCreateDTO dto) {
         plan.setTitle(dto.getTitle());
         plan.setCoverImage(dto.getCoverImage());
         plan.setStartDate(dto.getStartDate());
@@ -293,6 +383,65 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         if (dto.getStatus() != null) {
             plan.setStatus(dto.getStatus());
         }
+    }
+
+    /**
+     * 将TravelPlanCreateDTO中的字段值填充到TravelPlan实体中，适用于更新行程时的字段赋值。
+     * 该方法会根据DTO中的字段值设置TravelPlan的相应属性，包括标题、封面图片、日期、预算等信息。
+     * 同时，对于一些可选字段（如isPublic和status），如果DTO中没有提供值，则不会修改原有的值，确保行程数据的合理更新。
+     */
+    private void fillPlanFieldsForUpdate(TravelPlan plan, TravelPlanCreateDTO dto) {
+        plan.setTitle(dto.getTitle());
+        plan.setCoverImage(dto.getCoverImage());
+        plan.setStartDate(dto.getStartDate());
+        plan.setEndDate(dto.getEndDate());
+        plan.setTotalDays(dto.getTotalDays());
+        plan.setDestinationRegionId(dto.getDestinationRegionId());
+        plan.setDescription(dto.getDescription());
+        plan.setEstimatedBudget(dto.getEstimatedBudget());
+        plan.setTravelCompanion(dto.getTravelCompanion());
+        if (dto.getIsPublic() != null) {
+            plan.setIsPublic(dto.getIsPublic());
+        }
+        if (dto.getStatus() != null) {
+            plan.setStatus(dto.getStatus());
+        }
+    }
+
+    /**
+     * 验证行程项的dayNo字段是否在行程计划的总天数范围内，确保用户添加的行程项对应的天数不会超过整个行程计划的总天数。该方法会检查TravelPlan对象中的totalDays字段和传入的dayNo参数，如果dayNo大于totalDays，则抛出一个业务异常，提示用户天数超出计划范围。通过这种验证，可以保证行程数据的合理性和一致性，避免出现不符合逻辑的行程安排。
+     */
+    private void validateDayNoInRange(TravelPlan plan, Integer dayNo) {
+        if (plan.getTotalDays() == null || dayNo == null) {
+            return;
+        }
+        if (dayNo > plan.getTotalDays()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "天数超出计划范围");
+        }
+    }
+
+    /**
+     * 验证分页查询的pageSize参数，确保用户请求的每页数据量不会超过系统设定的最大值。该方法会检查传入的pageSize参数，如果pageSize不为null且大于100，则抛出一个业务异常，提示用户pageSize不能大于100。通过这种验证，可以防止用户请求过多的数据导致系统性能问题，同时也可以引导用户合理使用分页功能，提升系统的稳定性和响应速度。
+     * 
+     * @param pageSize
+     */
+    private void validatePageSize(Integer pageSize) {
+        if (pageSize != null && pageSize > 100) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "pageSize 不能大于 100");
+        }
+    }
+
+    /**
+     * 解析行程项的类型，确保传入的itemType参数是合法的行程项类型。如果itemType为null，则默认设置为自定义类型（ITEM_TYPE_CUSTOM）。如果itemType不为null，则会调用TravelPlanItemType枚举类的fromCode方法验证该类型是否合法，如果不合法则抛出一个业务异常，提示用户itemType非法。通过这种方式，可以保证行程项的数据合法性和系统的一致性，避免出现不符合预期的行程项类型。
+     */
+    private Integer resolveItemType(Integer itemType) {
+        if (itemType == null) {
+            return ITEM_TYPE_CUSTOM;
+        }
+        if (TravelPlanItemType.fromCode(itemType) == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "itemType 非法");
+        }
+        return itemType;
     }
 
     private Long getCurrentUserIdRequired() {

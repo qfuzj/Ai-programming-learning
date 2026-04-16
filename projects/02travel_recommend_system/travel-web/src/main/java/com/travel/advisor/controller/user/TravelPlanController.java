@@ -1,9 +1,9 @@
 package com.travel.advisor.controller.user;
 
-import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.plan.TravelPlanCreateDTO;
+import com.travel.advisor.dto.plan.TravelPlanCreateWithItemsDTO;
 import com.travel.advisor.dto.plan.TravelPlanQueryDTO;
 import com.travel.advisor.dto.plan.TravelPlanItemCreateDTO;
 import com.travel.advisor.service.TravelPlanService;
@@ -31,8 +31,13 @@ public class TravelPlanController {
         return Result.success(travelPlanService.createPlan(dto));
     }
 
+    @PostMapping("/with-items")
+    public Result<Long> createPlanWithItems(@Valid @RequestBody TravelPlanCreateWithItemsDTO dto) {
+        return Result.success(travelPlanService.createPlanWithItems(dto.getPlan(), dto.getItems()));
+    }
+
     @GetMapping
-    public Result<PageResult<TravelPlanDetailVO>> pageMyPlans(TravelPlanQueryDTO pageQuery) {
+    public Result<PageResult<TravelPlanDetailVO>> pageMyPlans(@Valid TravelPlanQueryDTO pageQuery) {
         return Result.success(travelPlanService.pageMyPlans(pageQuery));
     }
 

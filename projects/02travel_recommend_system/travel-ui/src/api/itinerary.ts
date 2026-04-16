@@ -4,6 +4,9 @@
 import http from "@/api/http";
 import type { PageQuery, PageResult } from "@/types/api";
 
+/**
+ * 对应-行程计划详情 VO（View Object）
+ */
 export interface ItineraryItem {
   id: number;
   title: string;
@@ -18,17 +21,23 @@ export interface ItineraryItem {
   isPublic?: number;
   source?: number;
   status?: number;
-  createTime?: string;
-  updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
   days?: ItineraryDayItem[];
 }
 
+/**
+ * 对应-行程计划分页查询 DTO
+ */
 export interface ItineraryQuery extends PageQuery {
   status?: number;
   keyword?: string;
   isPublic?: number;
 }
 
+/**
+ * 对应-行程计划创建 DTO
+ */
 export interface ItineraryCreatePayload {
   title: string;
   coverImage?: string;
@@ -43,6 +52,9 @@ export interface ItineraryCreatePayload {
   status?: number;
 }
 
+/**
+ * 对饮-行程计划项创建 DTO
+ */
 export interface ItineraryItemPayload {
   dayNo: number;
   scenicSpotId?: number;
@@ -59,6 +71,9 @@ export interface ItineraryItemPayload {
   notes?: string;
 }
 
+/**
+ * 对应-行程项（最小粒度）
+ */
 export interface ItineraryDayItem {
   dayNo: number;
   items: Array<{
@@ -76,7 +91,7 @@ export interface ItineraryDayItem {
     latitude?: number;
     estimatedCost?: number;
     notes?: string;
-    createTime?: string;
+    createdAt?: string;
   }>;
 }
 
@@ -117,5 +132,6 @@ export function generateItineraryByAi(payload: {
   preferredTags?: string[];
 }): Promise<unknown> {
   void payload;
+  // TODO: 后端暂未提供 /api/user/travel-plans/ai-generate 接口，后续补充实现
   return Promise.reject(new Error("后端暂未提供 /api/user/travel-plans/ai-generate 接口"));
 }

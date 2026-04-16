@@ -7,6 +7,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * 行程计划创建 DTO
+ */
 @Data
 public class TravelPlanCreateDTO {
 
