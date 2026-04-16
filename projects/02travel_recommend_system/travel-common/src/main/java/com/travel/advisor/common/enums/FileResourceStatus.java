@@ -10,9 +10,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum FileResourceStatus {
 
-    PENDING(0, "待处理"),
-    NORMAL(1, "正常"),
-    DELETING(2, "删除中");
+    TEMP(0, "临时"),
+    USED(1, "已使用"),
+    DELETED(2, "已删除");
 
     private final Integer code;
     private final String desc;

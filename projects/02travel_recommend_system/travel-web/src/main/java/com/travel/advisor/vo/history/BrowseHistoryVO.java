@@ -4,6 +4,9 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * 用户浏览历史记录VO
+ */
 @Data
 public class BrowseHistoryVO {
 

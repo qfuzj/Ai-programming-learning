@@ -3,6 +3,9 @@ package com.travel.advisor.dto.file;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+/**
+ * 文件上传回调DTO
+ */
 @Data
 public class FileUploadCallbackDTO {
 

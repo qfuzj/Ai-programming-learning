@@ -84,9 +84,14 @@ public class FileResource {
     private Integer uploaderType;
 
     /**
-     * 状态：0 待处理 1 正常 2 删除中
+     * 状态：0 临时 1 已使用 2 已删除
      */
     private Integer status;
+
+    /**
+     * 使用时间
+     */
+    private LocalDateTime usedTime;
 
     private LocalDateTime createTime;
 

@@ -32,6 +32,13 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
     private final UserBrowseHistoryMapper userBrowseHistoryMapper;
     private final ScenicSpotMapper scenicSpotMapper;
 
+    /**
+     * 用户浏览历史上报接口，记录用户浏览的景点信息，包括停留时长、来源、设备类型等数据
+      * 1. 获取当前用户ID，确保用户已登录
+      * 2. 验证景点ID是否存在，确保上报的浏览记录关联到有效的景点
+      * 3. 创建UserBrowseHistory实体对象，并设置相关属性
+      * 4. 将浏览记录保存到数据库中
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void report(BrowseHistoryCreateDTO dto) {
@@ -48,6 +55,13 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
         userBrowseHistoryMapper.insert(history);
     }
 
+    /**
+     * 获取当前用户的浏览历史分页列表，按照浏览时间倒序排序
+      * 1. 首先查询用户的浏览历史记录列表
+      * 2. 根据浏览记录中的景点ID批量查询景点信息，避免N+1查询问题
+      * 3. 将用户浏览历史转换为VO对象，并添加景点信息
+      * 4. 返回分页结果
+     */
     @Override
     public PageResult<BrowseHistoryVO> page(PageQuery pageQuery) {
         Long userId = getCurrentUserIdRequired();
@@ -100,6 +114,12 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
             .build();
     }
 
+    /**
+     * 根据ID删除单条浏览历史记录，确保只能删除当前用户自己的记录
+      * 1. 获取当前用户ID，确保用户已登录
+      * 2. 根据记录ID和用户ID删除数据库中的浏览记录数据
+      * 3. 如果没有找到对应的记录，抛出404异常
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void deleteById(Long id) {
@@ -112,6 +132,11 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
         }
     }
 
+    /**
+     * 清空当前用户的浏览历史记录，删除所有与当前用户ID相关的浏览记录数据
+      * 1. 获取当前用户ID，确保用户已登录
+      * 2. 删除数据库中所有与当前用户ID相关的浏览记录数据
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void clear() {

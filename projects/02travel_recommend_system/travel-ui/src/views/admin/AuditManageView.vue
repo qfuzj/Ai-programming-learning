@@ -32,15 +32,31 @@
       </el-form>
 
       <el-table v-loading="loading" :data="reviewList">
-        <el-table-column prop="username" label="用户名" min-width="120" />
-        <el-table-column prop="scenicName" label="景点名称" min-width="140" />
-        <el-table-column prop="content" label="评论内容" min-width="200" show-overflow-tooltip />
+        <el-table-column label="用户名" min-width="120">
+          <template #default="scope">
+            {{
+              scope.row.snapshot?.userId
+                ? scope.row.snapshot?.username || "ID:" + scope.row.snapshot.userId
+                : "-"
+            }}
+          </template>
+        </el-table-column>
+        <el-table-column label="景点名称" min-width="140">
+          <template #default="scope">{{ scope.row.snapshot?.scenicName || "-" }}</template>
+        </el-table-column>
+        <el-table-column label="评论内容" min-width="200" show-overflow-tooltip>
+          <template #default="scope">{{ scope.row.snapshot?.content || "-" }}</template>
+        </el-table-column>
         <el-table-column label="评分" width="90">
-          <template #default="scope">{{ formatRating(scope.row.rating ?? scope.row.score) }}</template>
+          <template #default="scope">
+            {{ formatRating(scope.row.snapshot?.rating ?? scope.row.snapshot?.score) }}
+          </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="scope">
-            <el-tag :type="statusTagType(scope.row.status)">{{ statusText(scope.row.status) }}</el-tag>
+            <el-tag :type="statusTagType(scope.row.auditStatus)">
+              {{ statusText(scope.row.auditStatus) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
@@ -48,7 +64,7 @@
           <template #default="scope">
             <el-button link type="primary" @click="openDetail(scope.row.id)">查看详情</el-button>
             <el-popconfirm
-              v-if="scope.row.status === 0"
+              v-if="scope.row.auditStatus === 0"
               title="确认通过该评论吗？"
               confirm-button-text="确认"
               cancel-button-text="取消"
@@ -58,11 +74,16 @@
                 <el-button link type="success">通过</el-button>
               </template>
             </el-popconfirm>
-            <el-button v-if="scope.row.status === 0" link type="warning" @click="openRejectDialog(scope.row.id)">
+            <el-button
+              v-if="scope.row.auditStatus === 0"
+              link
+              type="warning"
+              @click="openRejectDialog(scope.row.id)"
+            >
               拒绝
             </el-button>
             <el-popconfirm
-              v-if="scope.row.status === 0"
+              v-if="scope.row.auditStatus === 0"
               title="确认隐藏该评论吗？"
               confirm-button-text="确认"
               cancel-button-text="取消"
@@ -98,26 +119,36 @@
     >
       <el-descriptions v-if="detailData" :column="2" border>
         <el-descriptions-item label="ID">{{ detailData.id }}</el-descriptions-item>
-        <el-descriptions-item label="用户名">{{ detailData.username || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="景点名称">{{ detailData.scenicName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="评分">
-          {{ formatRating(detailData.rating ?? detailData.score) }}
+        <el-descriptions-item label="用户名">
+          {{ detailData.snapshot?.username || "-" }}
         </el-descriptions-item>
-        <el-descriptions-item label="状态">{{ statusText(detailData.status) }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ detailData.createTime || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="评论内容" :span="2">{{ detailData.content || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="景点名称">
+          {{ detailData.snapshot?.scenicName || "-" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="评分">
+          {{ formatRating(detailData.snapshot?.rating ?? detailData.snapshot?.score) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          {{ statusText(detailData.auditStatus) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间">
+          {{ detailData.createTime || "-" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="评论内容" :span="2">
+          {{ detailData.snapshot?.content || "-" }}
+        </el-descriptions-item>
       </el-descriptions>
       <el-divider content-position="left">图片</el-divider>
-      <div class="image-list" v-if="detailData?.images?.length">
+      <div v-if="detailData?.snapshot?.images?.length" class="image-list">
         <el-image
-          v-for="item in detailData.images"
+          v-for="item in detailData.snapshot?.images"
           :key="item"
           :src="item"
           fit="cover"
           style="width: 120px; height: 80px; border-radius: 6px"
         />
       </div>
-      <div class="text-muted" v-else>暂无图片</div>
+      <div v-else class="text-muted">暂无图片</div>
     </el-dialog>
 
     <el-dialog v-model="rejectVisible" title="拒绝原因" width="520px" destroy-on-close>
@@ -150,20 +181,20 @@ import {
   getAdminAuditPage,
   hideAdminAudit,
   rejectAdminAudit,
-  type ReviewItem,
-  type ReviewQuery,
+  type AuditItem,
+  type AuditQuery,
 } from "@/api/audit";
 
 const loading = ref(false);
 const total = ref(0);
-const reviewList = ref<ReviewItem[]>([]);
+const reviewList = ref<AuditItem[]>([]);
 const detailVisible = ref(false);
-const detailData = ref<ReviewItem | null>(null);
+const detailData = ref<AuditItem | null>(null);
 const rejectVisible = ref(false);
 const rejectAuditId = ref<number | null>(null);
 const rejectForm = reactive({ reason: "" });
 
-const query = reactive<ReviewQuery>({
+const query = reactive<AuditQuery>({
   pageNum: 1,
   pageSize: 10,
   contentType: "review",

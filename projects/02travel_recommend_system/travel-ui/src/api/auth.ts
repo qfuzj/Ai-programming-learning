@@ -12,6 +12,9 @@ import type {
 } from "@/types/auth";
 import http from "@/api/http";
 
+/**
+ * 对应-登录成功VO类
+ */
 interface LoginRawResponse {
   accessToken: string;
   refreshToken: string;
@@ -66,13 +69,13 @@ export function getCaptcha(
 
 export function loginUser(payload: LoginPayload): Promise<LoginResponse> {
   return http
-    .post<any, LoginRawResponse>("/api/user/auth/login", payload)
+    .post<LoginRawResponse>("/api/user/auth/login", payload)
     .then((res) => normalizeLoginResponse(res, "USER"));
 }
 
 export function loginAdmin(payload: LoginPayload): Promise<LoginResponse> {
   return http
-    .post<any, LoginRawResponse>("/api/admin/auth/login", payload)
+    .post<LoginRawResponse>("/api/admin/auth/login", payload)
     .then((res) => normalizeLoginResponse(res, "ADMIN"));
 }
 
@@ -88,13 +91,13 @@ export function resetPassword(payload: ResetPasswordPayload): Promise<void> {
 
 export function refreshUserToken(payload: RefreshTokenPayload): Promise<LoginResponse> {
   return http
-    .post<any, LoginRawResponse>("/api/user/auth/refresh-token", payload)
+    .post<LoginRawResponse>("/api/user/auth/refresh-token", payload)
     .then((res) => normalizeLoginResponse(res, "USER"));
 }
 
 export function refreshAdminToken(payload: RefreshTokenPayload): Promise<LoginResponse> {
   return http
-    .post<any, LoginRawResponse>("/api/admin/auth/refresh-token", payload)
+    .post<LoginRawResponse>("/api/admin/auth/refresh-token", payload)
     .then((res) => normalizeLoginResponse(res, "ADMIN"));
 }
 

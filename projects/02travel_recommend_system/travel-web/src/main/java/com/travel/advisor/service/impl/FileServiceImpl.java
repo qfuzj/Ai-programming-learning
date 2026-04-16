@@ -1,5 +1,8 @@
 package com.travel.advisor.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.travel.advisor.common.enums.BizType;
 import com.travel.advisor.common.enums.FileResourceStatus;
 import com.travel.advisor.common.enums.FileResourceUploaderType;
 import com.travel.advisor.common.result.ResultCode;
@@ -22,6 +25,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -170,7 +174,7 @@ public class FileServiceImpl implements FileService {
         entity.setUrl(buildFileUrl(dto.getObjectKey()));
         entity.setUploaderId(SecurityUtils.getCurrentUserId());
         entity.setUploaderType(FileResourceUploaderType.fromRoleType(SecurityUtils.getCurrentRoleType()).getCode());
-        entity.setStatus(FileResourceStatus.NORMAL.getCode());
+        entity.setStatus(FileResourceStatus.TEMP.getCode());
 
         fileResourceMapper.insert(entity);
         return entity.getId();
@@ -208,9 +212,79 @@ public class FileServiceImpl implements FileService {
             log.info("MinIO文件删除失败，objectKey={}", fileResource.getObjectKey(), e);
             throw new BusinessException(ResultCode.SYSTEM_ERROR, "文件删除失败: " + e.getMessage());
         }
-        // 删除数据库记录
-        fileResourceMapper.deleteById(id);
-        log.info("数据记录删除成功，id={}", id);
+        // 只更新状态为已删除
+        FileResource updateEntity = new FileResource();
+        updateEntity.setId(id);
+        updateEntity.setStatus(FileResourceStatus.DELETED.getCode());
+        fileResourceMapper.updateById(updateEntity);
+        log.info("数据记录已标记为删除状态，id={}", id);
+    }
+
+    /**
+     * 将多个文件与某个业务（如订单、用户等）绑定，并更新文件的状态。
+      - 前端上传文件后会得到一个文件ID列表，调用此接口将这些文件与具体业务数据关联起来
+      - 更新文件状态为已使用，并记录使用时间
+     */
+    @Override
+    public void bindFilesToBiz(java.util.List<Long> fileIds, Long bizId, BizType bizType) {
+        if (fileIds == null || fileIds.isEmpty()) return;
+        LambdaUpdateWrapper<FileResource> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.in(FileResource::getId, fileIds)
+                .set(FileResource::getBizId, bizId)
+                .set(FileResource::getBizType, bizType.name())
+                .set(FileResource::getStatus, FileResourceStatus.USED.getCode())
+                .set(FileResource::getUsedTime, LocalDateTime.now());
+        fileResourceMapper.update(null, wrapper);
+    }
+
+    /**
+     * 删除与特定业务（如订单、用户等）绑定的文件。(更新文件的状态为 "已删除"，而不是物理删除。)
+     */
+    @Override
+    public void deleteFilesByBiz(Long bizId, BizType bizType) {
+        LambdaUpdateWrapper<FileResource> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(FileResource::getBizId, bizId)
+                .eq(FileResource::getBizType, bizType.name())
+                .set(FileResource::getStatus, FileResourceStatus.DELETED.getCode());
+        fileResourceMapper.update(null, wrapper);
+    }
+
+    /**
+     * 清理过期的临时文件
+      - 定时任务调用，清理24小时内未被绑定到业务的临时文件
+      - 删除MinIO中的实际文件，并将数据库记录状态更新为已删除
+     */
+    @Override
+    public int cleanupTempFiles() {
+        // 定义过期时间阈值，24小时之前的文件视为过期
+        LocalDateTime threshold = LocalDateTime.now().minusHours(24);
+        LambdaQueryWrapper<FileResource> query = new LambdaQueryWrapper<>();
+        query.eq(FileResource::getStatus, FileResourceStatus.TEMP.getCode())
+                .le(FileResource::getCreateTime, threshold);
+
+        List<FileResource> tempFiles = fileResourceMapper.selectList(query);
+        if (tempFiles.isEmpty()) return 0;
+
+        int count = 0;
+        for (FileResource file : tempFiles) {
+            try {
+                minioClient.removeObject(
+                        RemoveObjectArgs.builder()
+                                .bucket(minioProperties.getBucketName())
+                                .object(file.getObjectKey())
+                                .build());
+                
+                FileResource updateEntity = new FileResource();
+                updateEntity.setId(file.getId());
+                updateEntity.setStatus(FileResourceStatus.DELETED.getCode());
+                fileResourceMapper.updateById(updateEntity);
+                
+                count++;
+            } catch (Exception e) {
+                log.warn("清理临时文件失败 id={}", file.getId(), e);
+            }
+        }
+        return count;
     }
 
     /**
@@ -238,13 +312,6 @@ public class FileServiceImpl implements FileService {
                 minioProperties.getBucketName(), // travel-advisor
                 objectKey // avatar/2026-04-01/uuid.jpg
         );
-    }
-
-    /**
-     * 从 objectKey 中提取原始文件名（如果 originalName 不传，则使用 objectKey 的最后一部分作为文件名）
-     */
-    private String extractFileName(String objectKey) {
-        return objectKey.substring(objectKey.lastIndexOf('/') + 1);
     }
 
     /**

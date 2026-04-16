@@ -2,7 +2,6 @@ package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.travel.advisor.common.enums.ConversationStatus;
-import com.travel.advisor.common.enums.ConversationType;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.chat.ChatConversationCreateDTO;
 import com.travel.advisor.entity.LlmConversation;
@@ -75,6 +74,9 @@ public class ConversationServiceImpl implements ConversationService {
         return toVO(getConversationEntity(conversationId, userId));
     }
 
+    /**
+     * 删除会话信息 以及会话下的所有消息，首先验证会话是否属于当前用户，如果验证通过则执行删除操作，确保数据的一致性和完整性。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteConversation(Long conversationId) {
@@ -111,17 +113,14 @@ public class ConversationServiceImpl implements ConversationService {
      */
     private ChatConversationVO toVO(LlmConversation conversation) {
         ChatConversationVO vo = new ChatConversationVO();
-        vo.setId(conversation.getId());
+        vo.setConversationId(conversation.getId());
         vo.setTitle(conversation.getTitle());
-        ConversationType type = ConversationType.fromCode(conversation.getConversationType());
-        vo.setConversationType(type.getScene());
+        vo.setConversationType(conversation.getConversationType());
         vo.setMessageCount(conversation.getMessageCount());
         vo.setTotalTokens(conversation.getTotalTokens());
-        vo.setLastMessageAt(conversation.getLastMessageAt());
-        ConversationStatus status = ConversationStatus.fromCode(conversation.getStatus());
-        vo.setStatus(status.getDesc());
-        vo.setCreateTime(conversation.getCreateTime());
-        vo.setUpdateTime(conversation.getUpdateTime());
+        vo.setUpdatedAt(conversation.getLastMessageAt());
+        vo.setStatus(conversation.getStatus());
+        vo.setCreatedAt(conversation.getCreateTime());
         return vo;
     }
 

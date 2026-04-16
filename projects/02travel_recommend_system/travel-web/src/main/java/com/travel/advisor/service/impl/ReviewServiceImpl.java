@@ -2,24 +2,31 @@ package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.travel.advisor.common.enums.BizType;
 import com.travel.advisor.common.enums.ContentAuditStatus;
 import com.travel.advisor.common.enums.UserReviewStatus;
 import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.review.ReviewCreateDTO;
+import com.travel.advisor.dto.review.ReviewReplyDTO;
 import com.travel.advisor.entity.ContentAudit;
+import com.travel.advisor.entity.ReviewLike;
+import com.travel.advisor.entity.ReviewReply;
 import com.travel.advisor.entity.ScenicSpot;
 import com.travel.advisor.entity.User;
 import com.travel.advisor.entity.UserReview;
 import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.mapper.ContentAuditMapper;
+import com.travel.advisor.mapper.ReviewLikeMapper;
+import com.travel.advisor.mapper.ReviewReplyMapper;
 import com.travel.advisor.mapper.ScenicSpotMapper;
 import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.service.ReviewService;
 import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.utils.SecurityUtils;
+import com.travel.advisor.vo.review.ReviewReplyVO;
 import com.travel.advisor.vo.review.ReviewVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,7 +47,13 @@ public class ReviewServiceImpl implements ReviewService {
     private final ScenicSpotMapper scenicSpotMapper;
     private final UserMapper userMapper;
     private final ContentAuditMapper contentAuditMapper;
+    private final ReviewLikeMapper reviewLikeMapper;
+    private final ReviewReplyMapper reviewReplyMapper;
+    private final com.travel.advisor.service.FileService fileService;
 
+    /**
+     * 提交评论
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Long create(ReviewCreateDTO dto) {
@@ -70,42 +85,53 @@ public class ReviewServiceImpl implements ReviewService {
         audit.setContentSnapshot(JsonUtils.toJson(dto));
         contentAuditMapper.insert(audit);
 
+        fileService.bindFilesToBiz(dto.getImageIds(), review.getId(), BizType.REVIEW);
+
         return review.getId();
     }
 
+    /**
+     * 获取我的评论列表
+     */
     @Override
     public PageResult<ReviewVO> pageMyReviews(PageQuery pageQuery) {
         Long userId = getCurrentUserIdRequired();
         Page<UserReview> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());
         Page<UserReview> result = userReviewMapper.selectPage(page, new LambdaQueryWrapper<UserReview>()
-            .eq(UserReview::getUserId, userId)
-            .orderByDesc(UserReview::getCreateTime));
+                .eq(UserReview::getUserId, userId)
+                .orderByDesc(UserReview::getCreateTime));
 
         List<ReviewVO> records = buildReviewVO(result.getRecords());
         return PageResult.<ReviewVO>builder()
-            .records(records)
-            .total(result.getTotal())
-            .pageNum(Math.toIntExact(result.getCurrent()))
-            .pageSize(Math.toIntExact(result.getSize()))
-            .totalPage(result.getPages())
-            .build();
+                .records(records)
+                .total(result.getTotal())
+                .pageNum(Math.toIntExact(result.getCurrent()))
+                .pageSize(Math.toIntExact(result.getSize()))
+                .totalPage(result.getPages())
+                .build();
     }
 
+    /**
+     * 删除我的评论，首先验证评论是否存在且属于当前用户，如果验证通过则删除评论数据，同时删除相关的内容审核记录和文件资源关联记录，确保数据的一致性和完整性。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void deleteMyReview(Long id) {
         Long userId = getCurrentUserIdRequired();
         int affected = userReviewMapper.delete(new LambdaQueryWrapper<UserReview>()
-            .eq(UserReview::getId, id)
-            .eq(UserReview::getUserId, userId));
+                .eq(UserReview::getId, id)
+                .eq(UserReview::getUserId, userId));
         if (affected == 0) {
             throw new BusinessException(ResultCode.NOT_FOUND, "点评不存在");
         }
+
+        fileService.deleteFilesByBiz(id, BizType.REVIEW);
     }
 
     /**
      * 分页查询景点点评列表
-     * @param scenicId 景点ID
+     * 
+     * @param scenicId  景点ID
      * @param pageQuery 分页查询参数
      * @return 点评列表分页结果
      */
@@ -117,8 +143,8 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         LambdaQueryWrapper<UserReview> wrapper = new LambdaQueryWrapper<UserReview>()
-            .eq(UserReview::getScenicSpotId, scenicId)
-            .eq(UserReview::getStatus, UserReviewStatus.APPROVED.getCode());
+                .eq(UserReview::getScenicSpotId, scenicId)
+                .eq(UserReview::getStatus, UserReviewStatus.APPROVED.getCode());
         applySort(wrapper, pageQuery.getSortBy());
 
         Page<UserReview> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());
@@ -126,16 +152,17 @@ public class ReviewServiceImpl implements ReviewService {
 
         List<ReviewVO> records = buildReviewVO(result.getRecords());
         return PageResult.<ReviewVO>builder()
-            .records(records)
-            .total(result.getTotal())
-            .pageNum(Math.toIntExact(result.getCurrent()))
-            .pageSize(Math.toIntExact(result.getSize()))
-            .totalPage(result.getPages())
-            .build();
+                .records(records)
+                .total(result.getTotal())
+                .pageNum(Math.toIntExact(result.getCurrent()))
+                .pageSize(Math.toIntExact(result.getSize()))
+                .totalPage(result.getPages())
+                .build();
     }
 
     /**
      * 构建点评VO列表
+     * 
      * @param reviews 某一个景点的所有用户点评列表
      * @return 点评VO列表
      */
@@ -146,11 +173,22 @@ public class ReviewServiceImpl implements ReviewService {
 
         List<Long> scenicIds = reviews.stream().map(UserReview::getScenicSpotId).distinct().toList();
         Map<Long, ScenicSpot> scenicMap = scenicSpotMapper.selectBatchIds(scenicIds).stream()
-            .collect(Collectors.toMap(ScenicSpot::getId, item -> item));
+                .collect(Collectors.toMap(ScenicSpot::getId, item -> item));
 
         List<Long> userIds = reviews.stream().map(UserReview::getUserId).distinct().toList();
         Map<Long, User> userMap = userMapper.selectBatchIds(userIds).stream()
-            .collect(Collectors.toMap(User::getId, item -> item));
+                .collect(Collectors.toMap(User::getId, item -> item));
+
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        List<Long> likedReviewIds = Collections.emptyList();
+        if (currentUserId != null) {
+            List<Long> reviewIds = reviews.stream().map(UserReview::getId).toList();
+            likedReviewIds = reviewLikeMapper.selectList(new LambdaQueryWrapper<ReviewLike>()
+                    .eq(ReviewLike::getUserId, currentUserId)
+                    .in(ReviewLike::getReviewId, reviewIds))
+                    .stream().map(ReviewLike::getReviewId).toList();
+        }
+        final List<Long> finalLikedReviewIds = likedReviewIds;
 
         return reviews.stream().map(item -> {
             ReviewVO vo = new ReviewVO();
@@ -168,12 +206,109 @@ public class ReviewServiceImpl implements ReviewService {
             vo.setTravelType(item.getTravelType());
             vo.setLikeCount(item.getLikeCount());
             vo.setReplyCount(item.getReplyCount());
+            vo.setIsLiked(finalLikedReviewIds.contains(item.getId()));
             vo.setIsAnonymous(item.getIsAnonymous());
             vo.setStatus(item.getStatus());
             vo.setAuditRemark(item.getAuditRemark());
-            vo.setCreateTime(item.getCreateTime());
+            vo.setCreatedAt(item.getCreateTime());
             return vo;
         }).toList();
+    }
+
+    /**
+     * 点赞评论
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void likeReview(Long reviewId) {
+        Long userId = getCurrentUserIdRequired();
+        UserReview review = userReviewMapper.selectById(reviewId);
+        if (review == null || review.getStatus() == null || review.getStatus() != UserReviewStatus.APPROVED.getCode()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "点评不存在或未审核通过");
+        }
+
+        ReviewLike existLike = reviewLikeMapper.selectOne(new LambdaQueryWrapper<ReviewLike>()
+                .eq(ReviewLike::getReviewId, reviewId)
+                .eq(ReviewLike::getUserId, userId));
+
+        if (existLike != null) {
+            reviewLikeMapper.deleteById(existLike.getId());
+            review.setLikeCount(Math.max(0, review.getLikeCount() - 1));
+        } else {
+            ReviewLike reviewLike = new ReviewLike();
+            reviewLike.setReviewId(reviewId);
+            reviewLike.setUserId(userId);
+            reviewLikeMapper.insert(reviewLike);
+            review.setLikeCount((review.getLikeCount() == null ? 0 : review.getLikeCount()) + 1);
+        }
+        userReviewMapper.updateById(review);
+    }
+
+    /**
+     * 回复评论
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Long replyReview(Long reviewId, ReviewReplyDTO dto) {
+        Long userId = getCurrentUserIdRequired();
+        UserReview review = userReviewMapper.selectById(reviewId);
+        if (review == null || review.getStatus() == null || review.getStatus() != UserReviewStatus.APPROVED.getCode()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "点评不存在或未审核通过");
+        }
+
+        // 目前没有对回复内容进行审核，后续如果需要审核可以增加 content_audit 记录并修改 replyReview 接口逻辑
+        ReviewReply reply = new ReviewReply();
+        reply.setReviewId(reviewId);
+        reply.setUserId(userId);
+        reply.setContent(dto.getContent());
+        reviewReplyMapper.insert(reply);
+
+        review.setReplyCount((review.getReplyCount() == null ? 0 : review.getReplyCount()) + 1);
+        userReviewMapper.updateById(review);
+
+        return reply.getId();
+    }
+
+    /**
+     * 分页查询评论回复列表
+     */
+    @Override
+    public PageResult<ReviewReplyVO> pageReplies(Long reviewId, PageQuery query) {
+        Page<ReviewReply> page = new Page<>(query.getPageNum(), query.getPageSize());
+        Page<ReviewReply> result = reviewReplyMapper.selectPage(page, new LambdaQueryWrapper<ReviewReply>()
+                .eq(ReviewReply::getReviewId, reviewId)
+                .orderByAsc(ReviewReply::getCreateTime));
+
+        List<ReviewReply> records = result.getRecords();
+        List<ReviewReplyVO> voList = Collections.emptyList();
+
+        // 查询回复用户信息并转换VO
+        if (!records.isEmpty()) {
+            List<Long> userIds = records.stream().map(ReviewReply::getUserId).distinct().toList();
+            Map<Long, User> userMap = userMapper.selectBatchIds(userIds)
+                    .stream()
+                    .collect(Collectors.toMap(User::getId, u -> u));
+
+            voList = records.stream().map(item -> {
+                ReviewReplyVO vo = new ReviewReplyVO();
+                vo.setId(item.getId());
+                vo.setReviewId(item.getReviewId());
+                vo.setUserId(item.getUserId());
+                User user = userMap.get(item.getUserId());
+                vo.setUsername(user != null ? user.getUsername() : "未知用户");
+                vo.setContent(item.getContent());
+                vo.setCreatedAt(item.getCreateTime());
+                return vo;
+            }).toList();
+        }
+
+        return PageResult.<ReviewReplyVO>builder()
+                .records(voList)
+                .total(result.getTotal())
+                .pageNum(Math.toIntExact(result.getCurrent()))
+                .pageSize(Math.toIntExact(result.getSize()))
+                .totalPage(result.getPages())
+                .build();
     }
 
     private List<Long> parseImageIds(String images) {

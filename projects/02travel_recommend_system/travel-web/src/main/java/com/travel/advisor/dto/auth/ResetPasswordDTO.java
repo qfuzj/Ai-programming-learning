@@ -5,6 +5,9 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+/**
+ * 重置密码DTO
+ */
 @Data
 public class ResetPasswordDTO {
 

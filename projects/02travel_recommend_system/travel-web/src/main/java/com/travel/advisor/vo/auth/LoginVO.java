@@ -3,7 +3,7 @@ package com.travel.advisor.vo.auth;
 import lombok.Data;
 
 /**
- * 登录成功后返回给前端的 VO 对象
+ * 登录成功VO
  */
 @Data
 public class LoginVO {

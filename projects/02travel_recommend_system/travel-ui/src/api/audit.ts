@@ -1,9 +1,12 @@
 /**
- * 点评模块接口。
+ * 点评审核模块接口。
  */
 import http from "@/api/http";
 import type { PageQuery, PageResult } from "@/types/api";
 
+/**
+ * 对应-用户评论 VO
+ */
 export interface ReviewItem {
   id: number;
   userId?: number;
@@ -19,87 +22,59 @@ export interface ReviewItem {
   travelType?: string;
   likeCount?: number;
   replyCount?: number;
+  isLiked?: boolean;
   isAnonymous?: number;
   status?: number;
   auditRemark?: string;
-  createTime?: string;
+  createdAt?: string;
 }
-
-export interface ReviewQuery extends PageQuery {
-  contentType?: "review" | "scenic" | "plan";
-  auditStatus?: number;
-  submitUserId?: number;
-  contentId?: number;
-}
-
-interface AdminAuditRaw {
+/**
+ * 对应-审核记录VO
+ */
+export interface AuditItem {
   id: number;
   contentType?: string;
   contentId?: number;
-  contentSnapshot?: string;
+  snapshot?: any;
   submitUserId?: number;
   auditStatus?: number;
+  autoAuditResult?: any;
+  autoAuditScore?: number;
+  llmCallLogId?: number;
+  auditorId?: number;
+  auditRemark?: string;
+  auditTime?: string;
+  violationType?: any;
   createTime?: string;
+  updateTime?: string;
+}
+/**
+ * 审核查询DTO
+ */
+export interface AuditQuery extends PageQuery {
+  contentType?: string;
+  auditStatus?: number;
+  submitUserId?: number;
+  contentId?: number;
 }
 
-interface ReviewSnapshot {
-  scenicId?: number;
-  scenicName?: string;
-  userId?: number;
-  username?: string;
-  content?: string;
-  score?: number;
-  rating?: number;
-  images?: string[];
-}
-
-function parseReviewSnapshot(snapshot?: string): ReviewSnapshot {
-  if (!snapshot) {
-    return {};
-  }
-  try {
-    const parsed: unknown = JSON.parse(snapshot);
-    if (parsed && typeof parsed === "object") {
-      return parsed as ReviewSnapshot;
-    }
-    return {};
-  } catch {
-    return {};
-  }
-}
-
-function mapAuditToReview(raw: AdminAuditRaw): ReviewItem {
-  const snapshot = parseReviewSnapshot(raw.contentSnapshot);
-  return {
-    id: raw.id,
-    userId: snapshot.userId ?? raw.submitUserId,
-    username: snapshot.username,
-    scenicId: snapshot.scenicId,
-    scenicName: snapshot.scenicName,
-    content: snapshot.content,
-    rating: snapshot.rating ?? snapshot.score,
-    score: snapshot.score ?? snapshot.rating,
-    status: raw.auditStatus,
-    createTime: raw.createTime,
-    images: snapshot.images,
-  };
-}
-
-function mapAuditPage(page: PageResult<AdminAuditRaw>): PageResult<ReviewItem> {
-  return {
-    ...page,
-    records: page.records.map(mapAuditToReview),
-  };
-}
-
+/**
+ * 获取我的评论列表
+ */
 export function getMyReviews(query: PageQuery): Promise<PageResult<ReviewItem>> {
   return http.get("/api/user/reviews/me", { params: query });
 }
 
+/**
+ * 删除我的评论
+ */
 export function deleteMyReview(id: number): Promise<void> {
   return http.delete(`/api/user/reviews/${id}`);
 }
 
+/**
+ * 获取景点评论列表
+ */
 export function getScenicReviews(
   scenicId: number,
   query: PageQuery
@@ -107,6 +82,9 @@ export function getScenicReviews(
   return http.get(`/api/user/scenic-spots/${scenicId}/reviews`, { params: query });
 }
 
+/**
+ * 提交评论
+ */
 export function submitReview(payload: {
   scenicId: number;
   score: number;
@@ -119,8 +97,11 @@ export function submitReview(payload: {
   return http.post("/api/user/reviews", payload);
 }
 
-export async function getAdminAuditPage(query: ReviewQuery): Promise<PageResult<ReviewItem>> {
-  const page = await http.get<any, PageResult<AdminAuditRaw>>("/api/admin/audits", {
+/**
+ * 获取管理员审核分页列表
+ */
+export async function getAdminAuditPage(query: AuditQuery): Promise<PageResult<AuditItem>> {
+  return http.get<PageResult<AuditItem>>("/api/admin/audits", {
     params: {
       pageNum: query.pageNum,
       pageSize: query.pageSize,
@@ -130,29 +111,68 @@ export async function getAdminAuditPage(query: ReviewQuery): Promise<PageResult<
       contentId: query.contentId,
     },
   });
-  return mapAuditPage(page);
 }
 
-export async function getAdminAuditDetail(id: number): Promise<ReviewItem> {
-  const detail = await http.get<any, AdminAuditRaw>(`/api/admin/audits/${id}`);
-  return mapAuditToReview(detail);
+/**
+ * 获取管理员审核详情
+ */
+export async function getAdminAuditDetail(id: number): Promise<AuditItem> {
+  return http.get<AuditItem>(`/api/admin/audits/${id}`);
 }
 
+/**
+ * 批准审核
+ */
 export function approveAdminAudit(id: number): Promise<void> {
   return http.post(`/api/admin/audits/${id}/approve`, {});
 }
 
+/**
+ * 拒绝审核
+ */
 export function rejectAdminAudit(id: number, reason: string): Promise<void> {
   return http.post(`/api/admin/audits/${id}/reject`, { reason });
 }
 
+/**
+ * 隐藏审核
+ */
 export function hideAdminAudit(id: number): Promise<void> {
   return http.post(`/api/admin/audits/${id}/hide`, {});
 }
 
-// Backward-compatible aliases for existing imports.
-export const getAdminReviewPage = getAdminAuditPage;
-export const getAdminReviewDetail = getAdminAuditDetail;
-export const approveAdminReview = approveAdminAudit;
-export const rejectAdminReview = rejectAdminAudit;
-export const deleteAdminReview = hideAdminAudit;
+/**
+ * 对应-评论回复VO
+ */
+export interface ReviewReplyItem {
+  id: number;
+  reviewId: number;
+  userId: number;
+  username: string;
+  content: string;
+  createdAt: string;
+}
+
+/**
+ * 点赞评论
+ */
+export function likeReview(reviewId: number): Promise<void> {
+  return http.post(`/api/user/reviews/${reviewId}/like`);
+}
+
+/**
+ * 回复评论
+ */
+export function replyReview(reviewId: number, content: string): Promise<number> {
+  return http.post(`/api/user/reviews/${reviewId}/reply`, { content });
+}
+
+/**
+ * 分页查询评论回复列表
+ */
+export function getReviewReplies(
+  reviewId: number,
+  query: PageQuery
+): Promise<PageResult<ReviewReplyItem>> {
+  return http.get(`/api/user/reviews/${reviewId}/replies`, { params: query });
+}

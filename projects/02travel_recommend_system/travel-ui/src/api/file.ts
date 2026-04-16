@@ -3,13 +3,18 @@
  */
 import http from "@/api/http";
 
+/**
+ * 获取上传凭证 参数类型
+ */
 export interface UploadTokenParams {
   bizType?: string;
   fileName?: string;
   fileSize?: number;
   bizId?: number;
 }
-
+/**
+ * 对应-文件上传回调DTO
+ */
 export interface UploadCallbackPayload {
   bucketName: string;
   objectKey: string;
@@ -19,6 +24,9 @@ export interface UploadCallbackPayload {
   thumbnailUrl?: string;
 }
 
+/**
+ * 对应-文件资源实体
+ */
 export interface FileResourceItem {
   id: number;
   bucketName?: string;
@@ -35,11 +43,15 @@ export interface FileResourceItem {
   uploaderId?: number;
   uploaderType?: number;
   status?: number;
-  createTime?: string;
-  updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export function getUploadToken(params: UploadTokenParams = {}): Promise<Record<string, unknown>> {
+export interface UploadTokenResult {
+  [key: string]: unknown;
+}
+
+export function getUploadToken(params: UploadTokenParams = {}): Promise<UploadTokenResult> {
   return http.post("/api/common/files/upload-token", null, { params });
 }
 
@@ -48,9 +60,9 @@ export function uploadCallback(payload: UploadCallbackPayload): Promise<number> 
 }
 
 export function getFileResource(id: number): Promise<FileResourceItem> {
-  return http.get(`/api/common/files/${id}`);
+  return http.get<FileResourceItem>(`/api/common/files/${id}`);
 }
 
 export function deleteFileResource(id: number): Promise<void> {
-  return http.delete(`/api/common/files/${id}`);
+  return http.delete<void>(`/api/common/files/${id}`);
 }
