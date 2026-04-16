@@ -44,7 +44,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="时间" width="180" />
+        <el-table-column prop="createdAt" label="时间" width="180" />
         <el-table-column label="操作" width="100" fixed="right">
           <template #default="scope">
             <el-button link type="primary" @click="openDetail(scope.row.id)">详情</el-button>
@@ -68,20 +68,39 @@
     <el-dialog v-model="detailVisible" title="日志详情" width="860px" destroy-on-close>
       <el-descriptions v-if="detailData" :column="2" border>
         <el-descriptions-item label="日志ID">{{ detailData.id }}</el-descriptions-item>
-        <el-descriptions-item label="管理员">{{ detailData.adminUsername || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="模块">{{ detailData.module || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="动作">{{ detailData.action || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="请求方法">{{ detailData.requestMethod || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="请求地址">{{ detailData.requestUrl || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="耗时(ms)">{{ detailData.executionTimeMs ?? '-' }}</el-descriptions-item>
-        <el-descriptions-item label="状态">{{ detailData.status === 1 ? '成功' : '失败' }}</el-descriptions-item>
-        <el-descriptions-item label="IP地址">{{ detailData.ipAddress || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="时间">{{ detailData.createTime || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="描述" :span="2">{{ detailData.description || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="管理员">
+          {{ detailData.adminUsername || "-" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="模块">{{ detailData.module || "-" }}</el-descriptions-item>
+        <el-descriptions-item label="动作">{{ detailData.action || "-" }}</el-descriptions-item>
+        <el-descriptions-item label="请求方法">
+          {{ detailData.requestMethod || "-" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="请求地址">
+          {{ detailData.requestUrl || "-" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="耗时(ms)">
+          {{ detailData.executionTimeMs ?? "-" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          {{ detailData.status === 1 ? "成功" : "失败" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="IP地址">
+          {{ detailData.ipAddress || "-" }}
+        </el-descriptions-item>
+        <el-descriptions-item label="时间">{{ detailData.createdAt || "-" }}</el-descriptions-item>
+        <el-descriptions-item label="描述" :span="2">
+          {{ detailData.description || "-" }}
+        </el-descriptions-item>
       </el-descriptions>
 
       <el-divider content-position="left">请求参数</el-divider>
-      <el-input :model-value="detailData?.requestParams || '-'" type="textarea" :rows="4" readonly />
+      <el-input
+        :model-value="detailData?.requestParams || '-'"
+        type="textarea"
+        :rows="4"
+        readonly
+      />
 
       <el-divider content-position="left">响应数据</el-divider>
       <el-input :model-value="detailData?.responseData || '-'" type="textarea" :rows="4" readonly />
@@ -98,15 +117,16 @@ import { ElMessage } from "element-plus";
 import {
   getOperationLogDetail,
   getOperationLogPage,
-  type OperationLogItem,
+  type OperationLogDetailItem,
+  type OperationLogListItem,
   type OperationLogQuery,
 } from "@/api/log";
 
 const loading = ref(false);
 const total = ref(0);
-const logList = ref<OperationLogItem[]>([]);
+const logList = ref<OperationLogListItem[]>([]);
 const detailVisible = ref(false);
-const detailData = ref<OperationLogItem | null>(null);
+const detailData = ref<OperationLogDetailItem | null>(null);
 
 const query = reactive<OperationLogQuery>({
   pageNum: 1,

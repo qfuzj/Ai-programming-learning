@@ -4,6 +4,9 @@ import com.travel.advisor.common.page.PageQuery;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+/**
+ * 操作日志查询DTO，包含了用于分页查询操作日志的相关字段。
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class OperationLogQueryDTO extends PageQuery {
