@@ -26,7 +26,103 @@ export interface ReviewItem {
   isAnonymous?: number;
   status?: number;
   auditRemark?: string;
+  rejectReason?: string;
   createdAt?: string;
+}
+
+/**
+ * 景点评论列表列表-前端缓存
+ */
+interface ScenicReviewCacheEntry {
+  data: PageResult<ReviewItem>;
+  expireAt: number;
+}
+
+// 5分钟缓存过期，最多缓存100个不同查询的结果
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 100;
+const scenicReviewsCache = new Map<string, ScenicReviewCacheEntry>();
+
+function normalizeReviewItem(item: ReviewItem): ReviewItem {
+  const resolvedScore = item.score ?? item.rating;
+  return {
+    ...item,
+    score: resolvedScore,
+    rating: resolvedScore,
+  };
+}
+
+function normalizeReviewPage(page: PageResult<ReviewItem>): PageResult<ReviewItem> {
+  return {
+    ...page,
+    records: (page.records || []).map(normalizeReviewItem),
+  };
+}
+
+function cloneReviewPage(page: PageResult<ReviewItem>): PageResult<ReviewItem> {
+  return {
+    ...page,
+    records: [...(page.records || [])],
+  };
+}
+/**
+ * 将查询参数排序后序列化，确保不同顺序但内容相同的参数生成同一个 key。
+ */
+function buildStableQueryString(query: PageQuery): string {
+  const sortedEntries = Object.entries(query)
+    .filter(([, value]) => value !== undefined && value !== null)
+    .sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify(Object.fromEntries(sortedEntries));
+}
+
+/**
+ * 构建景点评论缓存的 key，格式为 `${scenicId}:${sortedQueryString}`，其中 sortedQueryString 是对查询参数进行排序后序列化得到的字符串。通过这种方式，可以确保对于相同的 scenicId 和查询参数，无论参数的顺序如何，都能生成相同的缓存 key，从而提高缓存命中率。
+ */
+function buildScenicReviewsCacheKey(scenicId: number, query: PageQuery): string {
+  return `${scenicId}:${buildStableQueryString(query)}`;
+}
+
+function getCachedScenicReviews(key: string): PageResult<ReviewItem> | null {
+  const entry = scenicReviewsCache.get(key);
+  if (!entry) {
+    return null;
+  }
+  if (Date.now() > entry.expireAt) {
+    scenicReviewsCache.delete(key);
+    return null;
+  }
+  return cloneReviewPage(entry.data);
+}
+
+function setCachedScenicReviews(key: string, data: PageResult<ReviewItem>): void {
+  scenicReviewsCache.set(key, {
+    data: cloneReviewPage(data),
+    expireAt: Date.now() + CACHE_TTL_MS,
+  });
+
+  while (scenicReviewsCache.size > CACHE_MAX_ENTRIES) {
+    const oldestKey = scenicReviewsCache.keys().next().value as string | undefined;
+    if (!oldestKey) {
+      break;
+    }
+    scenicReviewsCache.delete(oldestKey);
+  }
+}
+
+/**
+ * 清除景点评论缓存。当用户提交新的评论或者删除评论后，需要调用此方法清除相关缓存，以确保后续获取评论列表时能够获取到最新的数据。
+ */
+export function clearScenicReviewsCache(scenicId?: number): void {
+  if (scenicId === undefined) {
+    scenicReviewsCache.clear();
+    return;
+  }
+  const prefix = `${scenicId}:`;
+  for (const key of scenicReviewsCache.keys()) {
+    if (key.startsWith(prefix)) {
+      scenicReviewsCache.delete(key);
+    }
+  }
 }
 /**
  * 对应-审核记录VO
@@ -62,7 +158,9 @@ export interface AuditQuery extends PageQuery {
  * 获取我的评论列表
  */
 export function getMyReviews(query: PageQuery): Promise<PageResult<ReviewItem>> {
-  return http.get("/api/user/reviews/me", { params: query });
+  return http
+    .get<PageResult<ReviewItem>>("/api/user/reviews/me", { params: query })
+    .then(normalizeReviewPage);
 }
 
 /**
@@ -79,7 +177,19 @@ export function getScenicReviews(
   scenicId: number,
   query: PageQuery
 ): Promise<PageResult<ReviewItem>> {
-  return http.get(`/api/user/scenic-spots/${scenicId}/reviews`, { params: query });
+  const cacheKey = buildScenicReviewsCacheKey(scenicId, query);
+  const cached = getCachedScenicReviews(cacheKey);
+  if (cached) {
+    return Promise.resolve(cached);
+  }
+
+  return http
+    .get<PageResult<ReviewItem>>(`/api/user/scenic-spots/${scenicId}/reviews`, { params: query })
+    .then((res) => {
+      const normalized = normalizeReviewPage(res);
+      setCachedScenicReviews(cacheKey, normalized);
+      return cloneReviewPage(normalized);
+    });
 }
 
 /**
@@ -94,7 +204,10 @@ export function submitReview(payload: {
   travelType?: string;
   isAnonymous?: number;
 }): Promise<number> {
-  return http.post("/api/user/reviews", payload);
+  return http.post<number>("/api/user/reviews", payload).then((id) => {
+    clearScenicReviewsCache(payload.scenicId);
+    return id;
+  });
 }
 
 /**

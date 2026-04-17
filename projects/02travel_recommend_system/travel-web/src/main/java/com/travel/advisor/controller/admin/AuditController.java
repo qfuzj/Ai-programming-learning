@@ -4,8 +4,8 @@ import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.audit.AuditActionDTO;
 import com.travel.advisor.dto.audit.AuditQueryDTO;
-import com.travel.advisor.entity.ContentAudit;
 import com.travel.advisor.service.AuditService;
+import com.travel.advisor.vo.audit.AuditVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,8 +23,13 @@ public class AuditController {
     private final AuditService auditService;
 
     @GetMapping
-    public Result<PageResult<ContentAudit>> page(@Valid AuditQueryDTO dto) {
+    public Result<PageResult<AuditVO>> page(@Valid AuditQueryDTO dto) {
         return Result.success(auditService.page(dto));
+    }
+
+    @GetMapping("/{id}")
+    public Result<AuditVO> getById(@PathVariable Long id) {
+        return Result.success(auditService.getById(id));
     }
 
     @PostMapping("/{id}/approve")
