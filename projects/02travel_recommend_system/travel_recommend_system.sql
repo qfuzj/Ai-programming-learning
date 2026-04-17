@@ -11,7 +11,7 @@
  Target Server Version : 80042 (8.0.42)
  File Encoding         : 65001
 
- Date: 08/04/2026 14:22:21
+ Date: 15/04/2026 20:01:19
 */
 
 SET NAMES utf8mb4;
@@ -42,13 +42,6 @@ CREATE TABLE `admin_user` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员表';
 
 -- ----------------------------
--- Records of admin_user
--- ----------------------------
-BEGIN;
-INSERT INTO `admin_user` (`id`, `username`, `password`, `real_name`, `phone`, `email`, `avatar`, `role`, `permissions`, `status`, `last_login_time`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 'admin', '$2a$10$wDFUz0gh59U6lL2zowmTI./PMCHx3RvEWJ4P161RRX/I3ABS.csRK', '系统管理员', NULL, NULL, NULL, 'super_admin', NULL, 1, '2026-04-06 14:52:13', '2026-04-01 18:41:02', '2026-04-02 18:44:55', 0);
-COMMIT;
-
--- ----------------------------
 -- Table structure for content_audit
 -- ----------------------------
 DROP TABLE IF EXISTS `content_audit`;
@@ -75,13 +68,7 @@ CREATE TABLE `content_audit` (
   KEY `idx_audit_status` (`audit_status`),
   KEY `idx_auditor_id` (`auditor_id`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容审核表';
-
--- ----------------------------
--- Records of content_audit
--- ----------------------------
-BEGIN;
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容审核表';
 
 -- ----------------------------
 -- Table structure for file_resource
@@ -102,7 +89,8 @@ CREATE TABLE `file_resource` (
   `biz_id` bigint DEFAULT NULL COMMENT '业务 ID（反向关联）',
   `uploader_id` bigint DEFAULT NULL COMMENT '上传者 ID',
   `uploader_type` tinyint NOT NULL DEFAULT '1' COMMENT '上传者类型：1 用户 2 管理员 3 系统',
-  `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：0 待处理 1 正常 2 删除中',
+  `status` tinyint NOT NULL DEFAULT '0' COMMENT '状态：0 临时 1 已使用 2 已删除',
+  `used_time` datetime DEFAULT NULL COMMENT '使用时间',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `is_deleted` tinyint NOT NULL DEFAULT '0' COMMENT '逻辑删除：0 否 1 是',
@@ -113,13 +101,13 @@ CREATE TABLE `file_resource` (
   KEY `idx_biz_id` (`biz_id`),
   KEY `idx_uploader_id` (`uploader_id`),
   KEY `idx_file_hash` (`file_hash`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件资源表';
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件资源表';
 
--- ----------------------------
--- Records of file_resource
--- ----------------------------
-BEGIN;
-COMMIT;
+-- 迁移脚本：重置旧数据状态及使用时间
+UPDATE file_resource SET status = 1 WHERE status = 1;
+UPDATE file_resource SET status = 2 WHERE status = 2;
+UPDATE file_resource SET status = 0 WHERE status = 0;
+UPDATE file_resource SET used_time = create_time WHERE status = 1 AND used_time IS NULL;
 
 -- ----------------------------
 -- Table structure for llm_call_log
@@ -153,14 +141,7 @@ CREATE TABLE `llm_call_log` (
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`),
   KEY `idx_trace_id` (`trace_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 调用日志表';
-
--- ----------------------------
--- Records of llm_call_log
--- ----------------------------
-BEGIN;
-INSERT INTO `llm_call_log` (`id`, `user_id`, `call_type`, `model_name`, `provider`, `request_prompt`, `request_messages`, `response_content`, `input_tokens`, `output_tokens`, `total_tokens`, `cost_amount`, `response_time_ms`, `status`, `error_message`, `retry_count`, `trace_id`, `ip_address`, `create_time`) VALUES (1, 1, 'recommend', 'gpt-4', 'openai', NULL, NULL, NULL, 0, 0, 1200, 0.000000, NULL, 1, NULL, 0, NULL, NULL, '2026-04-01 18:40:53');
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 调用日志表';
 
 -- ----------------------------
 -- Table structure for llm_conversation
@@ -183,13 +164,7 @@ CREATE TABLE `llm_conversation` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_conversation_type` (`conversation_type`),
   KEY `idx_last_message_at` (`last_message_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 会话表';
-
--- ----------------------------
--- Records of llm_conversation
--- ----------------------------
-BEGIN;
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 会话表';
 
 -- ----------------------------
 -- Table structure for llm_message
@@ -210,13 +185,7 @@ CREATE TABLE `llm_message` (
   KEY `idx_conversation_id` (`conversation_id`),
   KEY `idx_create_time` (`create_time`),
   KEY `idx_llm_call_log_id` (`llm_call_log_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 消息表';
-
--- ----------------------------
--- Records of llm_message
--- ----------------------------
-BEGIN;
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 消息表';
 
 -- ----------------------------
 -- Table structure for operation_log
@@ -246,13 +215,7 @@ CREATE TABLE `operation_log` (
   KEY `idx_ip_address` (`ip_address`),
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
-
--- ----------------------------
--- Records of operation_log
--- ----------------------------
-BEGIN;
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
 -- ----------------------------
 -- Table structure for recommend_record
@@ -279,14 +242,7 @@ CREATE TABLE `recommend_record` (
   KEY `idx_recommend_type` (`recommend_type`),
   KEY `idx_create_time` (`create_time`),
   KEY `idx_llm_call_log_id` (`llm_call_log_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐记录表';
-
--- ----------------------------
--- Records of recommend_record
--- ----------------------------
-BEGIN;
-INSERT INTO `recommend_record` (`id`, `user_id`, `session_id`, `recommend_type`, `scene`, `request_params`, `user_profile_snapshot`, `algorithm`, `llm_used`, `llm_call_log_id`, `total_candidates`, `returned_count`, `response_time_ms`, `create_time`) VALUES (1, 1, NULL, 1, NULL, NULL, NULL, NULL, 1, 1, NULL, 2, NULL, '2026-04-01 18:40:53');
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐记录表';
 
 -- ----------------------------
 -- Table structure for recommend_result_item
@@ -306,15 +262,7 @@ CREATE TABLE `recommend_result_item` (
   PRIMARY KEY (`id`),
   KEY `idx_recommend_record_id` (`recommend_record_id`),
   KEY `idx_scenic_spot_id` (`scenic_spot_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐结果明细表';
-
--- ----------------------------
--- Records of recommend_result_item
--- ----------------------------
-BEGIN;
-INSERT INTO `recommend_result_item` (`id`, `recommend_record_id`, `scenic_spot_id`, `rank_position`, `score`, `reason`, `is_clicked`, `is_favorited`, `click_time`, `create_time`) VALUES (1, 1, 1, 1, 0.9800, '根据您对大熊猫的偏好为您推荐', 0, 0, NULL, '2026-04-01 18:40:53');
-INSERT INTO `recommend_result_item` (`id`, `recommend_record_id`, `scenic_spot_id`, `rank_position`, `score`, `reason`, `is_clicked`, `is_favorited`, `click_time`, `create_time`) VALUES (2, 1, 2, 2, 0.9200, '九寨沟目前正是最佳游玩季节', 0, 0, NULL, '2026-04-01 18:40:53');
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐结果明细表';
 
 -- ----------------------------
 -- Table structure for region
@@ -341,23 +289,37 @@ CREATE TABLE `region` (
   KEY `idx_level` (`level`),
   KEY `idx_pinyin` (`pinyin`),
   KEY `idx_is_hot` (`is_hot`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='地区表';
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='地区表';
 
 -- ----------------------------
--- Records of region
+-- Table structure for review_like
 -- ----------------------------
-BEGIN;
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 0, '四川省', NULL, 1, '510000', 'Sichuan', NULL, NULL, 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 1, '成都市', NULL, 2, '510100', 'Chengdu', NULL, NULL, 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (3, 1, '阿坝藏族羌族自治州', NULL, 2, '513200', 'Aba', NULL, NULL, 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (4, 1, 'test2', 't2', 2, '123', 'test1', 72.0000000, 89.0000000, 2, 2, '2026-04-02 18:58:48', '2026-04-02 19:00:14', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (5, 0, '重庆市', '重庆', 1, '500000', 'Chongqing', NULL, NULL, 0, 1, '2026-04-03 14:29:42', '2026-04-03 14:29:42', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (6, 5, '重庆中心城区', NULL, 2, '500100', 'Chongqing-City', NULL, NULL, 0, 1, '2026-04-03 14:29:42', '2026-04-03 14:29:42', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (7, 0, '北京市', '北京', 1, '110000', 'Beijing', NULL, NULL, 0, 1, '2026-04-03 14:29:42', '2026-04-03 14:29:42', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (8, 7, '东城区', NULL, 2, '110101', 'Dongcheng', NULL, NULL, 0, 1, '2026-04-03 14:29:42', '2026-04-03 14:29:42', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (9, 0, '云南省', '云南', 1, '530000', 'Yunnan', NULL, NULL, 0, 1, '2026-04-03 14:29:42', '2026-04-03 14:29:42', 0);
-INSERT INTO `region` (`id`, `parent_id`, `name`, `short_name`, `level`, `code`, `pinyin`, `longitude`, `latitude`, `sort_order`, `is_hot`, `create_time`, `update_time`, `is_deleted`) VALUES (10, 9, '大理白族自治州', '大理', 2, '532900', 'Dali', NULL, NULL, 0, 1, '2026-04-03 14:29:42', '2026-04-03 14:29:42', 0);
-COMMIT;
+DROP TABLE IF EXISTS `review_like`;
+CREATE TABLE `review_like` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `review_id` bigint NOT NULL COMMENT '点评ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_review_user` (`review_id`,`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评点赞表';
+
+-- ----------------------------
+-- Table structure for review_reply
+-- ----------------------------
+DROP TABLE IF EXISTS `review_reply`;
+CREATE TABLE `review_reply` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `review_id` bigint NOT NULL COMMENT '点评ID',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `content` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '回复内容',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` tinyint NOT NULL DEFAULT '0' COMMENT '是否删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_review_id` (`review_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评回复表';
 
 -- ----------------------------
 -- Table structure for scenic_image
@@ -380,20 +342,7 @@ CREATE TABLE `scenic_image` (
   KEY `idx_file_resource_id` (`file_resource_id`),
   KEY `idx_image_type` (`image_type`),
   KEY `idx_is_cover` (`is_cover`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点图片表';
-
--- ----------------------------
--- Records of scenic_image
--- ----------------------------
-BEGIN;
-INSERT INTO `scenic_image` (`id`, `scenic_spot_id`, `file_resource_id`, `image_url`, `image_type`, `title`, `sort_order`, `is_cover`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 1, 101, 'https://example.com/images/panda_cover.jpg', 1, NULL, 0, 1, '2026-04-01 18:40:42', '2026-04-01 18:40:42', 0);
-INSERT INTO `scenic_image` (`id`, `scenic_spot_id`, `file_resource_id`, `image_url`, `image_type`, `title`, `sort_order`, `is_cover`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 2, 102, 'https://example.com/images/jiuzhaigou_cover.jpg', 1, NULL, 0, 1, '2026-04-01 18:40:42', '2026-04-01 18:40:42', 0);
-INSERT INTO `scenic_image` (`id`, `scenic_spot_id`, `file_resource_id`, `image_url`, `image_type`, `title`, `sort_order`, `is_cover`, `create_time`, `update_time`, `is_deleted`) VALUES (3, 12, 3, '', 1, NULL, 0, 1, '2026-04-03 15:14:06', '2026-04-03 15:14:06', 0);
-INSERT INTO `scenic_image` (`id`, `scenic_spot_id`, `file_resource_id`, `image_url`, `image_type`, `title`, `sort_order`, `is_cover`, `create_time`, `update_time`, `is_deleted`) VALUES (4, 13, 3, '', 1, NULL, 0, 1, '2026-04-03 15:49:54', '2026-04-03 15:51:58', 1);
-INSERT INTO `scenic_image` (`id`, `scenic_spot_id`, `file_resource_id`, `image_url`, `image_type`, `title`, `sort_order`, `is_cover`, `create_time`, `update_time`, `is_deleted`) VALUES (5, 13, 3, '', 1, NULL, 0, 1, '2026-04-03 15:51:58', '2026-04-03 15:52:28', 1);
-INSERT INTO `scenic_image` (`id`, `scenic_spot_id`, `file_resource_id`, `image_url`, `image_type`, `title`, `sort_order`, `is_cover`, `create_time`, `update_time`, `is_deleted`) VALUES (6, 13, 3, '', 1, NULL, 0, 1, '2026-04-03 15:52:28', '2026-04-03 15:52:28', 0);
-INSERT INTO `scenic_image` (`id`, `scenic_spot_id`, `file_resource_id`, `image_url`, `image_type`, `title`, `sort_order`, `is_cover`, `create_time`, `update_time`, `is_deleted`) VALUES (7, 12, 100, 'https://loremflickr.com/400/400?lock=7025248744143193', 1, '林荫大道', 0, 0, '2026-04-03 16:23:51', '2026-04-03 16:23:51', 0);
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点图片表';
 
 -- ----------------------------
 -- Table structure for scenic_spot
@@ -444,21 +393,6 @@ CREATE TABLE `scenic_spot` (
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点表';
 
 -- ----------------------------
--- Records of scenic_spot
--- ----------------------------
-BEGIN;
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (1, '成都大熊猫繁育研究基地', 2, '成都市成华区外北熊猫大道1375号', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 55.00, '4A', '动物园', 4.9, 0, 0, 0, NULL, NULL, NULL, 1, 0, 0, '2026-04-01 18:40:42', '2026-04-01 18:40:42', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (2, '九寨沟景区', 3, '阿坝藏族羌族自治州九寨沟县漳扎镇', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 190.00, '5A', '自然风光', 5.0, 0, 0, 0, NULL, NULL, NULL, 1, 0, 0, '2026-04-01 18:40:42', '2026-04-01 18:40:42', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (3, '洪崖洞民俗风貌区', 6, '重庆市渝中区嘉陵江滨江路88号', NULL, NULL, NULL, '以最具巴渝传统建筑特色的“吊脚楼”风貌为主体。', NULL, NULL, NULL, 0.00, '4A', '人文景观', 4.8, 0, 0, 0, NULL, NULL, NULL, 1, 0, 1, '2026-04-03 14:29:48', '2026-04-03 14:29:48', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (4, '故宫博物院', 8, '北京市东城区景山前街4号', NULL, NULL, NULL, '世界上现存规模最大、保存最为完整的木质结构古建筑之一。', NULL, NULL, NULL, 60.00, '5A', '历史古迹', 5.0, 0, 0, 0, NULL, NULL, NULL, 1, 0, 1, '2026-04-03 14:29:48', '2026-04-03 14:29:48', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (5, '大理古城', 10, '大理白族自治州大理市复兴路', NULL, NULL, NULL, '位居苍山之下，洱海之滨，古代南诏国和大理国的都城。', NULL, NULL, NULL, 0.00, '4A', '古镇园林', 4.6, 0, 0, 0, NULL, NULL, NULL, 1, 0, 0, '2026-04-03 14:29:48', '2026-04-03 14:29:48', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (6, '玉龙雪山', 9, '丽江市玉龙纳西族自治县', NULL, NULL, NULL, '北半球最近赤道的终年积雪雪山。', NULL, NULL, NULL, 100.00, '5A', '自然风光', 4.7, 0, 0, 0, NULL, NULL, NULL, 1, 0, 1, '2026-04-03 14:29:48', '2026-04-03 14:29:48', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (7, '宽窄巷子', 2, '成都市青羊区金河路口', NULL, NULL, NULL, '由宽巷子、窄巷子、井巷子平行排列组成。', NULL, NULL, NULL, 0.00, '4A', '特色街区', 4.5, 0, 0, 0, NULL, NULL, NULL, 1, 0, 0, '2026-04-03 14:29:48', '2026-04-03 14:29:48', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (12, '景点1', 2, '成都市成华区外北熊猫大道1375号', 56.0000000, 17.0000000, 'https://loremflickr.com/400/400?lock=5547992062992404', '景点描述11111111', '内容1111111', '2027-03-18 04:26:21', '购票信息11111', 765.55, '5A', '自然风光', 4.5, 0, 0, 0, '春季', '2', '提示11111', 1, 0, 1, '2026-04-03 15:14:06', '2026-04-03 16:08:40', 0);
-INSERT INTO `scenic_spot` (`id`, `name`, `region_id`, `address`, `longitude`, `latitude`, `cover_image`, `description`, `detail_content`, `open_time`, `ticket_info`, `ticket_price`, `level`, `category`, `score`, `rating_count`, `view_count`, `favorite_count`, `best_season`, `suggested_hours`, `tips`, `status`, `sort_order`, `is_recommended`, `create_time`, `update_time`, `is_deleted`) VALUES (13, '景点3', 2, '成都市成华区外北熊猫大道111122222号', 56.0000000, 17.0000000, 'https://loremflickr.com/400/400?lock=5547992062992404', '景点描述3333', '内容333', '2027-03-18 04:26:21', '购票信息333', 765.55, '5A', '自然风光', 4.5, 0, 0, 0, '春季', '2', '提示3333', 1, 0, 1, '2026-04-03 15:49:54', '2026-04-03 16:08:40', 0);
-COMMIT;
-
--- ----------------------------
 -- Table structure for scenic_spot_tag
 -- ----------------------------
 DROP TABLE IF EXISTS `scenic_spot_tag`;
@@ -471,19 +405,7 @@ CREATE TABLE `scenic_spot_tag` (
   UNIQUE KEY `uk_scenic_tag` (`scenic_spot_id`,`tag_id`),
   KEY `idx_scenic_spot_id` (`scenic_spot_id`),
   KEY `idx_tag_id` (`tag_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点-标签关联表';
-
--- ----------------------------
--- Records of scenic_spot_tag
--- ----------------------------
-BEGIN;
-INSERT INTO `scenic_spot_tag` (`id`, `scenic_spot_id`, `tag_id`, `create_time`) VALUES (1, 1, 3, '2026-04-01 18:40:42');
-INSERT INTO `scenic_spot_tag` (`id`, `scenic_spot_id`, `tag_id`, `create_time`) VALUES (2, 2, 1, '2026-04-01 18:40:42');
-INSERT INTO `scenic_spot_tag` (`id`, `scenic_spot_id`, `tag_id`, `create_time`) VALUES (28, 13, 3, '2026-04-03 15:52:29');
-INSERT INTO `scenic_spot_tag` (`id`, `scenic_spot_id`, `tag_id`, `create_time`) VALUES (29, 13, 4, '2026-04-03 15:52:29');
-INSERT INTO `scenic_spot_tag` (`id`, `scenic_spot_id`, `tag_id`, `create_time`) VALUES (30, 12, 1, '2026-04-03 16:10:52');
-INSERT INTO `scenic_spot_tag` (`id`, `scenic_spot_id`, `tag_id`, `create_time`) VALUES (31, 12, 4, '2026-04-03 16:10:52');
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点-标签关联表';
 
 -- ----------------------------
 -- Table structure for stat_platform_daily
@@ -510,12 +432,6 @@ CREATE TABLE `stat_platform_daily` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='平台日统计表';
 
 -- ----------------------------
--- Records of stat_platform_daily
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for stat_scenic_daily
 -- ----------------------------
 DROP TABLE IF EXISTS `stat_scenic_daily`;
@@ -540,12 +456,6 @@ CREATE TABLE `stat_scenic_daily` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点日统计表';
 
 -- ----------------------------
--- Records of stat_scenic_daily
--- ----------------------------
-BEGIN;
-COMMIT;
-
--- ----------------------------
 -- Table structure for system_config
 -- ----------------------------
 DROP TABLE IF EXISTS `system_config`;
@@ -563,17 +473,6 @@ CREATE TABLE `system_config` (
   UNIQUE KEY `uk_config_key` (`config_key`),
   KEY `idx_config_group` (`config_group`)
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
-
--- ----------------------------
--- Records of system_config
--- ----------------------------
-BEGIN;
-INSERT INTO `system_config` (`id`, `config_key`, `config_value`, `config_type`, `config_group`, `description`, `is_public`, `create_time`, `update_time`) VALUES (15, 'llm_model_name', 'gpt-4-turbo', 'string', 'llm', '当前使用的 LLM 模型名称', 0, '2026-04-01 18:41:02', '2026-04-01 18:41:02');
-INSERT INTO `system_config` (`id`, `config_key`, `config_value`, `config_type`, `config_group`, `description`, `is_public`, `create_time`, `update_time`) VALUES (16, 'recommend_min_score', '0.6', 'string', 'recommend', '推荐结果展示的最低阈值', 0, '2026-04-01 18:41:02', '2026-04-01 18:41:02');
-INSERT INTO `system_config` (`id`, `config_key`, `config_value`, `config_type`, `config_group`, `description`, `is_public`, `create_time`, `update_time`) VALUES (17, 'llm_max_tokens', '2048', 'number', 'llm', 'LLM 生成行程的最大 Token 数', 0, '2026-04-03 14:30:12', '2026-04-03 14:30:12');
-INSERT INTO `system_config` (`id`, `config_key`, `config_value`, `config_type`, `config_group`, `description`, `is_public`, `create_time`, `update_time`) VALUES (18, 'recommend_strategy', 'hybrid', 'string', 'recommend', '推荐策略：collaborative(协同) / content(内容) / hybrid(混合)', 0, '2026-04-03 14:30:12', '2026-04-03 14:30:12');
-INSERT INTO `system_config` (`id`, `config_key`, `config_value`, `config_type`, `config_group`, `description`, `is_public`, `create_time`, `update_time`) VALUES (19, 'minio_bucket_scenic', 'scenic-images', 'string', 'minio', '景点图片存储桶名称', 0, '2026-04-03 14:30:12', '2026-04-03 14:30:12');
-COMMIT;
 
 -- ----------------------------
 -- Table structure for tag
@@ -595,19 +494,7 @@ CREATE TABLE `tag` (
   UNIQUE KEY `uk_name` (`name`),
   KEY `idx_type` (`type`),
   KEY `idx_category` (`category`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
-
--- ----------------------------
--- Records of tag
--- ----------------------------
-BEGIN;
-INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (1, '自然风光', 1, '主题', NULL, '#4CAF50', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (2, '历史古迹', 1, '主题', NULL, '#FF5722', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (3, '大熊猫', 1, '特色', NULL, '#333333', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (4, '深度游', 2, '风格', NULL, '#2196F3', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (5, '吃货必备', 2, '偏好', NULL, '#E91E63', 0, 1, '2026-04-01 18:40:33', '2026-04-01 18:40:33', 0);
-INSERT INTO `tag` (`id`, `name`, `type`, `category`, `icon`, `color`, `sort_order`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (21, '掌11', 48, 'ut', 'https://avatars.githubusercontent.com/u/75775389', 'maroon', 8, 67, '2026-04-02 19:46:10', '2026-04-02 19:46:36', 0);
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
 
 -- ----------------------------
 -- Table structure for travel_plan
@@ -638,14 +525,7 @@ CREATE TABLE `travel_plan` (
   KEY `idx_destination_region_id` (`destination_region_id`),
   KEY `idx_start_date` (`start_date`),
   KEY `idx_status` (`status`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='行程计划表';
-
--- ----------------------------
--- Records of travel_plan
--- ----------------------------
-BEGIN;
-INSERT INTO `travel_plan` (`id`, `user_id`, `title`, `cover_image`, `start_date`, `end_date`, `total_days`, `destination_region_id`, `description`, `estimated_budget`, `travel_companion`, `is_public`, `view_count`, `like_count`, `source`, `status`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 1, '成都三日深度游', NULL, NULL, NULL, 3, 2, NULL, NULL, NULL, 0, 0, 0, 2, 1, '2026-04-01 18:40:57', '2026-04-01 18:40:57', 0);
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='行程计划表';
 
 -- ----------------------------
 -- Table structure for travel_plan_item
@@ -674,16 +554,7 @@ CREATE TABLE `travel_plan_item` (
   KEY `idx_travel_plan_id` (`travel_plan_id`),
   KEY `idx_scenic_spot_id` (`scenic_spot_id`),
   KEY `idx_day_sort` (`travel_plan_id`,`day_number`,`sort_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='行程明细表';
-
--- ----------------------------
--- Records of travel_plan_item
--- ----------------------------
-BEGIN;
-INSERT INTO `travel_plan_item` (`id`, `travel_plan_id`, `scenic_spot_id`, `day_number`, `sort_order`, `item_type`, `title`, `description`, `start_time`, `end_time`, `location`, `longitude`, `latitude`, `estimated_cost`, `notes`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 1, 1, 1, 1, 1, '看大熊猫', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 18:40:57', '2026-04-01 18:40:57', 0);
-INSERT INTO `travel_plan_item` (`id`, `travel_plan_id`, `scenic_spot_id`, `day_number`, `sort_order`, `item_type`, `title`, `description`, `start_time`, `end_time`, `location`, `longitude`, `latitude`, `estimated_cost`, `notes`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 1, NULL, 1, 2, 2, '春熙路吃火锅', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 18:40:57', '2026-04-01 18:40:57', 0);
-INSERT INTO `travel_plan_item` (`id`, `travel_plan_id`, `scenic_spot_id`, `day_number`, `sort_order`, `item_type`, `title`, `description`, `start_time`, `end_time`, `location`, `longitude`, `latitude`, `estimated_cost`, `notes`, `create_time`, `update_time`, `is_deleted`) VALUES (3, 1, 2, 2, 1, 1, '出发前往九寨沟', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-04-01 18:40:57', '2026-04-01 18:40:57', 0);
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='行程明细表';
 
 -- ----------------------------
 -- Table structure for user
@@ -699,6 +570,7 @@ CREATE TABLE `user` (
   `avatar` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像 URL（MinIO）',
   `gender` tinyint DEFAULT '0' COMMENT '性别：0 未知 1 男 2 女',
   `birthday` date DEFAULT NULL COMMENT '生日',
+  `signature` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '个性签名',
   `region_id` bigint DEFAULT NULL COMMENT '所在地区 ID',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：0 禁用 1 正常',
   `last_login_time` datetime DEFAULT NULL COMMENT '最后登录时间',
@@ -713,17 +585,7 @@ CREATE TABLE `user` (
   KEY `idx_region_id` (`region_id`),
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
-
--- ----------------------------
--- Records of user
--- ----------------------------
-BEGIN;
-INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `phone`, `email`, `avatar`, `gender`, `birthday`, `region_id`, `status`, `last_login_time`, `last_login_ip`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 'traveler_01', '$2a$10$76DsLh.mN8L...', '小明爱旅行', NULL, NULL, NULL, 1, NULL, 2, 1, NULL, NULL, '2026-04-01 18:40:38', '2026-04-01 18:40:38', 0);
-INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `phone`, `email`, `avatar`, `gender`, `birthday`, `region_id`, `status`, `last_login_time`, `last_login_ip`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 'test1', '$2a$10$a0gCobuHvyyI7Fs8.iUBIOtj7brKpsf/rvRReMWahIQRzVgVhjvJa', 'test1', '14834531098', NULL, NULL, 0, NULL, NULL, 1, '2026-04-02 16:18:13', NULL, '2026-04-01 19:57:39', '2026-04-01 19:57:39', 0);
-INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `phone`, `email`, `avatar`, `gender`, `birthday`, `region_id`, `status`, `last_login_time`, `last_login_ip`, `create_time`, `update_time`, `is_deleted`) VALUES (3, 'traveler_03', '$2a$10$76DsLh.mN8L...', '老张走天下', NULL, NULL, NULL, 1, NULL, NULL, 1, NULL, NULL, '2026-04-03 14:29:53', '2026-04-03 14:29:53', 0);
-INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `phone`, `email`, `avatar`, `gender`, `birthday`, `region_id`, `status`, `last_login_time`, `last_login_ip`, `create_time`, `update_time`, `is_deleted`) VALUES (4, 'traveler_04', '$2a$10$76DsLh.mN8L...', '吃货小何', NULL, NULL, NULL, 2, NULL, NULL, 1, NULL, NULL, '2026-04-03 14:29:53', '2026-04-03 14:29:53', 0);
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- ----------------------------
 -- Table structure for user_browse_history
@@ -743,13 +605,7 @@ CREATE TABLE `user_browse_history` (
   KEY `idx_scenic_spot_id` (`scenic_spot_id`),
   KEY `idx_browse_time` (`browse_time`),
   KEY `idx_user_browse_time` (`user_id`,`browse_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='浏览历史表';
-
--- ----------------------------
--- Records of user_browse_history
--- ----------------------------
-BEGIN;
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=161 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='浏览历史表';
 
 -- ----------------------------
 -- Table structure for user_favorite
@@ -769,13 +625,7 @@ CREATE TABLE `user_favorite` (
   KEY `idx_user_id` (`user_id`),
   KEY `idx_scenic_spot_id` (`scenic_spot_id`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户收藏表';
-
--- ----------------------------
--- Records of user_favorite
--- ----------------------------
-BEGIN;
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户收藏表';
 
 -- ----------------------------
 -- Table structure for user_preference_tag
@@ -793,18 +643,7 @@ CREATE TABLE `user_preference_tag` (
   UNIQUE KEY `uk_user_tag` (`user_id`,`tag_id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_tag_id` (`tag_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户偏好标签表';
-
--- ----------------------------
--- Records of user_preference_tag
--- ----------------------------
-BEGIN;
-INSERT INTO `user_preference_tag` (`id`, `user_id`, `tag_id`, `weight`, `source`, `create_time`, `update_time`) VALUES (1, 1, 1, 0.85, 2, '2026-04-01 18:40:38', '2026-04-01 18:40:38');
-INSERT INTO `user_preference_tag` (`id`, `user_id`, `tag_id`, `weight`, `source`, `create_time`, `update_time`) VALUES (2, 1, 3, 0.95, 1, '2026-04-01 18:40:38', '2026-04-01 18:40:38');
-INSERT INTO `user_preference_tag` (`id`, `user_id`, `tag_id`, `weight`, `source`, `create_time`, `update_time`) VALUES (3, 3, 2, 0.98, 1, '2026-04-03 14:30:04', '2026-04-03 14:30:04');
-INSERT INTO `user_preference_tag` (`id`, `user_id`, `tag_id`, `weight`, `source`, `create_time`, `update_time`) VALUES (4, 4, 5, 0.90, 2, '2026-04-03 14:30:04', '2026-04-03 14:30:04');
-INSERT INTO `user_preference_tag` (`id`, `user_id`, `tag_id`, `weight`, `source`, `create_time`, `update_time`) VALUES (5, 4, 1, 0.70, 3, '2026-04-03 14:30:04', '2026-04-03 14:30:04');
-COMMIT;
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户偏好标签表';
 
 -- ----------------------------
 -- Table structure for user_profile
@@ -827,15 +666,6 @@ CREATE TABLE `user_profile` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户画像表';
-
--- ----------------------------
--- Records of user_profile
--- ----------------------------
-BEGIN;
-INSERT INTO `user_profile` (`id`, `user_id`, `travel_style`, `budget_level`, `preferred_season`, `travel_companion`, `interest_keywords`, `embedding_vector`, `profile_version`, `last_analyzed_at`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 1, '休闲游', 2, '[\"春季\", \"秋季\"]', NULL, '大熊猫, 摄影, 川菜', NULL, 1, NULL, '2026-04-01 18:40:38', '2026-04-01 18:40:38', 0);
-INSERT INTO `user_profile` (`id`, `user_id`, `travel_style`, `budget_level`, `preferred_season`, `travel_companion`, `interest_keywords`, `embedding_vector`, `profile_version`, `last_analyzed_at`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 3, '深度游', 3, '[\"秋季\", \"冬季\"]', '家庭', '古建筑, 博物馆, 历史, 园林', NULL, 1, NULL, '2026-04-03 14:29:53', '2026-04-03 14:29:53', 0);
-INSERT INTO `user_profile` (`id`, `user_id`, `travel_style`, `budget_level`, `preferred_season`, `travel_companion`, `interest_keywords`, `embedding_vector`, `profile_version`, `last_analyzed_at`, `create_time`, `update_time`, `is_deleted`) VALUES (3, 4, '穷游', 1, '[\"夏季\"]', '独自', '美食, 打卡, 夜景, 现代', NULL, 1, NULL, '2026-04-03 14:29:53', '2026-04-03 14:29:53', 0);
-COMMIT;
 
 -- ----------------------------
 -- Table structure for user_review
@@ -866,46 +696,6 @@ CREATE TABLE `user_review` (
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`),
   FULLTEXT KEY `ft_content` (`content`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户点评表';
-
--- ----------------------------
--- Records of user_review
--- ----------------------------
-BEGIN;
-INSERT INTO `user_review` (`id`, `user_id`, `scenic_spot_id`, `rating`, `content`, `images`, `visit_date`, `travel_type`, `like_count`, `reply_count`, `is_anonymous`, `status`, `audit_remark`, `ip_address`, `create_time`, `update_time`, `is_deleted`) VALUES (1, 1, 1, 5, '熊猫太可爱了！建议一早去排队。', NULL, NULL, NULL, 0, 0, 0, 1, NULL, NULL, '2026-04-01 18:40:53', '2026-04-01 18:40:53', 0);
-INSERT INTO `user_review` (`id`, `user_id`, `scenic_spot_id`, `rating`, `content`, `images`, `visit_date`, `travel_type`, `like_count`, `reply_count`, `is_anonymous`, `status`, `audit_remark`, `ip_address`, `create_time`, `update_time`, `is_deleted`) VALUES (2, 3, 4, 5, '震撼！故宫的建筑工艺让人叹为观止，一定要请导游讲解。', NULL, NULL, NULL, 0, 0, 0, 1, NULL, NULL, '2026-04-03 14:30:08', '2026-04-03 14:30:08', 0);
-INSERT INTO `user_review` (`id`, `user_id`, `scenic_spot_id`, `rating`, `content`, `images`, `visit_date`, `travel_type`, `like_count`, `reply_count`, `is_anonymous`, `status`, `audit_remark`, `ip_address`, `create_time`, `update_time`, `is_deleted`) VALUES (3, 4, 3, 4, '洪崖洞夜景绝美，就是人太多了，挤得走不动路。', NULL, NULL, NULL, 0, 0, 0, 1, NULL, NULL, '2026-04-03 14:30:08', '2026-04-03 14:30:08', 0);
-INSERT INTO `user_review` (`id`, `user_id`, `scenic_spot_id`, `rating`, `content`, `images`, `visit_date`, `travel_type`, `like_count`, `reply_count`, `is_anonymous`, `status`, `audit_remark`, `ip_address`, `create_time`, `update_time`, `is_deleted`) VALUES (4, 2, 5, 2, '大理古城商业化太严重了，到处都是卖丝巾和银饰的。', NULL, NULL, NULL, 0, 0, 0, 1, NULL, NULL, '2026-04-03 14:30:08', '2026-04-03 14:30:08', 0);
-COMMIT;
-
--- ----------------------------
--- Table structure for review_like
--- ----------------------------
-DROP TABLE IF EXISTS `review_like`;
-CREATE TABLE `review_like` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `review_id` bigint(20) NOT NULL COMMENT '点评ID',
-  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_review_user` (`review_id`,`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评点赞表';
-
--- ----------------------------
--- Table structure for review_reply
--- ----------------------------
-DROP TABLE IF EXISTS `review_reply`;
-CREATE TABLE `review_reply` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `review_id` bigint(20) NOT NULL COMMENT '点评ID',
-  `user_id` bigint(20) NOT NULL COMMENT '用户ID',
-  `content` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '回复内容',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `is_deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否删除',
-  PRIMARY KEY (`id`),
-  KEY `idx_review_id` (`review_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评回复表';
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户点评表';
 
 SET FOREIGN_KEY_CHECKS = 1;
