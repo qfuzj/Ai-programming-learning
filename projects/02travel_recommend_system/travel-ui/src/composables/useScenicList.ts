@@ -2,7 +2,12 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { getRegionTree } from "@/api/common";
-import { getScenicFilterOptions, getScenicPage, type ScenicItem, type ScenicQuery } from "@/api/scenic";
+import {
+  getScenicFilterOptions,
+  getScenicPage,
+  type ScenicItem,
+  type ScenicQuery,
+} from "@/api/scenic";
 import { addFavorite, removeFavorite } from "@/api/favorite";
 import type { ScenicRegionNode } from "@/types/scenic-list";
 
