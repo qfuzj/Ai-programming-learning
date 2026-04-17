@@ -4,15 +4,21 @@
 export type UserRole = "ADMIN" | "USER";
 export type LoginType = "username" | "phone";
 
+/**
+ * 对应-用户登录 DTO
+ */
 export interface LoginPayload {
+  loginType: LoginType;
   username?: string;
   phone?: string;
   password: string;
-  loginType: LoginType;
   captchaId: string;
   captchaCode: string;
 }
 
+/**
+ * 对应-登录成功VO
+ */
 export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
@@ -24,11 +30,17 @@ export interface LoginResponse {
   avatar: string;
 }
 
+/**
+ * 对应-验证码VO
+ */
 export interface CaptchaResponse {
   captchaId: string;
   captchaBase64: string;
 }
 
+/**
+ * 当前用户信息VO类
+ */
 export interface CurrentUser {
   id: number;
   username: string;
@@ -37,6 +49,9 @@ export interface CurrentUser {
   role: UserRole;
 }
 
+/**
+ * 对应-用户注册DTO
+ */
 export interface RegisterPayload {
   username: string;
   phone: string;
@@ -46,6 +61,9 @@ export interface RegisterPayload {
   captchaCode: string;
 }
 
+/**
+ * 对应-重置密码DTO
+ */
 export interface ResetPasswordPayload {
   phone: string;
   newPassword: string;
@@ -53,6 +71,7 @@ export interface ResetPasswordPayload {
   captchaCode: string;
 }
 
+// 对应-刷新Token DTO
 export interface RefreshTokenPayload {
   refreshToken: string;
 }

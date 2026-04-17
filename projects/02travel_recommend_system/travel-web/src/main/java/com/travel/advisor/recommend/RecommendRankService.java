@@ -7,7 +7,7 @@ import com.travel.advisor.service.ScenicSpotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,7 +35,7 @@ public class RecommendRankService {
         }
 
         // 2. 数据聚合：将多路召回的相同景点分数累加，并合并来源类型。
-        Map<Long, BigDecimal> scoreMap = new HashMap<>();
+        Map<Long, Double> scoreMap = new HashMap<>();
         Map<Long, Set<String>> sourceMap = new HashMap<>();
 
         for (RecallCandidate candidate : candidates) {
@@ -46,8 +46,8 @@ public class RecommendRankService {
             }
 
             // 分数累加：如果同一景点被多个召回策略命中，则将它们的基础分数相加，得到一个综合得分。
-            BigDecimal score = Optional.ofNullable(candidate.getBaseScore()).orElse(BigDecimal.ZERO);
-            scoreMap.merge(id, score, BigDecimal::add);
+            Double score = Optional.ofNullable(candidate.getBaseScore()).orElse(0.0);
+            scoreMap.merge(id, score, Double::sum);
 
             // 来源合并
             if (candidate.getSourceType() != null) {
@@ -68,7 +68,7 @@ public class RecommendRankService {
                 .map(item ->
                         RankedRecommend.builder()
                                 .scenicSpot(item)
-                                .rankScore(scoreMap.getOrDefault(item.getId(), BigDecimal.ZERO))
+                                .rankScore(scoreMap.getOrDefault(item.getId(), 0.0))
                                 .sourceTypes(sourceMap.getOrDefault(item.getId(), Collections.emptySet()))
                                 .build()
                 ).sorted(Comparator.comparing(RankedRecommend::getRankScore, Comparator.reverseOrder()))

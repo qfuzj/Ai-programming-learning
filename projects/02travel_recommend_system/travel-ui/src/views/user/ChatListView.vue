@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { createConversation, getConversations, type ConversationItem } from "@/api/chat";
+import { createConversation, getConversations, type ConversationItem } from "@/api/conversation";
 
 const router = useRouter();
 const loading = ref(false);
@@ -41,7 +41,7 @@ async function loadConversations(): Promise<void> {
 async function createNewConversation(): Promise<void> {
   creating.value = true;
   try {
-    const result = await createConversation({ title: "新的旅行咨询", scene: "travel_consult" });
+    const result = await createConversation({ title: "新的旅行咨询", conversationType: 3 });
     await router.push(`/ai/chat/${result.conversationId}`);
   } finally {
     creating.value = false;

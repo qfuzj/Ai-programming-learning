@@ -5,7 +5,7 @@
     <template v-else>
       <el-empty v-if="messages.length === 0" description="暂无消息" />
       <div v-else class="message-list">
-        <div v-for="item in messages" :key="item.id" :class="['message-item', item.role]">
+        <div v-for="item in messages" :key="item.messageId" :class="['message-item', item.role]">
           <div class="message-role">{{ item.role === "user" ? "我" : "AI" }}</div>
           <div class="message-content">{{ item.content }}</div>
         </div>
@@ -23,11 +23,12 @@
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import {
+  ContentType,
   getConversationDetail,
   getConversationMessages,
   sendConversationMessage,
   type ChatMessageItem,
-} from "@/api/chat";
+} from "@/api/conversation";
 
 const route = useRoute();
 const conversationId = computed(() => Number(route.params.conversationId));
@@ -36,6 +37,23 @@ const loading = ref(false);
 const sending = ref(false);
 const messages = ref<ChatMessageItem[]>([]);
 const message = ref("");
+
+function buildLocalMessage(payload: {
+  messageId: number;
+  role: "user" | "assistant";
+  content: string;
+  tokensUsed?: number;
+}): ChatMessageItem {
+  return {
+    messageId: payload.messageId,
+    role: payload.role,
+    content: payload.content,
+    contentType: ContentType.TEXT,
+    tokensUsed: payload.tokensUsed ?? 0,
+    llmCallLogId: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
 
 async function loadConversation(): Promise<void> {
   const id = conversationId.value;
@@ -66,11 +84,19 @@ async function sendMessage(): Promise<void> {
   sending.value = true;
   try {
     const response = await sendConversationMessage(conversationId.value, content);
-    messages.value = [
-      ...messages.value,
-      { id: response.userMessageId, role: "user", content },
-      { id: response.assistantMessageId, role: "assistant", content: response.replyContent },
-    ];
+    const userMessage = buildLocalMessage({
+      messageId: response.userMessageId,
+      role: "user",
+      content,
+    });
+    const assistantMessage = buildLocalMessage({
+      messageId: response.assistantMessageId,
+      role: "assistant",
+      content: response.replyContent,
+      tokensUsed: response.tokenUsage,
+    });
+
+    messages.value = [...messages.value, userMessage, assistantMessage];
     message.value = "";
   } finally {
     sending.value = false;

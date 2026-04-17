@@ -346,13 +346,13 @@ public class MessageServiceImpl implements MessageService {
      */
     private ChatMessageVO toVO(LlmMessage message) {
         ChatMessageVO vo = new ChatMessageVO();
-        vo.setId(message.getId());
+        vo.setMessageId(message.getId());
         vo.setRole(message.getRole());
         vo.setContent(message.getContent());
         vo.setContentType(message.getContentType());
         vo.setTokensUsed(message.getTokensUsed());
         vo.setLlmCallLogId(message.getLlmCallLogId());
-        vo.setCreateTime(message.getCreateTime());
+        vo.setCreatedAt(message.getCreateTime());
         return vo;
     }
 
