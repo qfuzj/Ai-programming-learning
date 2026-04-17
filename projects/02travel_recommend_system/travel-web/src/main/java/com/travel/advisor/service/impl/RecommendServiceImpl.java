@@ -27,7 +27,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.*;
 
@@ -258,8 +257,8 @@ public class RecommendServiceImpl implements RecommendService {
             vo.setScenicName(rankedRecommend.getScenicSpot().getName());
             vo.setCoverImage(rankedRecommend.getScenicSpot().getCoverImage());
             vo.setScore(rankedRecommend.getScenicSpot().getScore() == null
-                    ? BigDecimal.ZERO : rankedRecommend.getScenicSpot().getScore());
-            vo.setRecommendReason(item.getReason());
+                    ? 0.0 : rankedRecommend.getScenicSpot().getScore());
+            vo.setReason(item.getReason());
             vo.setSourceType(String.join(",", rankedRecommend.getSourceTypes()));
             vo.setRankScore(rankedRecommend.getRankScore());
             vos.add(vo);
@@ -298,7 +297,7 @@ public class RecommendServiceImpl implements RecommendService {
                 .map(id -> RecallCandidate.builder()
                         .scenicId(id)
                         .sourceType("SIMILAR_TAG")
-                        .baseScore(BigDecimal.valueOf(1.2D))
+                        .baseScore(Double.valueOf(1.2D))
                         .build())
                 .toList();
     }
