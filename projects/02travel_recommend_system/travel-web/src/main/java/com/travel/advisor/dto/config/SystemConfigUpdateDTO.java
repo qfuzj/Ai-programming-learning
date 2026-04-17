@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+/**
+ * 系统配置更新 DTO
+ */
 @Data
 public class SystemConfigUpdateDTO {
 

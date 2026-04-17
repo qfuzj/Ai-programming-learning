@@ -4,6 +4,9 @@ import com.travel.advisor.common.page.PageQuery;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+/**
+ * 系统配置查询 DTO
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class SystemConfigQueryDTO extends PageQuery {

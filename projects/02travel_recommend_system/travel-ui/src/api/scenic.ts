@@ -121,7 +121,6 @@ export interface ScenicCreatePayload {
  */
 export interface ScenicUpdatePayload extends Partial<ScenicCreatePayload> {}
 
-
 export interface ScenicImageItem {
   id: number;
   fileResourceId?: number;
