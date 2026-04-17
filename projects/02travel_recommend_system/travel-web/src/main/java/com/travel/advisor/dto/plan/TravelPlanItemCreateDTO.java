@@ -1,20 +1,25 @@
 package com.travel.advisor.dto.plan;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
 
+/**
+ * 行程计划项创建 DTO
+ */
 @Data
 public class TravelPlanItemCreateDTO {
 
-    private Long scenicSpotId;
-
     @NotNull(message = "dayNo不能为空")
+    @Min(value = 1, message = "dayNo 不能小于 1")
     private Integer dayNo;
-
+    
+    private Long scenicSpotId;
+    
     private Integer sortOrder;
 
     /**
