@@ -5,6 +5,7 @@ import com.travel.advisor.entity.ScenicSpot;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -22,4 +23,17 @@ public interface ScenicSpotMapper extends BaseMapper<ScenicSpot> {
 
     @Select("SELECT DISTINCT level FROM scenic_spot WHERE is_deleted = 0 AND status = 1 AND level IS NOT NULL AND level <> '' ORDER BY level")
     List<String> selectLevels();
+
+    @Update("""
+            UPDATE scenic_spot
+            SET score = #{score},
+                rating_count = #{ratingCount}
+            WHERE id = #{scenicSpotId}
+              AND is_deleted = 0
+            """)
+    int updateScoreAndRatingCount(
+            @Param("scenicSpotId") Long scenicSpotId,
+            @Param("score") Double score,
+            @Param("ratingCount") Integer ratingCount
+    );
 }

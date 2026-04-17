@@ -35,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,6 +85,7 @@ public class ReviewServiceImpl implements ReviewService {
         contentAuditMapper.insert(audit);
 
         fileService.bindFilesToBiz(dto.getImageIds(), review.getId(), BizType.REVIEW);
+        refreshScenicSpotScore(dto.getScenicId());
 
         return review.getId();
     }
@@ -116,6 +118,13 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public void deleteMyReview(Long id) {
         Long userId = getCurrentUserIdRequired();
+        UserReview review = userReviewMapper.selectOne(new LambdaQueryWrapper<UserReview>()
+                .eq(UserReview::getId, id)
+                .eq(UserReview::getUserId, userId));
+        if (review == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "点评不存在");
+        }
+
         int affected = userReviewMapper.delete(new LambdaQueryWrapper<UserReview>()
                 .eq(UserReview::getId, id)
                 .eq(UserReview::getUserId, userId));
@@ -124,6 +133,7 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         fileService.deleteFilesByBiz(id, BizType.REVIEW);
+        refreshScenicSpotScore(review.getScenicSpotId());
     }
 
     /**
@@ -332,6 +342,19 @@ public class ReviewServiceImpl implements ReviewService {
             return;
         }
         wrapper.orderByDesc(UserReview::getCreateTime);
+    }
+
+    /**
+     * 刷新景点的平均评分和评分人数
+     */
+    private void refreshScenicSpotScore(Long scenicSpotId) {
+        Double averageRating = userReviewMapper.selectAverageRatingByScenicSpotId(scenicSpotId);
+        Integer ratingCount = userReviewMapper.countByScenicSpotId(scenicSpotId);
+        scenicSpotMapper.updateScoreAndRatingCount(
+                scenicSpotId,
+                Objects.requireNonNullElse(averageRating, 0D),
+                Objects.requireNonNullElse(ratingCount, 0)
+        );
     }
 
     private Long getCurrentUserIdRequired() {

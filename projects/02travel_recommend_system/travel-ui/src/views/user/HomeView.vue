@@ -52,11 +52,7 @@
 
         <!-- 横向滚动列表 -->
         <div v-else class="horizontal-scroll-list trip-scroll-list">
-          <div
-            v-for="(item, index) in hotScenicList"
-            :key="item.id"
-            class="trip-card-wrapper"
-          >
+          <div v-for="(item, index) in hotScenicList" :key="item.id" class="trip-card-wrapper">
             <div class="trip-rank-top">热门 TOP {{ index + 1 }}</div>
             <div class="trip-card" @click="goScenicDetail(item.id)">
               <div class="trip-card-image">
@@ -66,35 +62,39 @@
                   </template>
                 </el-image>
               </div>
-              
+
               <div class="trip-card-body">
                 <div class="trip-content">
                   <div class="trip-location">{{ item.regionName || "未知" }}</div>
-                <h3 class="trip-title">{{ item.name }}</h3>
-                <div class="trip-rating">
-                  <span class="rating-score">{{ item.score ? item.score.toFixed(1) : '5.0' }}</span>
-                  <span class="rating-bubbles">
-                    <span
-                      v-for="n in 5"
-                      :key="n"
-                      class="bubble"
-                      :class="{ 'is-filled': n <= Math.round(item.score || 5) }"
-                    ></span>
-                  </span>
-                  <span class="rating-count">({{ Math.floor((item.score || 5) * 12.5) + (index * 7) }})</span>
-                </div>
-                <div class="trip-footer">
-                  <span class="trip-price-label">低至</span>
-                  <span class="trip-price-value">¥{{ item.ticketPrice || 199 }}</span>
+                  <h3 class="trip-title">{{ item.name }}</h3>
+                  <div class="trip-rating">
+                    <span class="rating-score">
+                      {{ item.score ? item.score.toFixed(1) : "5.0" }}
+                    </span>
+                    <span class="rating-bubbles">
+                      <span
+                        v-for="n in 5"
+                        :key="n"
+                        class="bubble"
+                        :class="{ 'is-filled': n <= Math.round(item.score || 5) }"
+                      ></span>
+                    </span>
+                    <span class="rating-count">
+                      ({{ Math.floor((item.score || 5) * 12.5) + index * 7 }})
+                    </span>
+                  </div>
+                  <div class="trip-footer">
+                    <span class="trip-price-label">低至</span>
+                    <span class="trip-price-value">¥{{ item.ticketPrice || 199 }}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          </div>
         </div>
       </div>
 
-            <!-- 我的景区标签 -->
+      <!-- 我的景区标签 -->
       <div class="section-container">
         <div class="section-header">
           <h2 class="section-title">我的景区标签</h2>
@@ -114,8 +114,12 @@
           >
             <div class="tag-cover">
               <el-image v-if="item.icon" :src="item.icon" fit="cover" class="tag-image" />
-              <div v-else class="tag-placeholder" :style="{ backgroundColor: item.color || '#00e676' }">
-              <span class="tag-name-large">{{ item.name.substring(0, 2) }}</span>
+              <div
+                v-else
+                class="tag-placeholder"
+                :style="{ backgroundColor: item.color || '#00e676' }"
+              >
+                <span class="tag-name-large">{{ item.name.substring(0, 2) }}</span>
               </div>
             </div>
             <div class="scenic-body">
@@ -326,7 +330,7 @@ onMounted(() => {
   height: 280px;
   border-radius: 12px;
   color: white;
-  box-shadow: inset 0 0 40px rgba(0,0,0,0.1);
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
 }
 
@@ -354,7 +358,7 @@ onMounted(() => {
   font-weight: 900;
   opacity: 0.9;
   letter-spacing: 4px;
-  text-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* 热门推荐横向滚动 */

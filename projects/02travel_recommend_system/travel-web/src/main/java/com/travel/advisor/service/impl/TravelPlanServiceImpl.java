@@ -58,58 +58,6 @@ public class TravelPlanServiceImpl implements TravelPlanService {
     }
 
     /**
-     * 创建行程计划及其行程项，首先获取当前用户ID，并验证用户是否登录。
-     * 然后根据传入的TravelPlanCreateDTO对象创建一个新的TravelPlan实体对象，
-     * 并将相关字段值填充到该对象中。接着设置行程计划的来源为用户创建，默认状态为正常，
-     * 并初始化浏览量和点赞数为0。将行程计划保存到数据库中后，如果传入的行程项列表不为空，
-     * 则遍历该列表，为每个行程项创建一个TravelPlanItem实体对象，并将相关字段值填充到该对象中，
-     * 包括关联的行程计划ID、天数、排序顺序等信息。最后将每个行程项保存到数据库中，并返回新创建的行程计划ID。
-     */
-    @Transactional(rollbackFor = Exception.class)
-    @Override
-    public Long createPlanWithItems(TravelPlanCreateDTO dto, List<TravelPlanItemCreateDTO> items) {
-        Long userId = getCurrentUserIdRequired();
-
-        TravelPlan plan = new TravelPlan();
-        fillPlanFieldsForCreate(plan, dto);
-        plan.setUserId(userId);
-        plan.setSource(PLAN_SOURCE_USER);
-        if (plan.getStatus() == null) {
-            plan.setStatus(PLAN_STATUS_NORMAL);
-        }
-        plan.setViewCount(0);
-        plan.setLikeCount(0);
-        travelPlanMapper.insert(plan);
-
-        if (items == null || items.isEmpty()) {
-            return plan.getId();
-        }
-
-        for (TravelPlanItemCreateDTO itemDto : items) {
-            validateDayNoInRange(plan, itemDto.getDayNo());
-            Integer itemType = resolveItemType(itemDto.getItemType());
-            TravelPlanItem item = new TravelPlanItem();
-            item.setTravelPlanId(plan.getId());
-            item.setScenicSpotId(itemDto.getScenicSpotId());
-            item.setDayNo(itemDto.getDayNo());
-            item.setSortOrder(itemDto.getSortOrder() == null ? 0 : itemDto.getSortOrder());
-            item.setItemType(itemType);
-            item.setTitle(itemDto.getTitle());
-            item.setDescription(itemDto.getDescription());
-            item.setStartTime(itemDto.getStartTime());
-            item.setEndTime(itemDto.getEndTime());
-            item.setLocation(itemDto.getLocation());
-            item.setLongitude(itemDto.getLongitude());
-            item.setLatitude(itemDto.getLatitude());
-            item.setEstimatedCost(itemDto.getEstimatedCost());
-            item.setNotes(itemDto.getNotes());
-            travelPlanItemMapper.insert(item);
-        }
-
-        return plan.getId();
-    }
-
-    /**
      * 分页查询当前用户的行程计划
      * 首先获取当前用户ID，并验证用户是否登录。
      * 然后根据传入的TravelPlanQueryDTO对象构建一个分页查询条件，包括行程计划的状态、公开性和关键词等信息。

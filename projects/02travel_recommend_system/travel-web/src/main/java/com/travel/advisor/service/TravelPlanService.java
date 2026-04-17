@@ -6,13 +6,9 @@ import com.travel.advisor.dto.plan.TravelPlanQueryDTO;
 import com.travel.advisor.dto.plan.TravelPlanItemCreateDTO;
 import com.travel.advisor.vo.plan.TravelPlanDetailVO;
 
-import java.util.List;
-
 public interface TravelPlanService {
 
     Long createPlan(TravelPlanCreateDTO dto);
-
-    Long createPlanWithItems(TravelPlanCreateDTO dto, List<TravelPlanItemCreateDTO> items);
 
     PageResult<TravelPlanDetailVO> pageMyPlans(TravelPlanQueryDTO pageQuery);
 
