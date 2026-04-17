@@ -35,6 +35,12 @@ export const userRoutes: RouteRecordRaw[] = [
         meta: { title: "浏览历史", requiresAuth: true, roles: ["USER"] },
       },
       {
+        path: "favorites",
+        name: "UserFavorites",
+        component: () => import("@/views/user/FavoritesView.vue"),
+        meta: { title: "我的收藏", requiresAuth: true, roles: ["USER"] },
+      },
+      {
         path: "my-reviews",
         name: "MyReviews",
         component: () => import("@/views/user/MyReviewsView.vue"),

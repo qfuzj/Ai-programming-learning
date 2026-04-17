@@ -35,6 +35,19 @@
               </ScenicCardGrid>
             </template>
 
+            <template v-if="activeTab === 'reviews'">
+              <ReviewListSection
+                :reviews="reviews"
+                :total="reviewTotal"
+                :current-page="reviewCurrentPage"
+                :page-size="reviewPageSize"
+                :loading="tabLoading"
+                @delete="handleDeleteReview"
+                @page-change="handleReviewPageChange"
+                @go-scenic="handleGoScenicFromReview"
+              />
+            </template>
+
             <template v-if="activeTab === 'history'">
               <ScenicCardGrid
                 :items="historyMapped"
@@ -67,17 +80,21 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import ProfileHeader from "./components/ProfileHeader.vue";
 import ProfileSidebar from "./components/ProfileSidebar.vue";
 import EditProfileDialog from "./components/EditProfileDialog.vue";
 import TagDialog from "./components/TagDialog.vue";
 import ScenicCardGrid from "./components/ScenicCardGrid.vue";
+import ReviewListSection from "./components/ReviewListSection.vue";
 import { useProfile } from "@/composables/useProfile";
+import { deleteMyReview, getMyReviews, type ReviewItem } from "@/api/audit";
 import type { ScenicCardItem } from "./components/ScenicCardGrid.vue";
 import type { TabItem, UpdateProfilePayload } from "@/types/profile";
 
 const TABS: TabItem[] = [
   { label: "我的收藏", key: "favorites" },
+  { label: "我的点评", key: "reviews" },
   { label: "近期浏览", key: "history" },
 ];
 
@@ -105,6 +122,13 @@ const {
 const editDialogVisible = ref(false);
 const tagDialogVisible = ref(false);
 const activeTab = ref("favorites");
+const reviews = ref<ReviewItem[]>([]);
+const reviewTotal = ref(0);
+const reviewCurrentPage = ref(1);
+const reviewPageSize = ref(10);
+const favoritesLoaded = ref(false);
+const reviewsLoaded = ref(false);
+const historyLoaded = ref(false);
 
 const favoriteMapped = computed<ScenicCardItem[]>(() =>
   favoriteList.value.map((item) => ({
@@ -130,6 +154,54 @@ function handleTabChange(key: string): void {
   activeTab.value = key;
 }
 
+async function loadMyReviews(): Promise<void> {
+  tabLoading.value = true;
+  try {
+    const page = await getMyReviews({
+      pageNum: reviewCurrentPage.value,
+      pageSize: reviewPageSize.value,
+    });
+    reviews.value = page.records ?? [];
+    reviewTotal.value = page.total ?? 0;
+    reviewsLoaded.value = true;
+  } catch {
+    ElMessage.error("获取点评列表失败");
+  } finally {
+    tabLoading.value = false;
+  }
+}
+
+async function handleDeleteReview(id: number): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确定要删除这条点评吗？删除后不可恢复", "提示", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+    });
+    await deleteMyReview(id);
+    ElMessage.success("删除成功");
+    if (reviews.value.length === 1 && reviewCurrentPage.value > 1) {
+      reviewCurrentPage.value -= 1;
+    }
+    await loadMyReviews();
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("删除点评失败");
+    }
+  }
+}
+
+function handleReviewPageChange(page: number): void {
+  reviewCurrentPage.value = page;
+  void loadMyReviews();
+}
+
+function handleGoScenicFromReview(id: number | undefined): void {
+  if (id) {
+    goToScenic(id);
+  }
+}
+
 async function handleSaveProfile(payload: UpdateProfilePayload): Promise<void> {
   const success = await saveProfile(payload);
   if (success) editDialogVisible.value = false;
@@ -146,16 +218,22 @@ async function handleSaveTags(ids: number[]): Promise<void> {
 }
 
 watch(activeTab, (newTab) => {
-  if (newTab === "favorites" && favoriteList.value.length === 0) {
+  if (newTab === "favorites" && !favoritesLoaded.value) {
+    favoritesLoaded.value = true;
     void loadFavorites();
   }
-  if (newTab === "history" && historyList.value.length === 0) {
+  if (newTab === "reviews" && !reviewsLoaded.value) {
+    void loadMyReviews();
+  }
+  if (newTab === "history" && !historyLoaded.value) {
+    historyLoaded.value = true;
     void loadHistory();
   }
 });
 
 onMounted(async () => {
   await loadProfile();
+  favoritesLoaded.value = true;
   void loadFavorites();
 });
 </script>
