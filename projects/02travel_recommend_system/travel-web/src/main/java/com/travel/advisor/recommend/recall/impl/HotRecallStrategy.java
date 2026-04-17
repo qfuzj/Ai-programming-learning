@@ -10,7 +10,6 @@ import com.travel.advisor.mapper.ScenicSpotMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,7 +42,7 @@ public class HotRecallStrategy implements RecallStrategy {
         return spots.stream().map(item -> RecallCandidate.builder()
             .scenicId(item.getId())
             .sourceType(strategyName())
-            .baseScore(BigDecimal.valueOf(0.6D))
+            .baseScore(Double.valueOf(0.6D))
             .build()).toList();
     }
 }

@@ -128,8 +128,8 @@ public class AdminUserManageServiceImpl implements AdminUserManageService {
         vo.setStatus(user.getStatus());
         vo.setLastLoginTime(user.getLastLoginTime());
         vo.setLastLoginIp(user.getLastLoginIp());
-        vo.setCreateTime(user.getCreateTime());
-        vo.setUpdateTime(user.getUpdateTime());
+        vo.setCreatedAt(user.getCreateTime());
+        vo.setUpdatedAt(user.getUpdateTime());
         return vo;
     }
 

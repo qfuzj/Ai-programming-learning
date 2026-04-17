@@ -12,7 +12,6 @@ import com.travel.advisor.mapper.UserBrowseHistoryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -90,7 +89,7 @@ public class GeoRecallStrategy implements RecallStrategy {
         return regionSpots.stream().map(item -> RecallCandidate.builder()
                 .scenicId(item.getId())
                 .sourceType(strategyName())
-                .baseScore(BigDecimal.valueOf(0.8D))
+                .baseScore(0.8D)
                 .build()).toList();
     }
 }

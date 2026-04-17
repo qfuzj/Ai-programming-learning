@@ -11,14 +11,20 @@
           <el-statistic title="景点总数" :value="overview.totalScenicSpots" />
         </el-col>
         <el-col :span="6"><el-statistic title="评论总数" :value="overview.totalReviews" /></el-col>
-        <el-col :span="6"><el-statistic title="旅行计划数" :value="overview.totalPlans" /></el-col>
+        <el-col :span="6">
+          <el-statistic title="旅行计划数" :value="overview.totalTravelPlans" />
+        </el-col>
       </el-row>
       <el-row :gutter="12" style="margin-top: 12px">
         <el-col :span="6">
           <el-statistic title="推荐请求数" :value="overview.totalRecommendRequests" />
         </el-col>
-        <el-col :span="6"><el-statistic title="LLM 调用数" :value="overview.totalLlmCalls" /></el-col>
-        <el-col :span="6"><el-statistic title="浏览总数" :value="overview.totalBrowseCount" /></el-col>
+        <el-col :span="6">
+          <el-statistic title="LLM 调用数" :value="overview.totalLlmCalls" />
+        </el-col>
+        <el-col :span="6">
+          <el-statistic title="浏览总数" :value="overview.totalBrowseCount" />
+        </el-col>
         <el-col :span="6">
           <el-statistic title="收藏总数" :value="overview.totalFavoriteCount" />
         </el-col>
@@ -42,21 +48,41 @@
       </el-table>
 
       <el-divider content-position="left">推荐分析摘要</el-divider>
-      <el-descriptions :column="3" border v-loading="recommendLoading">
-        <el-descriptions-item label="总推荐请求数">{{ safeInt(recommend.totalRecommendRequests) }}</el-descriptions-item>
-        <el-descriptions-item label="总推荐点击数">{{ safeInt(recommend.totalRecommendClicks) }}</el-descriptions-item>
-        <el-descriptions-item label="总推荐收藏数">{{ safeInt(recommend.totalRecommendFavorites) }}</el-descriptions-item>
-        <el-descriptions-item label="点击率">{{ formatPercent(recommend.clickRate) }}</el-descriptions-item>
-        <el-descriptions-item label="收藏率">{{ formatPercent(recommend.favoriteRate) }}</el-descriptions-item>
+      <el-descriptions v-loading="recommendLoading" :column="3" border>
+        <el-descriptions-item label="总推荐请求数">
+          {{ safeInt(recommend.totalRecommendRequests) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="总推荐点击数">
+          {{ safeInt(recommend.totalRecommendClicks) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="总推荐收藏数">
+          {{ safeInt(recommend.totalRecommendFavorites) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="点击率">
+          {{ formatPercent(recommend.clickRate) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="收藏率">
+          {{ formatPercent(recommend.favoriteRate) }}
+        </el-descriptions-item>
       </el-descriptions>
 
       <el-divider content-position="left">LLM 分析摘要</el-divider>
-      <el-descriptions :column="3" border v-loading="llmLoading">
-        <el-descriptions-item label="总调用次数">{{ safeInt(llm.totalCallCount) }}</el-descriptions-item>
-        <el-descriptions-item label="成功次数">{{ safeInt(llm.successCallCount) }}</el-descriptions-item>
-        <el-descriptions-item label="失败次数">{{ safeInt(llm.failCallCount) }}</el-descriptions-item>
-        <el-descriptions-item label="总 Token 数">{{ safeInt(llm.totalTokens) }}</el-descriptions-item>
-        <el-descriptions-item label="总费用">{{ formatCost(llm.totalCostAmount) }}</el-descriptions-item>
+      <el-descriptions v-loading="llmLoading" :column="3" border>
+        <el-descriptions-item label="总调用次数">
+          {{ safeInt(llm.totalCallCount) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="成功次数">
+          {{ safeInt(llm.successCallCount) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="失败次数">
+          {{ safeInt(llm.failCallCount) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="总 Token 数">
+          {{ safeInt(llm.totalTokens) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="总费用">
+          {{ formatCost(llm.totalCostAmount) }}
+        </el-descriptions-item>
       </el-descriptions>
     </el-card>
   </div>
@@ -84,7 +110,7 @@ const overview = reactive<DashboardOverview>({
   totalUsers: 0,
   totalScenicSpots: 0,
   totalReviews: 0,
-  totalPlans: 0,
+  totalTravelPlans: 0,
   totalRecommendRequests: 0,
   totalLlmCalls: 0,
   totalBrowseCount: 0,

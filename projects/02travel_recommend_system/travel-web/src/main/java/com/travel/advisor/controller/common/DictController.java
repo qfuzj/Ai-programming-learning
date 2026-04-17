@@ -3,7 +3,7 @@ package com.travel.advisor.controller.common;
 import com.travel.advisor.common.enums.*;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.DictVO;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/dict")
-@RequiredArgsConstructor
 public class DictController {
 
     /**
@@ -103,6 +102,50 @@ public class DictController {
     @GetMapping("/message-content-type")
     public Result<List<DictVO>> getMessageContentTypes() {
         List<DictVO> list = Arrays.stream(MessageContentType.values())
+                .map(type -> new DictVO(type.getCode(), type.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 业务类型字典
+     */
+    @GetMapping("/biz-type")
+    public Result<List<DictVO>> getBizTypes() {
+        List<DictVO> list = Arrays.stream(BizType.values())
+                .map(type -> new DictVO(type.getCode(), type.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 文件资源状态枚举
+     */
+    @GetMapping("/file-resource-status")
+    public Result<List<DictVO>> getFileResourceStatuses() {
+        List<DictVO> list = Arrays.stream(FileResourceStatus.values())
+                .map(status -> new DictVO(status.getCode(), status.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 消息角色枚举
+     */
+    @GetMapping("/message-roles")
+    public Result<List<DictVO>> getMessageRoles() {
+        List<DictVO> list = Arrays.stream(MessageRole.values())
+                .map(role -> new DictVO(role.getRole(), role.getRole()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 行程项类型字典
+     */
+    @GetMapping("/travel-plan-item-type")
+    public Result<List<DictVO>> getTravelPlanItemTypes() {
+        List<DictVO> list = Arrays.stream(TravelPlanItemType.values())
                 .map(type -> new DictVO(type.getCode(), type.getDesc()))
                 .collect(Collectors.toList());
         return Result.success(list);

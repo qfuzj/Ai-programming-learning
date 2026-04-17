@@ -32,7 +32,9 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="头像" width="80">
           <template #default="scope">
-            <el-avatar :size="40" :src="scope.row.avatar">{{ scope.row.nickname?.charAt(0) || 'U' }}</el-avatar>
+            <el-avatar :size="40" :src="scope.row.avatar">
+              {{ scope.row.nickname?.charAt(0) || "U" }}
+            </el-avatar>
           </template>
         </el-table-column>
         <el-table-column prop="username" label="用户名" min-width="120" />
@@ -46,7 +48,7 @@
         <el-table-column prop="phone" label="手机号" width="140" />
         <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
         <el-table-column prop="lastLoginTime" label="最后登录" width="180" />
-        <el-table-column prop="createTime" label="注册时间" width="180" />
+        <el-table-column prop="createdAt" label="注册时间" width="180" />
         <el-table-column label="状态" width="90">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -99,20 +101,31 @@
     <el-dialog v-model="detailVisible" title="用户详情" width="760px" destroy-on-close>
       <div v-if="detailData" class="detail-container">
         <div class="user-avatar-section">
-          <el-avatar :size="80" :src="detailData.avatar">{{ detailData.nickname?.charAt(0) || 'U' }}</el-avatar>
+          <el-avatar :size="80" :src="detailData.avatar">
+            {{ detailData.nickname?.charAt(0) || "U" }}
+          </el-avatar>
         </div>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="用户ID">{{ detailData.id }}</el-descriptions-item>
-          <el-descriptions-item label="用户名">{{ detailData.username || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="昵称">{{ detailData.nickname || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="性别">{{ formatGender(detailData.gender) }}</el-descriptions-item>
-          <el-descriptions-item label="生日">{{ detailData.birthday || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="手机号">{{ detailData.phone || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="邮箱">{{ detailData.email || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="角色">{{ detailData.role || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="状态">{{ detailData.status === 1 ? '正常' : '禁用' }}</el-descriptions-item>
-          <el-descriptions-item label="注册时间">{{ detailData.createTime || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="最后登录" :span="2">{{ detailData.lastLoginTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="用户名">
+            {{ detailData.username || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="昵称">{{ detailData.nickname || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="性别">
+            {{ formatGender(detailData.gender) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="生日">{{ detailData.birthday || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="手机号">{{ detailData.phone || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="邮箱">{{ detailData.email || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            {{ detailData.status === 1 ? "正常" : "禁用" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="注册时间">
+            {{ detailData.createdAt || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="最后登录" :span="2">
+            {{ detailData.lastLoginTime || "-" }}
+          </el-descriptions-item>
         </el-descriptions>
       </div>
     </el-dialog>

@@ -3,6 +3,9 @@ package com.travel.advisor.dto.history;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+/**
+ * 用户浏览历史记录创建DTO
+ */
 @Data
 public class BrowseHistoryCreateDTO {
 

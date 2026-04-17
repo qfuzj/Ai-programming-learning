@@ -16,7 +16,6 @@ import com.travel.advisor.mapper.UserReviewMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -106,7 +105,7 @@ public class TagRecallStrategy implements RecallStrategy {
                 .map(id -> RecallCandidate.builder()
                         .scenicId(id)
                         .sourceType(strategyName())
-                        .baseScore(BigDecimal.valueOf(1.0D))
+                        .baseScore(Double.valueOf(1.0D))
                         .build())
                 .toList();
     }
