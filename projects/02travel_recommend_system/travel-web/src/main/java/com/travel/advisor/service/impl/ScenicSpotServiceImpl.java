@@ -396,7 +396,6 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         vo.setLevel(scenicSpot.getLevel());
         vo.setCategory(scenicSpot.getCategory());
         vo.setScore(scenicSpot.getScore());
-        vo.setRatingScore(scenicSpot.getScore());
         vo.setRatingCount(scenicSpot.getRatingCount());
         vo.setViewCount(scenicSpot.getViewCount());
         

@@ -42,8 +42,6 @@ public class ScenicCreateDTO {
 
     private String category;
 
-    private Double ratingScore;
-
     private String bestSeason;
 
     private Integer suggestedHours;

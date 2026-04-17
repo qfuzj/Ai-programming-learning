@@ -92,11 +92,6 @@ public class ScenicDetailVO {
     private Double score;
 
     /**
-     * 评分得分
-     */
-    private Double ratingScore;
-
-    /**
      * 评分人数
      */
     private Integer ratingCount;

@@ -196,9 +196,6 @@
           <el-descriptions-item label="评分">
             {{ formatNumber(detailData.score) }}
           </el-descriptions-item>
-          <el-descriptions-item label="综合评分">
-            {{ formatNumber(detailData.ratingScore) }}
-          </el-descriptions-item>
           <el-descriptions-item label="评分人数">
             {{ formatInteger(detailData.ratingCount) }}
           </el-descriptions-item>
@@ -379,16 +376,6 @@
         <el-form-item label="分类">
           <el-input v-model="formModel.category" placeholder="例如：自然风光" />
         </el-form-item>
-        <el-form-item label="评分">
-          <el-input-number
-            v-model="formModel.ratingScore"
-            :min="0"
-            :max="5"
-            :precision="1"
-            :step="0.1"
-            style="width: 100%"
-          />
-        </el-form-item>
         <el-form-item label="最佳季节">
           <el-input v-model="formModel.bestSeason" placeholder="例如：春秋" />
         </el-form-item>
@@ -504,7 +491,6 @@ interface ScenicFormModel {
   ticketPrice?: number;
   level: string;
   category: string;
-  ratingScore?: number;
   bestSeason: string;
   suggestedHours?: number;
   tips: string;
@@ -554,7 +540,6 @@ const formModel = reactive<ScenicFormModel>({
   ticketPrice: undefined,
   level: "",
   category: "",
-  ratingScore: undefined,
   bestSeason: "",
   suggestedHours: undefined,
   tips: "",
@@ -656,7 +641,6 @@ function resetFormModel(): void {
   formModel.ticketPrice = undefined;
   formModel.level = "";
   formModel.category = "";
-  formModel.ratingScore = undefined;
   formModel.bestSeason = "";
   formModel.suggestedHours = undefined;
   formModel.tips = "";
@@ -756,7 +740,6 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.ticketPrice = detail.ticketPrice;
     formModel.level = detail.level || "";
     formModel.category = detail.category || "";
-    formModel.ratingScore = detail.ratingScore;
     formModel.bestSeason = detail.bestSeason || "";
     formModel.suggestedHours = detail.suggestedHours;
     formModel.tips = detail.tips || "";
@@ -792,7 +775,6 @@ async function submitForm(): Promise<void> {
     ticketPrice: formModel.ticketPrice,
     level: formModel.level || undefined,
     category: formModel.category || undefined,
-    ratingScore: formModel.ratingScore,
     bestSeason: formModel.bestSeason || undefined,
     suggestedHours: formModel.suggestedHours,
     tips: formModel.tips || undefined,

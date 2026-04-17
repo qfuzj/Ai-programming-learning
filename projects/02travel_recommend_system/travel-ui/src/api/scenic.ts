@@ -34,7 +34,6 @@ export interface ScenicDetail extends ScenicItem {
   description?: string;
   detailContent?: string;
   ticketInfo?: string;
-  ratingScore?: number;
   ratingCount?: number;
   viewCount?: number;
   favoriteCount?: number;
@@ -105,7 +104,6 @@ export interface ScenicCreatePayload {
   ticketPrice?: number;
   level?: string;
   category?: string;
-  ratingScore?: number;
   bestSeason?: string;
   suggestedHours?: number;
   tips?: string;
@@ -154,7 +152,6 @@ interface ScenicItemRaw {
   category?: string;
   longitude?: number;
   latitude?: number;
-  ratingScore?: number;
   level?: string;
   status?: number;
   address?: string;
@@ -193,7 +190,7 @@ interface ScenicDetailRaw extends ScenicItemRaw {
  */
 function normalizeScenicItem(raw: ScenicItemRaw): ScenicItem {
   const resolvedId = Number(raw.scenicId ?? 0);
-  const resolvedScore = Number(raw.score ?? raw.ratingScore ?? 0);
+  const resolvedScore = Number(raw.score ?? 0);
   return {
     id: resolvedId,
     name: raw.name,
@@ -227,7 +224,6 @@ function normalizeScenicDetail(raw: ScenicDetailRaw): ScenicDetail {
     hotScore: raw.hotScore,
     detailContent: raw.detailContent,
     ticketInfo: raw.ticketInfo,
-    ratingScore: raw.ratingScore,
     ratingCount: raw.ratingCount,
     viewCount: raw.viewCount,
     bestSeason: raw.bestSeason,
