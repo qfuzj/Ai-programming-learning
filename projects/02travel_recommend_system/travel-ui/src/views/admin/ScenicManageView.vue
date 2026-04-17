@@ -74,8 +74,13 @@
         </el-table-column>
         <el-table-column label="标签" min-width="120">
           <template #default="{ row }">
-            <template v-if="row.tags?.length">
-              <el-tag v-for="tag in row.tags.slice(0, 3)" :key="tag" size="small" class="tag-gap">
+            <template v-if="row.tagList?.length">
+              <el-tag
+                v-for="tag in row.tagList.slice(0, 3)"
+                :key="tag"
+                size="small"
+                class="tag-gap"
+              >
                 {{ tag }}
               </el-tag>
             </template>
@@ -227,7 +232,7 @@
         <el-divider content-position="left">内容介绍</el-divider>
         <div class="info-block">
           <div class="label">简介</div>
-          <div class="value">{{ detailData.intro || "-" }}</div>
+          <div class="value">{{ detailData.description || "-" }}</div>
         </div>
         <div class="info-block">
           <div class="label">详细内容</div>
@@ -265,8 +270,8 @@
 
         <el-divider content-position="left">标签</el-divider>
         <div class="info-item">
-          <template v-if="detailData.tags?.length">
-            <el-tag v-for="tag in detailData.tags" :key="tag" size="small" class="tag-gap">
+          <template v-if="detailData.tagList?.length">
+            <el-tag v-for="tag in detailData.tagList" :key="tag" size="small" class="tag-gap">
               {{ tag }}
             </el-tag>
           </template>
@@ -462,9 +467,9 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import {
   createAdminScenic,
+  getAdminScenicDetail,
   deleteAdminScenic,
   getAdminScenicPage,
-  getScenicDetail,
   type ScenicCreatePayload,
   type ScenicDetail,
   type ScenicItem,
@@ -719,7 +724,7 @@ function onSizeChange(): void {
 
 async function openDetailDialog(row: ScenicItem): Promise<void> {
   try {
-    detailData.value = await getScenicDetail(row.id);
+    detailData.value = await getAdminScenicDetail(row.id);
     detailVisible.value = true;
   } catch {
     ElMessage.error("获取景点详情失败");
@@ -736,9 +741,7 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
   isEdit.value = true;
   resetFormModel();
   try {
-    // 编辑前拉取详情，确保回填信息尽可能完整。
-    const detail = await getScenicDetail(row.id);
-    const tagNameSet = new Set(detail.tags ?? []);
+    const detail = await getAdminScenicDetail(row.id);
     formModel.id = row.id;
     formModel.name = detail.name;
     formModel.regionId = detail.regionId;
@@ -746,7 +749,7 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.longitude = detail.longitude;
     formModel.latitude = detail.latitude;
     formModel.coverImage = detail.coverImage || "";
-    formModel.description = detail.intro || "";
+    formModel.description = detail.description || "";
     formModel.detailContent = detail.detailContent || "";
     formModel.openTime = detail.openTime || "";
     formModel.ticketInfo = detail.ticketInfo || "";
@@ -760,11 +763,9 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.sortOrder = detail.sortOrder;
     formModel.isRecommended = detail.isRecommended ?? 0;
     formModel.status = detail.status ?? 1;
-    formModel.tagIds = tagOptions.value
-      .filter((item) => tagNameSet.has(item.name))
-      .map((item) => item.id);
+    formModel.tagIds = detail.tagIds ?? [];
     formModel.imageIds = (detail.images ?? [])
-      .map((item) => Number(item.id))
+      .map((item) => Number(item.fileResourceId))
       .filter((id) => Number.isFinite(id));
     formVisible.value = true;
   } catch {

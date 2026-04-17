@@ -6,6 +6,9 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
+/**
+ * 景点查询 DTO
+ */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class ScenicQueryDTO extends PageQuery {

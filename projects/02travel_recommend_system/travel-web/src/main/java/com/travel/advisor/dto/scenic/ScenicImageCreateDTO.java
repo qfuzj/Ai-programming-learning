@@ -2,6 +2,9 @@ package com.travel.advisor.dto.scenic;
 
 import lombok.Data;
 
+/**
+ * 景点图片创建 DTO
+ */
 @Data
 public class ScenicImageCreateDTO {
 

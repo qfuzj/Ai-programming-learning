@@ -7,6 +7,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * 景点创建 DTO
+ */
 @Data
 public class ScenicCreateDTO {
 
@@ -39,7 +42,7 @@ public class ScenicCreateDTO {
 
     private String category;
 
-    private BigDecimal ratingScore;
+    private Double ratingScore;
 
     private String bestSeason;
 

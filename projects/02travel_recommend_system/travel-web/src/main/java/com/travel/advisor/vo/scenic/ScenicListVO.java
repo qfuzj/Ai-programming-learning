@@ -56,6 +56,14 @@ public class ScenicListVO {
      */
     private String level;
 
+    private Integer status;
+
+    private String address;
+
+    private String openTime;
+
+    private BigDecimal ticketPrice;
+
     /**
      * 景点标签列表
      */
@@ -65,12 +73,4 @@ public class ScenicListVO {
      * 是否是用户的收藏
      */
     private Boolean isFavorite;
-
-    private Integer status;
-
-    private String address;
-
-    private String openTime;
-
-    private BigDecimal ticketPrice;
 }

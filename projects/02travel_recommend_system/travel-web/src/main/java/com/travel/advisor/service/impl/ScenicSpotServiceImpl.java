@@ -51,7 +51,6 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
-        // 始终在数据库层面完成过滤
         return scenicSpotMapper.selectList(
                 new LambdaQueryWrapper<ScenicSpot>()
                         .in(ScenicSpot::getId, ids)
@@ -59,6 +58,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         );
     }
 
+    /**
+     * 分页查询景点列表。
+     */
     @Override
     public PageResult<ScenicListVO> page(ScenicQueryDTO dto) {
         ScenicQueryDTO query = dto == null ? new ScenicQueryDTO() : dto;
@@ -77,6 +79,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .build();
     }
 
+    /**
+     * 查询景点详情，并在返回后递增浏览量。
+     */
     @Override
     public ScenicDetailVO detail(Long id) {
         ScenicSpot scenicSpot = findById(id);
@@ -84,7 +89,6 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         Long currentUserId = SecurityUtils.getCurrentUserId();
         vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
         
-        // 增加浏览量记录
         LambdaUpdateWrapper<ScenicSpot> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(ScenicSpot::getId, id)
                 .setSql("view_count = view_count + 1");
@@ -94,6 +98,15 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     @Override
+    public ScenicDetailVO adminDetail(Long id) {
+        ScenicSpot scenicSpot = findById(id);
+        return buildDetailVO(scenicSpot);
+    }
+
+    /**
+     * 按收藏数、评分、浏览量排序，返回热门景点前 10 条。
+     */
+    @Override
     public List<ScenicListVO> hotList() {
         LambdaQueryWrapper<ScenicSpot> queryWrapper = new LambdaQueryWrapper<ScenicSpot>()
                 .eq(ScenicSpot::getStatus, 1)
@@ -101,10 +114,13 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .orderByDesc(ScenicSpot::getFavoriteCount)
                 .orderByDesc(ScenicSpot::getScore)
                 .orderByDesc(ScenicSpot::getViewCount)
-                .last("limit 10");      // 热门榜单通常只取 Top 10
+                .last("limit 10");
         return enrichList(scenicSpotMapper.selectList(queryWrapper));
     }
 
+    /**
+     * 查询景点筛选项。
+     */
     @Override
     public ScenicFilterOptionsVO filterOptions() {
         ScenicFilterOptionsVO vo = new ScenicFilterOptionsVO();
@@ -127,6 +143,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         return scenicSpot.getId();
     }
 
+    /**
+     * 按非空字段更新景点信息。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void update(Long id, ScenicUpdateDTO dto) {
@@ -146,6 +165,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         }
     }
 
+    /**
+     * 删除景点及其关联的标签、图片记录。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void delete(Long id) {
@@ -155,6 +177,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         scenicSpotMapper.deleteById(id);
     }
 
+    /**
+     * 更新单个景点状态。
+     */
     @Override
     public void updateStatus(Long id, Integer status) {
         findById(id);
@@ -165,6 +190,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         scenicSpotMapper.updateById(update);
     }
 
+    /**
+     * 批量更新景点状态。
+     */
     @Override
     public void batchUpdateStatus(ScenicStatusDTO dto) {
         if (dto == null || CollectionUtils.isEmpty(dto.getScenicIds())) {
@@ -175,6 +203,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         }
     }
 
+    /**
+     * 覆盖景点标签关联。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateTags(Long scenicSpotId, List<Long> tagIds) {
@@ -190,6 +221,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .toList();
     }
 
+    /**
+     * 新增景点图片记录，支持通过 URL 或文件资源 ID 关联图片。
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public Long addImage(Long scenicSpotId, ScenicImageCreateDTO dto) {
@@ -246,9 +280,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     /**
-     * 获取指定地区及其所有子地区的ID集合，供查询使用，避免在数据库层面进行递归查询
-     * @param regionId
-     * @return
+     * 返回指定地区及其子地区 ID 集合。
      */
     private Set<Long> getAllDescendantRegionIds(Long regionId) {
         Set<Long> ids = new HashSet<>();
@@ -266,10 +298,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     /**
-     * 构建查询条件 支持根据状态、地区、分类、等级、评分等多维度过滤，并且支持关键词搜索（同时匹配景点名称和地址）
-     *
-     * @param query 查询参数
-     * @return 查询条件构造器
+     * 构建景点分页查询条件。
      */
     private LambdaQueryWrapper<ScenicSpot> buildQueryWrapper(ScenicQueryDTO query) {
         LambdaQueryWrapper<ScenicSpot> queryWrapper = new LambdaQueryWrapper<ScenicSpot>()
@@ -284,7 +313,6 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .ge(query.getMinScore() != null, ScenicSpot::getScore, query.getMinScore())
                 .eq(ScenicSpot::getIsDeleted, 0);
 
-        // 关键词搜索：同时匹配景点名称和地址
         if (StringUtils.hasText(query.getKeyword())) {
             queryWrapper.and(wrapper -> wrapper
                     .like(ScenicSpot::getName, query.getKeyword())
@@ -297,11 +325,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     /**
-     * 应用排序规则 支持根据名称、评分、热度（收藏数和浏览数综合）、创建时间等字段进行排序，并且支持升序和降序
-     *
-     * @param queryWrapper 查询条件构造器
-     * @param sortBy       排序字段
-     * @param sortOrder    排序顺序（asc或desc）
+     * 应用排序规则，兼容前端的 `createdAt` 和实体字段 `createTime`。
      */
     private void applySort(LambdaQueryWrapper<ScenicSpot> queryWrapper, String sortBy, String sortOrder) {
         boolean isAsc = "asc".equalsIgnoreCase(sortOrder);
@@ -315,7 +339,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             case "hot" -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getFavoriteCount)
                     .orderBy(true, isAsc, ScenicSpot::getViewCount);
 
-            case "createtime" -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getCreateTime);
+            case "createtime", "createdat" -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getCreateTime);
 
             default -> queryWrapper.orderBy(true, isAsc, ScenicSpot::getSortOrder)
                     .orderByDesc(ScenicSpot::getCreateTime);
@@ -323,10 +347,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     /**
-     * 丰富列表数据 包括地区名称、标签名称、是否收藏等信息，避免N+1查询问题
-     *
-     * @param scenicSpots 景点列表
-     * @return 丰富后的景点列表VO
+     * 批量补齐地区、标签、收藏状态等列表展示字段。
      */
     private List<ScenicListVO> enrichList(List<ScenicSpot> scenicSpots) {
         if (CollectionUtils.isEmpty(scenicSpots)) {
@@ -347,12 +368,12 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             vo.setLongitude(scenicSpot.getLongitude());
             vo.setLatitude(scenicSpot.getLatitude());
             vo.setLevel(scenicSpot.getLevel());
-            vo.setTagList(tagNameMap.getOrDefault(scenicSpot.getId(), Collections.emptyList()));
-            vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
             vo.setStatus(scenicSpot.getStatus());
             vo.setAddress(scenicSpot.getAddress());
             vo.setOpenTime(scenicSpot.getOpenTime());
             vo.setTicketPrice(scenicSpot.getTicketPrice());
+            vo.setTagList(tagNameMap.getOrDefault(scenicSpot.getId(), Collections.emptyList()));
+            vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
             return vo;
         }).toList();
     }
@@ -395,6 +416,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         vo.setSortOrder(scenicSpot.getSortOrder());
         vo.setIsRecommended(scenicSpot.getIsRecommended());
         vo.setTagList(loadTagNameMap(List.of(scenicSpot)).getOrDefault(scenicSpot.getId(), Collections.emptyList()));
+        vo.setTagIds(loadTagIds(scenicSpot.getId()));
         vo.setImages(listImages(scenicSpot.getId()));
         return vo;
     }
@@ -407,49 +429,45 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         return count == null ? 0 : Math.toIntExact(count);
     }
 
+    private List<Long> loadTagIds(Long scenicSpotId) {
+        return scenicSpotTagMapper.selectByScenicSpotId(scenicSpotId).stream()
+                .map(ScenicSpotTag::getTagId)
+                .toList();
+    }
+
     /**
-     * 加载地区名称映射 避免N+1查询问题
-     *
-     * @param scenicSpots 景点列表
-     * @return 地区ID到地区名称的映射
+     * 批量加载地区名称映射。
      */
     private Map<Long, String> loadRegionNameMap(List<ScenicSpot> scenicSpots) {
         List<Long> regionIds = scenicSpots.stream()
-                .map(ScenicSpot::getRegionId)   // 取出所有景点的地区ID
-                .filter(Objects::nonNull)       // 排除掉没有关联地区的
-                .distinct()                     // 去重，比如果多个景点在同一个地区，只查询一次
-                .toList();                      // 转成列表，方便后续查询
+                .map(ScenicSpot::getRegionId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
         if (regionIds.isEmpty()) {
             return Collections.emptyMap();
         }
         return regionMapper.selectBatchIds(regionIds).stream()
                 .collect(Collectors.toMap(
-                        Region::getId,                      // Key:地区ID
-                        Region::getName,                    // Value:地区名称
-                        (left, right) -> left, // 如果有重复的地区ID（理论上不应该有），保留第一个出现的名称
-                        LinkedHashMap::new));               // 使用LinkedHashMap保持查询结果的顺序与输入的regionIds一致
+                        Region::getId,
+                        Region::getName,
+                        (left, right) -> left,
+                        LinkedHashMap::new));
     }
 
     /**
-     * 加载标签名称映射 避免N+1查询问题
-     *
-     * @param scenicSpots 景点列表
-     * @return 景点ID到标签名称列表的映射
+     * 批量加载景点标签名称映射。
      */
     private Map<Long, List<String>> loadTagNameMap(List<ScenicSpot> scenicSpots) {
-        // 获取不重复的景点ID列表
         List<Long> scenicIds = scenicSpots.stream().map(ScenicSpot::getId).distinct().toList();
         if (scenicIds.isEmpty()) {
             return Collections.emptyMap();
         }
-        // 根据景点ID列表，查询相关的景点标签关联列表
         List<ScenicSpotTag> scenicSpotTags = scenicSpotTagMapper.selectByScenicSpotIds(scenicIds);
         if (CollectionUtils.isEmpty(scenicSpotTags)) {
             return Collections.emptyMap();
         }
-        // 从景点标签关联列表中，过滤出所有不重复的标签ID列表
         List<Long> tagIds = scenicSpotTags.stream().map(ScenicSpotTag::getTagId).distinct().toList();
-        // 根据标签ID列表批量查询标签信息，并映射为<标签ID,标签名称>Map，如果有相同的标签ID，取第一个，并保持查询结果的顺序
         Map<Long, String> tagNameMap = tagMapper.selectBatchIds(tagIds).stream()
                 .collect(Collectors.toMap(Tag::getId, Tag::getName, (left, right) -> left, LinkedHashMap::new));
         Map<Long, List<String>> result = new HashMap<>();
@@ -458,16 +476,13 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             if (tagName == null) {
                 continue;
             }
-            // 映射为 <景点ID，景点ID下的标签名称列表>Map
             result.computeIfAbsent(scenicSpotTag.getScenicSpotId(), key -> new ArrayList<>()).add(tagName);
         }
         return result;
     }
 
     /**
-     * @param userId
-     * @param scenicSpotId
-     * @return
+     * 判断当前用户是否已收藏该景点。
      */
     private boolean isFavorite(Long userId, Long scenicSpotId) {
         Long count = scenicSpotMapper.countUserFavorite(userId, scenicSpotId);
@@ -493,7 +508,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             scenicSpot.setIsRecommended(0);
         }
         if (scenicSpot.getScore() == null) {
-            scenicSpot.setScore(BigDecimal.ZERO);
+            scenicSpot.setScore(0.0);
         }
         if (scenicSpot.getRatingCount() == null) {
             scenicSpot.setRatingCount(0);
@@ -569,10 +584,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     /**
-     * 获取对象中值为null的属性名称列表，供BeanUtils.copyProperties时忽略这些属性，避免覆盖原有值
-     *
-     * @param source 源对象
-     * @return 值为null的属性名称数组
+     * 返回对象中值为 null 的属性名，供 BeanUtils.copyProperties 忽略。
      */
     private String[] getNullPropertyNames(Object source) {
         BeanWrapper src = new BeanWrapperImpl(source);

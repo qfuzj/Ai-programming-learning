@@ -4,62 +4,93 @@
 import http from "@/api/http";
 import type { PageQuery, PageResult } from "@/types/api";
 
+/**
+ * 前端-景点列表项 VO（View Object）
+ * 注意：后端接口返回的字段可能不完全一致，需进行适当的数据规整化
+ */
 export interface ScenicItem {
   id: number;
-  scenicId?: number;
   name: string;
-  coverImage?: string;
   regionName: string;
-  category?: string;
+  address?: string;
   longitude?: number;
   latitude?: number;
-  tags: string[];
-  tagList?: string[];
-  score: number;
-  level?: string;
-  status?: number;
-  intro?: string;
-  address?: string;
+  coverImage?: string;
   openTime?: string;
   ticketPrice?: number;
+  level?: string;
+  category?: string;
+  score: number;
+  status?: number;
+  tagList?: string[];
   isFavorite?: boolean;
 }
 
+/**
+ * 前端-景点详细信息 VO
+ */
 export interface ScenicDetail extends ScenicItem {
-  images?: Array<{ id: number; imageUrl: string }>;
   regionId?: number;
-  favoriteCount?: number;
-  reviewCount?: number;
-  hotScore?: number;
+  description?: string;
   detailContent?: string;
   ticketInfo?: string;
   ratingScore?: number;
   ratingCount?: number;
   viewCount?: number;
+  favoriteCount?: number;
+  reviewCount?: number;
+  hotScore?: number;
   bestSeason?: string;
   suggestedHours?: number;
   tips?: string;
   sortOrder?: number;
   isRecommended?: number;
-  isFavorite?: boolean;
+  tagIds?: number[];
+  images?: Array<{ id: number; imageUrl: string; fileResourceId?: number }>;
 }
 
+/**
+ * 前端-地区树形结构 VO
+ */
+export interface RegionTreeNode {
+  id: number;
+  parentId?: number;
+  name: string;
+  shortName?: string;
+  level?: number;
+  code?: string;
+  longitude?: number;
+  latitude?: number;
+  isHot?: number;
+  children?: RegionTreeNode[];
+}
+
+/**
+ * 对应-景点筛选条件 VO
+ */
 export interface ScenicFilterOptions {
-  regions: Array<{ id: number; name: string }>;
+  regions: RegionTreeNode[];
   categories: string[];
   levels: string[];
 }
 
+/**
+ * 对应-景点查询 DTO
+ */
 export interface ScenicQuery extends PageQuery {
   keyword?: string;
   regionId?: number;
   category?: string;
   level?: string;
   minScore?: number;
-  sortBy?: "hot" | "score" | "createTime";
+  sortBy?: "hot" | "score" | "createdAt";
+  sortOrder?: "ASC" | "DESC";
   status?: number;
 }
 
+/**
+ * 对应-景点创建 DTO
+ */
 export interface ScenicCreatePayload {
   name: string;
   regionId: number;
@@ -85,7 +116,11 @@ export interface ScenicCreatePayload {
   imageIds?: number[];
 }
 
+/**
+ * 对应-景点更新 DTO
+ */
 export interface ScenicUpdatePayload extends Partial<ScenicCreatePayload> {}
+
 
 export interface ScenicImageItem {
   id: number;
@@ -97,6 +132,9 @@ export interface ScenicImageItem {
   isCover?: number;
 }
 
+/**
+ * 对应-景点图片创建 DTO
+ */
 export interface ScenicImageCreatePayload {
   fileResourceId?: number;
   imageUrl?: string;
@@ -106,6 +144,9 @@ export interface ScenicImageCreatePayload {
   isCover?: number;
 }
 
+/**
+ * 对应-景点列表项 VO
+ */
 interface ScenicItemRaw {
   scenicId?: number;
   name: string;
@@ -114,19 +155,23 @@ interface ScenicItemRaw {
   category?: string;
   longitude?: number;
   latitude?: number;
-  score?: number;
   ratingScore?: number;
   level?: string;
   status?: number;
-  description?: string;
   address?: string;
   openTime?: string;
   ticketPrice?: number;
   tagList?: string[];
   isFavorite?: boolean;
+  score?: number;
 }
 
+/**
+ * 对应-景点详细信息 VO
+ * 注意：后端接口返回的字段可能不完全一致，需进行适当的数据规整化
+ */
 interface ScenicDetailRaw extends ScenicItemRaw {
+  description?: string;
   regionId?: number;
   favoriteCount?: number;
   reviewCount?: number;
@@ -140,39 +185,43 @@ interface ScenicDetailRaw extends ScenicItemRaw {
   tips?: string;
   sortOrder?: number;
   isRecommended?: number;
-  isFavorite?: boolean;
+  tagIds?: number[];
   images?: ScenicImageItem[];
 }
 
+/**
+ * 数据规整化
+ */
 function normalizeScenicItem(raw: ScenicItemRaw): ScenicItem {
   const resolvedId = Number(raw.scenicId ?? 0);
   const resolvedScore = Number(raw.score ?? raw.ratingScore ?? 0);
   return {
     id: resolvedId,
-    scenicId: resolvedId,
     name: raw.name,
     coverImage: raw.coverImage,
     regionName: raw.regionName ?? "",
+    score: Number.isFinite(resolvedScore) ? resolvedScore : 0,
     category: raw.category,
     longitude: raw.longitude,
     latitude: raw.latitude,
-    tags: raw.tagList ?? [],
-    tagList: raw.tagList ?? [],
-    score: Number.isFinite(resolvedScore) ? resolvedScore : 0,
     level: raw.level,
     status: raw.status,
-    intro: raw.description,
     address: raw.address,
     openTime: raw.openTime,
     ticketPrice: raw.ticketPrice,
+    tagList: raw.tagList ?? [],
     isFavorite: !!raw.isFavorite,
   };
 }
 
+/**
+ * 数据规整化
+ */
 function normalizeScenicDetail(raw: ScenicDetailRaw): ScenicDetail {
   const base = normalizeScenicItem(raw);
   return {
     ...base,
+    description: raw.description,
     regionId: raw.regionId,
     favoriteCount: raw.favoriteCount,
     reviewCount: raw.reviewCount,
@@ -187,10 +236,11 @@ function normalizeScenicDetail(raw: ScenicDetailRaw): ScenicDetail {
     tips: raw.tips,
     sortOrder: raw.sortOrder,
     isRecommended: raw.isRecommended,
-    isFavorite: raw.isFavorite,
+    tagIds: raw.tagIds,
     images: raw.images?.map((image) => ({
       id: image.id,
       imageUrl: image.imageUrl ?? "",
+      fileResourceId: image.fileResourceId,
     })),
   };
 }
@@ -204,29 +254,35 @@ function mapPageResult<T, R>(page: PageResult<T>, mapper: (item: T) => R): PageR
 
 export function getScenicPage(query: ScenicQuery): Promise<PageResult<ScenicItem>> {
   return http
-    .get<any, PageResult<ScenicItemRaw>>("/api/user/scenic-spots", { params: query })
+    .get<PageResult<ScenicItemRaw>>("/api/user/scenic-spots", { params: query })
     .then((res) => mapPageResult(res, normalizeScenicItem));
 }
 
 export function getScenicDetail(id: number): Promise<ScenicDetail> {
   return http
-    .get<any, ScenicDetailRaw>(`/api/user/scenic-spots/${id}`)
+    .get<ScenicDetailRaw>(`/api/user/scenic-spots/${id}`)
+    .then((res) => normalizeScenicDetail(res));
+}
+
+export function getAdminScenicDetail(id: number): Promise<ScenicDetail> {
+  return http
+    .get<ScenicDetailRaw>(`/api/admin/scenic-spots/${id}`)
     .then((res) => normalizeScenicDetail(res));
 }
 
 export function getScenicHotList(): Promise<ScenicItem[]> {
   return http
-    .get<any, ScenicItemRaw[]>("/api/user/scenic-spots/hot")
+    .get<ScenicItemRaw[]>("/api/user/scenic-spots/hot")
     .then((res) => res.map(normalizeScenicItem));
 }
 
 export function getScenicFilterOptions(): Promise<ScenicFilterOptions> {
-  return http.get("/api/user/scenic-spots/filter-options");
+  return http.get<ScenicFilterOptions>("/api/user/scenic-spots/filter-options");
 }
 
 export function getAdminScenicPage(query: ScenicQuery): Promise<PageResult<ScenicItem>> {
   return http
-    .get<any, PageResult<ScenicItemRaw>>("/api/admin/scenic-spots", { params: query })
+    .get<PageResult<ScenicItemRaw>>("/api/admin/scenic-spots", { params: query })
     .then((res) => mapPageResult(res, normalizeScenicItem));
 }
 
