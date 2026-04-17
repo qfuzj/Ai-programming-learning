@@ -4,33 +4,36 @@
 import http from "@/api/http";
 import type { PageQuery, PageResult } from "@/types/api";
 
+/**
+ * 对应-管理员用户详情 VO
+ */
 export interface AdminUserItem {
   id: number;
   username?: string;
   nickname?: string;
-  email?: string;
   phone?: string;
+  email?: string;
   avatar?: string;
   gender?: number;
   birthday?: string;
   regionId?: number;
   regionName?: string;
-  role?: string;
   status?: number;
   lastLoginIp?: string;
-  createTime?: string;
-  updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
   lastLoginTime?: string;
 }
 
+/**
+ * 对应-用户管理查询 DTO
+ */
 export interface AdminUserQuery extends PageQuery {
   keyword?: string;
   status?: number;
 }
 
-export function getAdminUserPage(
-  query: AdminUserQuery
-): Promise<PageResult<AdminUserItem>> {
+export function getAdminUserPage(query: AdminUserQuery): Promise<PageResult<AdminUserItem>> {
   return http.get("/api/admin/users", { params: query });
 }
 
