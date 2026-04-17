@@ -9,6 +9,10 @@ import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.audit.AuditActionDTO;
 import com.travel.advisor.dto.audit.AuditQueryDTO;
 import com.travel.advisor.entity.ContentAudit;
+
+import com.travel.advisor.vo.audit.AuditVO;
+import com.travel.advisor.utils.BeanCopyUtils;
+import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.entity.UserReview;
 import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.mapper.ContentAuditMapper;
@@ -32,32 +36,82 @@ public class AuditServiceImpl implements AuditService {
     private final ContentAuditMapper contentAuditMapper;
     private final UserReviewMapper userReviewMapper;
 
+    /**
+     * 获取管理员审核分页列表
+     */
     @Override
-    public PageResult<ContentAudit> page(AuditQueryDTO dto) {
+    public PageResult<AuditVO> page(AuditQueryDTO dto) {
         LambdaQueryWrapper<ContentAudit> wrapper = new LambdaQueryWrapper<ContentAudit>()
-            .eq(StringUtils.hasText(dto.getContentType()), ContentAudit::getContentType, dto.getContentType())
-            .eq(dto.getAuditStatus() != null, ContentAudit::getAuditStatus, dto.getAuditStatus())
-            .eq(dto.getContentId() != null, ContentAudit::getContentId, dto.getContentId())
-            .eq(dto.getSubmitUserId() != null, ContentAudit::getSubmitUserId, dto.getSubmitUserId())
-            .orderByDesc(ContentAudit::getCreateTime);
+                .eq(StringUtils.hasText(dto.getContentType()), ContentAudit::getContentType, dto.getContentType())
+                .eq(dto.getAuditStatus() != null, ContentAudit::getAuditStatus, dto.getAuditStatus())
+                .eq(dto.getContentId() != null, ContentAudit::getContentId, dto.getContentId())
+                .eq(dto.getSubmitUserId() != null, ContentAudit::getSubmitUserId, dto.getSubmitUserId())
+                .orderByDesc(ContentAudit::getCreateTime);
 
         Page<ContentAudit> page = new Page<>(dto.getPageNum(), dto.getPageSize());
         Page<ContentAudit> result = contentAuditMapper.selectPage(page, wrapper);
-        return PageResult.<ContentAudit>builder()
-            .records(result.getRecords())
-            .total(result.getTotal())
-            .pageNum(Math.toIntExact(result.getCurrent()))
-            .pageSize(Math.toIntExact(result.getSize()))
-            .totalPage(result.getPages())
-            .build();
+
+        return PageResult.<AuditVO>builder()
+                .records(result.getRecords().stream().map(this::convertToVO)
+                        .collect(java.util.stream.Collectors.toList()))
+                .total(result.getTotal())
+                .pageNum(Math.toIntExact(result.getCurrent()))
+                .pageSize(Math.toIntExact(result.getSize()))
+                .totalPage(result.getPages())
+                .build();
     }
 
+    /**
+     * 获取管理员审核详情
+     * 
+     * @param id 审核记录ID
+     * @return 审核记录详情VO对象
+     */
+    @Override
+    public AuditVO getById(Long id) {
+        ContentAudit audit = contentAuditMapper.selectById(id);
+        if (audit == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "审核记录不存在");
+        }
+        return convertToVO(audit);
+    }
+
+    private AuditVO convertToVO(ContentAudit audit) {
+        AuditVO vo = BeanCopyUtils.copy(audit, AuditVO.class);
+        if (StringUtils.hasText(audit.getContentSnapshot())) {
+            try {
+                vo.setSnapshot(JsonUtils.fromJson(audit.getContentSnapshot(), Object.class));
+            } catch (Exception e) {
+                // ignore or log
+            }
+        }
+        if (StringUtils.hasText(audit.getAutoAuditResult())) {
+            try {
+                vo.setAutoAuditResult(JsonUtils.fromJson(audit.getAutoAuditResult(), Object.class));
+            } catch (Exception e) {
+            }
+        }
+        if (StringUtils.hasText(audit.getViolationType())) {
+            try {
+                vo.setViolationType(JsonUtils.fromJson(audit.getViolationType(), Object.class));
+            } catch (Exception e) {
+            }
+        }
+        return vo;
+    }
+
+    /**
+     * 批准审核
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void approve(Long id, AuditActionDTO dto) {
         updateAuditAndReview(id, ContentAuditStatus.APPROVED.getCode(), UserReviewStatus.APPROVED.getCode(), dto);
     }
 
+    /**
+     * 拒绝审核
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void reject(Long id, AuditActionDTO dto) {
@@ -67,6 +121,9 @@ public class AuditServiceImpl implements AuditService {
         updateAuditAndReview(id, ContentAuditStatus.REJECTED.getCode(), UserReviewStatus.REJECTED.getCode(), dto);
     }
 
+    /**
+     * 隐藏审核
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void hide(Long id, AuditActionDTO dto) {
@@ -76,15 +133,16 @@ public class AuditServiceImpl implements AuditService {
 
     /**
      * 更新审核记录和用户点评状态
-     * @param auditId 审核记录ID
-    * @param auditStatus 审核状态：见 ContentAuditStatusEnum
-    * @param reviewStatus 点评状态：见 UserReviewStatusEnum
-     * @param dto 审核操作DTO，包含审核备注等信息
+     * 
+     * @param auditId      审核记录ID
+     * @param auditStatus  审核状态：见 ContentAuditStatusEnum
+     * @param reviewStatus 点评状态：见 UserReviewStatusEnum
+     * @param dto          审核操作DTO，包含审核备注等信息
      */
     private void updateAuditAndReview(Long auditId,
-                                      Integer auditStatus,
-                                      Integer reviewStatus,
-                                      AuditActionDTO dto) {
+            Integer auditStatus,
+            Integer reviewStatus,
+            AuditActionDTO dto) {
         ContentAudit audit = contentAuditMapper.selectById(auditId);
         if (audit == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "审核记录不存在");

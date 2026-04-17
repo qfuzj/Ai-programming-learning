@@ -35,8 +35,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -210,6 +208,7 @@ public class ReviewServiceImpl implements ReviewService {
             vo.setIsAnonymous(item.getIsAnonymous());
             vo.setStatus(item.getStatus());
             vo.setAuditRemark(item.getAuditRemark());
+            vo.setRejectReason(item.getAuditRemark());
             vo.setCreatedAt(item.getCreateTime());
             return vo;
         }).toList();

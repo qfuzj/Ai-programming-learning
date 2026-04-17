@@ -174,6 +174,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
+import { useDebounceFn } from "@vueuse/core";
 import { ElMessage } from "element-plus";
 import {
   approveAdminAudit,
@@ -239,10 +240,10 @@ async function loadReviewList(): Promise<void> {
   }
 }
 
-function onSearch(): void {
+const onSearch = useDebounceFn((): void => {
   query.pageNum = 1;
   void loadReviewList();
-}
+}, 300);
 
 function onReset(): void {
   query.auditStatus = undefined;

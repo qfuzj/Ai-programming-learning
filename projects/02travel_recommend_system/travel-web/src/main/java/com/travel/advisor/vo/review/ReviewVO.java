@@ -68,5 +68,10 @@ public class ReviewVO {
      */
     private String auditRemark;
 
+    /**
+     * 拒绝原因（与 auditRemark 同源字段，前端展示使用）
+     */
+    private String rejectReason;
+
     private LocalDateTime createdAt;
 }

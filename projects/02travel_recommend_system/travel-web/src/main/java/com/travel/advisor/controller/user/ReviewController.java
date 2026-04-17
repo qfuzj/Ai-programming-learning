@@ -4,7 +4,9 @@ import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.review.ReviewCreateDTO;
+import com.travel.advisor.dto.review.ReviewReplyDTO;
 import com.travel.advisor.service.ReviewService;
+import com.travel.advisor.vo.review.ReviewReplyVO;
 import com.travel.advisor.vo.review.ReviewVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +44,21 @@ public class ReviewController {
     @GetMapping("/scenic-spots/{scenicId}/reviews")
     public Result<PageResult<ReviewVO>> scenicReviews(@PathVariable Long scenicId, PageQuery pageQuery) {
         return Result.success(reviewService.pageScenicReviews(scenicId, pageQuery));
+    }
+
+    @PostMapping("/reviews/{reviewId}/like")
+    public Result<Void> likeReview(@PathVariable Long reviewId) {
+        reviewService.likeReview(reviewId);
+        return Result.success();
+    }
+
+    @PostMapping("/reviews/{reviewId}/reply")
+    public Result<Long> replyReview(@PathVariable Long reviewId, @Valid @RequestBody ReviewReplyDTO dto) {
+        return Result.success(reviewService.replyReview(reviewId, dto));
+    }
+
+    @GetMapping("/reviews/{reviewId}/replies")
+    public Result<PageResult<ReviewReplyVO>> pageReplies(@PathVariable Long reviewId, PageQuery pageQuery) {
+        return Result.success(reviewService.pageReplies(reviewId, pageQuery));
     }
 }
