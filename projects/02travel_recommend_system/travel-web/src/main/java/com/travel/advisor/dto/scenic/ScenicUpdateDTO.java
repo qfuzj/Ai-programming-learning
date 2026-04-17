@@ -5,6 +5,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * 景点更新 DTO
+ */
 @Data
 public class ScenicUpdateDTO {
 
@@ -34,7 +37,7 @@ public class ScenicUpdateDTO {
 
     private String category;
 
-    private BigDecimal ratingScore;
+    private Double ratingScore;
 
     private String bestSeason;
 

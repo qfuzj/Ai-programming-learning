@@ -157,6 +157,11 @@ public class ScenicDetailVO {
     private List<String> tagList;
 
     /**
+     * 标签 ID 列表
+     */
+    private List<Long> tagIds;
+
+    /**
      * 图片列表
      */
     private List<ScenicImageVO> images;

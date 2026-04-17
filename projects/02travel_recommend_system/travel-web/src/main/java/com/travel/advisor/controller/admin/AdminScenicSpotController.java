@@ -10,6 +10,7 @@ import com.travel.advisor.dto.scenic.ScenicUpdateDTO;
 import com.travel.advisor.service.ScenicSpotService;
 import com.travel.advisor.vo.scenic.ScenicImageVO;
 import com.travel.advisor.vo.scenic.ScenicListVO;
+import com.travel.advisor.vo.scenic.ScenicDetailVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -33,6 +34,11 @@ public class AdminScenicSpotController {
     @GetMapping
     public Result<PageResult<ScenicListVO>> page(@Valid ScenicQueryDTO dto) {
         return Result.success(scenicSpotService.page(dto));
+    }
+
+    @GetMapping("/{id}")
+    public Result<ScenicDetailVO> detail(@PathVariable Long id) {
+        return Result.success(scenicSpotService.adminDetail(id));
     }
 
     @PostMapping

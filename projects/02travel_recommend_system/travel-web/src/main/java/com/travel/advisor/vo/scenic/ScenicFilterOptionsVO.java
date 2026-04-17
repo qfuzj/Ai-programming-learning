@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * 景点筛选条件 VO
+ */
 @Data
 public class ScenicFilterOptionsVO {
 

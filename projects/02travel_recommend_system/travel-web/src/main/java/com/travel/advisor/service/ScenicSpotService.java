@@ -30,6 +30,8 @@ public interface ScenicSpotService {
 
     ScenicDetailVO detail(Long id);
 
+    ScenicDetailVO adminDetail(Long id);
+
     List<ScenicListVO> hotList();
 
     ScenicFilterOptionsVO filterOptions();
