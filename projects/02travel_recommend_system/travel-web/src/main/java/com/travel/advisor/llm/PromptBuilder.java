@@ -1,6 +1,6 @@
 package com.travel.advisor.llm;
 
-import com.travel.advisor.dto.llm.LlmChatRequest;
+import com.travel.advisor.dto.llm.LlmRequest;
 import com.travel.advisor.entity.LlmMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -25,31 +25,29 @@ public class PromptBuilder {
      * @param conversationId  会话 ID
      * @param contextData     最新的上下文数据（如用户偏好、历史行为等），用于构建系统提示
      * @param historyMessages 历史消息列表，按照时间顺序排列
-     * @return 构建好的 LlmChatRequest 对象，准备发送给 LLM 进行处理
+     * @return 构建好的 LlmRequest 对象，准备发送给 LLM 进行处理
      */
-    public LlmChatRequest buildChatRequest(Long userId,
-                                           Long conversationId,
-                                           String contextData,
-                                           List<LlmMessage> historyMessages) {
-        // 构建消息列表，首先添加系统提示，然后添加历史消息
-        List<LlmChatRequest.Message> messages = new ArrayList<>();
+    public LlmRequest buildChatRequest(Long userId,
+                                       Long conversationId,
+                                       String contextData,
+                                       List<LlmMessage> historyMessages) {
+        List<LlmRequest.Message> messages = new ArrayList<>();
 
         // 系统提示：提供上下文信息和对话指导，帮助 LLM 理解用户的需求和对话背景
-        messages.add(LlmChatRequest.Message.builder()
+        messages.add(LlmRequest.Message.builder()
                 .role("system")
                 .content(conversationContextManager.buildSystemContextPrompt(contextData))
                 .build());
 
         // 历史消息：按照时间顺序添加用户和助手的历史对话，帮助 LLM 理解当前对话状态和用户需求
         for (LlmMessage historyMessage : historyMessages) {
-            messages.add(LlmChatRequest.Message.builder()
+            messages.add(LlmRequest.Message.builder()
                     .role(historyMessage.getRole())
                     .content(historyMessage.getContent())
                     .build());
         }
 
-        // 构建 LlmChatRequest 对象，包含用户 ID、会话 ID、模型名称和消息列表，准备发送给 LLM 进行处理
-        return LlmChatRequest.builder()
+        return LlmRequest.builder()
                 .userId(userId)
                 .conversationId(conversationId)
                 .modelName(llmProperties.getModelName())

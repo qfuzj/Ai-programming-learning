@@ -1,31 +1,17 @@
 package com.travel.advisor.recommend;
 
 import com.travel.advisor.domain.recommend.RankedRecommend;
-import lombok.Builder;
-import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 public interface RecommendReasonLlmService {
 
-    RecommendReasonResult generateReasons(Long userId, String scene, List<RankedRecommend> pageItems);
-
     /**
-     * 推荐理由结果对象，包含景点ID到推荐理由的映射、是否使用LLM以及LLM调用日志ID等信息，用于返回给调用方
-      * 1. reasons 字段是一个 Map，键为景点ID，值为对应的推荐理由文本，便于调用方根据景点ID获取推荐理由
-      * 2. llmUsed 字段表示是否实际调用了LLM生成推荐理由，如果为 false 则说明使用了默认或缓存的推荐理由
-      * 3. llmCallLogId 字段记录了本次LLM调用的日志ID，便于后续查询和分析LLM调用情况
-      * 4. 通过这个类可以将推荐理由生成的结果封装成一个对象，方便调用方获取推荐理由和相关信息，同时也便于系统内部处理和记录推荐理由生成的过程和结果
+     * 生成推荐理由的核心方法，接收用户ID、场景信息和候选景点列表，调用LLM生成推荐理由，并记录调用日志
+      * 1. 构建LLM请求，整合场景信息和候选景点列表，形成清晰的指令，指导LLM生成针对每个候选景点的推荐理由
+      * 2. 调用LLM获取推荐理由，并解析LLM返回的JSON结果，提取每个景点对应的推荐理由文本，形成景点ID到推荐理由的映射
+      * 3. 记录LLM调用日志，保存请求和响应内容，以及调用结果状态，便于后续分析和优化推荐理由生成的效果
+      * 4. 返回生成的推荐理由结果对象，包含景点ID到推荐理由的映射、是否使用LLM以及LLM调用日志ID等信息，供调用方使用
      */
-    @Data
-    @Builder
-    class RecommendReasonResult {
-
-        private Map<Long, String> reasons;
-
-        private Boolean llmUsed;
-
-        private Long llmCallLogId;
-    }
+    RecommendReasonResult generateReasons(Long userId, String scene, List<RankedRecommend> pageItems);
 }

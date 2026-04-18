@@ -8,8 +8,8 @@ import com.travel.advisor.common.enums.MessageRole;
 import com.travel.advisor.common.enums.SensitiveStatus;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.chat.ChatSendMessageDTO;
-import com.travel.advisor.dto.llm.LlmChatRequest;
-import com.travel.advisor.dto.llm.LlmChatResponse;
+import com.travel.advisor.dto.llm.LlmRequest;
+import com.travel.advisor.dto.llm.LlmResponse;
 import com.travel.advisor.entity.LlmConversation;
 import com.travel.advisor.entity.LlmMessage;
 import com.travel.advisor.exception.BusinessException;
@@ -117,19 +117,19 @@ public class MessageServiceImpl implements MessageService {
         historyMessages = truncateHistory(historyMessages);
 
         // 构建LLM请求对象
-        LlmChatRequest request = promptBuilder.buildChatRequest(
+        LlmRequest request = promptBuilder.buildChatRequest(
                 userId, conversationId, conversation.getContextData(), historyMessages);
 
         // 调用 LLM 请求
         long start = System.currentTimeMillis();
-        LlmChatResponse response;
+        LlmResponse response;
         Long callLogId;
         String assistantReply;
         Integer tokenUsage;
         String modelName;
         try {
             // 调用LLM服务获取回复，将构建好的请求对象发送给LLM服务，获取LLM生成的回复内容、使用的token数量和模型名称等信息，便于后续保存回复消息和更新会话统计信息。
-            response = llmGateway.chat(request);
+            response = llmGateway.generate(request);
             // 将LLM调用的请求和响应信息保存到调用日志中，记录调用状态为成功，便于后续分析LLM调用的效果和性能，以及排查可能出现的问题。
             callLogId = llmCallLogService.saveChatLog(userId, JsonUtils.toJson(request.getMessages()), response, LLMCallLogStatus.SUCCESS.getCode(), null, (int) (System.currentTimeMillis() - start));
             assistantReply = response.getContent();

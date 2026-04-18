@@ -10,8 +10,8 @@ import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.protocol.ConnectionOptions;
-import com.travel.advisor.dto.llm.LlmChatRequest;
-import com.travel.advisor.dto.llm.LlmChatResponse;
+import com.travel.advisor.dto.llm.LlmRequest;
+import com.travel.advisor.dto.llm.LlmResponse;
 import com.travel.advisor.llm.LlmGateway;
 import com.travel.advisor.llm.LlmProperties;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ public class DefaultLlmGateway implements LlmGateway {
     private final LlmProperties llmProperties;
 
     @Override
-    public LlmChatResponse chat(LlmChatRequest request) {
+    public LlmResponse generate(LlmRequest request) {
         if (Boolean.FALSE.equals(llmProperties.getEnabled())) {
             throw new IllegalStateException("LLM 已禁用");
         }
@@ -54,13 +54,13 @@ public class DefaultLlmGateway implements LlmGateway {
     }
 
     /**
-     * 根据 LlmChatRequest 构建 GenerationParam 对象，包含 API Key、模型名称、消息列表和其他参数配置。
+     * 根据通用请求构建 DashScope 参数。
      * 1. 从请求中提取消息列表，并转换为 DashScope 的 Message 对象列表
      * 2. 确定使用的模型名称，优先使用请求中指定的模型，若未指定则使用默认配置
      * 3. 设置最大 token 数量和结果格式，如果请求开启 JSON 模式，则设置响应格式为 JSON 对象
      * 4. 返回构建好的 GenerationParam 对象，供 DashScope 客户端调用使用
      */
-    private GenerationParam buildParam(LlmChatRequest request, String apiKey) {
+    private GenerationParam buildParam(LlmRequest request, String apiKey) {
         List<Message> messages = new ArrayList<>();
         if (request.getMessages() != null) {
             request.getMessages().forEach(item -> messages.add(Message.builder()
@@ -95,7 +95,7 @@ public class DefaultLlmGateway implements LlmGateway {
      * @param request LLM 聊天请求，可能包含特定的超时设置
      * @return ConnectionOptions 实例，封装了连接、读写超时配置，提供底层HTTP客户端使用
      */
-    private ConnectionOptions buildConnectionOptions(LlmChatRequest request) {
+    private ConnectionOptions buildConnectionOptions(LlmRequest request) {
         // 确定超时毫秒数
         int timeoutMs = request.getTimeoutMs() == null || request.getTimeoutMs() <= 0
                 ? llmProperties.getTimeoutMs()
@@ -111,14 +111,14 @@ public class DefaultLlmGateway implements LlmGateway {
     }
 
     /**
-     * 根据 GenerationResult 构建 LlmChatResponse 对象，提取回复内容、模型名称和 token 使用情况等信息。
+     * 根据 GenerationResult 构建 LlmResponse 对象。
      * 1. 从 GenerationResult 中提取回复内容，优先从 choices 列表中的 message 获取，如果没有则尝试从 text 字段获取
      * 2. 确定使用的模型名称，优先使用 GenerationResult 中的输出模型名称，如果没有则回退到请求中指定的模型名称
      * 3. 从 GenerationResult 中提取 token 使用情况，包括输入 token 数量、输出 token 数量和总 token 数量
-     * 4. 构建并返回 LlmChatResponse 对象，封装了回复内容、模型名称和 token 使用情况等信息，供上层业务使用
+     * 4. 构建并返回 LlmResponse 对象，封装回复内容、模型名称和 token 使用情况，供上层业务使用
      *
      */
-    private LlmChatResponse buildResponse(GenerationResult result, LlmChatRequest request) {
+    private LlmResponse buildResponse(GenerationResult result, LlmRequest request) {
         String content = "";
         if (result.getOutput() != null && result.getOutput().getChoices() != null
                 && !result.getOutput().getChoices().isEmpty()) {
@@ -132,7 +132,7 @@ public class DefaultLlmGateway implements LlmGateway {
         }
 
         GenerationUsage usage = result.getUsage();
-        return LlmChatResponse.builder()
+        return LlmResponse.builder()
                 .content(content == null ? "" : content)
                 .modelName(result.getOutput() != null && result.getOutput().getModelName() != null
                         ? result.getOutput().getModelName()
@@ -146,7 +146,7 @@ public class DefaultLlmGateway implements LlmGateway {
     /**
      * 获取模型名字
      */
-    private String resolveModelName(LlmChatRequest request) {
+    private String resolveModelName(LlmRequest request) {
         return request.getModelName() == null || request.getModelName().isBlank()
                 ? llmProperties.getModelName()
                 : request.getModelName();

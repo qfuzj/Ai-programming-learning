@@ -6,11 +6,11 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * LLM聊天请求对象，包含用户ID、会话ID、模型名称和消息列表等信息，用于向LLM发送聊天请求。
+ * 通用 LLM 请求对象。
  */
 @Data
 @Builder
-public class LlmChatRequest {
+public class LlmRequest {
 
     private Long userId;
 

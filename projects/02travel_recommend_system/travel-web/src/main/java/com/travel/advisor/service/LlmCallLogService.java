@@ -1,6 +1,6 @@
 package com.travel.advisor.service;
 
-import com.travel.advisor.dto.llm.LlmChatResponse;
+import com.travel.advisor.dto.llm.LlmResponse;
 
 public interface LlmCallLogService {
 
@@ -8,14 +8,14 @@ public interface LlmCallLogService {
                     String callType,
                     String requestPrompt,
                     String requestMessages,
-                    LlmChatResponse response,
+                    LlmResponse response,
                     Integer status,
                     String errorMessage,
                     Integer responseTimeMs);
 
     Long saveChatLog(Long userId,
                     String requestMessages,
-                    LlmChatResponse response,
+                    LlmResponse response,
                     Integer status,
                     String errorMessage,
                     Integer responseTimeMs);

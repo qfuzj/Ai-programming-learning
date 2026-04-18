@@ -2,7 +2,7 @@ package com.travel.advisor.service.impl;
 
 import com.travel.advisor.entity.LlmCallLog;
 import com.travel.advisor.llm.LlmProperties;
-import com.travel.advisor.dto.llm.LlmChatResponse;
+import com.travel.advisor.dto.llm.LlmResponse;
 import com.travel.advisor.mapper.LlmCallLogMapper;
 import com.travel.advisor.service.LlmCallLogService;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ public class LlmCallLogServiceImpl implements LlmCallLogService {
                             String callType,
                             String requestPrompt,
                             String requestMessages,
-                            LlmChatResponse response,
+                            LlmResponse response,
                             Integer status,
                             String errorMessage,
                             Integer responseTimeMs) {
@@ -58,7 +58,7 @@ public class LlmCallLogServiceImpl implements LlmCallLogService {
     @Override
     public Long saveChatLog(Long userId,
                             String requestMessages,
-                            LlmChatResponse response,
+                            LlmResponse response,
                             Integer status,
                             String errorMessage,
                             Integer responseTimeMs) {

@@ -2,14 +2,13 @@ package com.travel.advisor.recommend;
 
 import com.travel.advisor.common.enums.LLMCallLogStatus;
 import com.travel.advisor.domain.recommend.RankedRecommend;
-import com.travel.advisor.dto.llm.LlmChatRequest;
-import com.travel.advisor.dto.llm.LlmChatResponse;
+import com.travel.advisor.dto.llm.LlmRequest;
+import com.travel.advisor.dto.llm.LlmResponse;
 import com.travel.advisor.llm.LlmGateway;
 import com.travel.advisor.llm.LlmProperties;
 import com.travel.advisor.mapper.RegionMapper;
 import com.travel.advisor.service.LlmCallLogService;
 import com.travel.advisor.utils.JsonUtils;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -53,19 +52,19 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
             return emptyResult();
         }
 
-        List<ScenicReasonCandidate> candidates = buildCandidates(pageItems);
+        List<RecommendReasonPromptCandidate> candidates = buildCandidates(pageItems);
         String userPrompt = buildUserPrompt(scene, candidates);
-        LlmChatRequest request = LlmChatRequest.builder()
+        LlmRequest request = LlmRequest.builder()
                 .userId(userId)
                 .modelName(llmProperties.getModelName())
                 .jsonMode(true)
                 .timeoutMs(llmProperties.getTimeoutMs())
                 .messages(List.of(
-                        LlmChatRequest.Message.builder()
+                        LlmRequest.Message.builder()
                                 .role("system")
                                 .content(SYSTEM_PROMPT)
                                 .build(),
-                        LlmChatRequest.Message.builder()
+                        LlmRequest.Message.builder()
                                 .role("user")
                                 .content(userPrompt)
                                 .build()))
@@ -74,7 +73,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
         long start = System.currentTimeMillis();
         String requestMessages = JsonUtils.toJson(request.getMessages());
         try {
-            LlmChatResponse response = llmGateway.chat(request);
+            LlmResponse response = llmGateway.generate(request);
             // 解析 LLM 返回的推荐理由 JSON，提取每个景点对应的推荐理由文本，形成景点ID到推荐理由的映射
             Map<Long, String> reasons = parseReasons(response.getContent());
             if (reasons.isEmpty()) {
@@ -130,10 +129,10 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
     /**
      * 构建推荐理由生成的候选项列表，提取景点的基本信息和排名分数等特征，供 LLM 生成推荐理由时参考
      * 1. 从输入的 RankedRecommend 列表中提取景点 ID、名称、所属区域名称、类别、等级、评分、来源类型和排名分数等信息
-     * 2. 为每个景点构建一个 ScenicReasonCandidate 对象，封装上述信息，形成候选项列表
+     * 2. 为每个景点构建一个 RecommendReasonPromptCandidate 对象，封装上述信息，形成候选项列表
      * 3. 返回构建好的候选项列表，供后续构建用户提示和生成推荐理由使用
      */
-    private List<ScenicReasonCandidate> buildCandidates(List<RankedRecommend> pageItems) {
+    private List<RecommendReasonPromptCandidate> buildCandidates(List<RankedRecommend> pageItems) {
         Set<Long> regionIds = pageItems.stream()
                 .map(item -> item.getScenicSpot().getRegionId())
                 .filter(id -> id != null && id > 0)
@@ -144,9 +143,9 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
                     .forEach(region -> regionNameMap.put(region.getId(), region.getName()));
         }
 
-        List<ScenicReasonCandidate> candidates = new ArrayList<>(pageItems.size());
+        List<RecommendReasonPromptCandidate> candidates = new ArrayList<>(pageItems.size());
         for (RankedRecommend pageItem : pageItems) {
-            candidates.add(ScenicReasonCandidate.builder()
+            candidates.add(RecommendReasonPromptCandidate.builder()
                     .scenicId(pageItem.getScenicSpot().getId())
                     .name(pageItem.getScenicSpot().getName())
                     .regionName(regionNameMap.get(pageItem.getScenicSpot().getRegionId()))
@@ -163,7 +162,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
     /**
      * 构建用户提示，整合场景信息和候选景点列表，形成清晰的指令，指导 LLM 生成针对每个候选景点的推荐理由
      */
-    private String buildUserPrompt(String scene, List<ScenicReasonCandidate> candidates) {
+    private String buildUserPrompt(String scene, List<RecommendReasonPromptCandidate> candidates) {
         return """
                 请根据以下候选景点信息生成推荐理由，并以 JSON 返回。
                 场景：%s
@@ -195,7 +194,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
         }
 
         Map<Long, String> result = new LinkedHashMap<>();
-        for (RecommendReasonItem item : payload.getItems()) {
+        for (RecommendReasonPayload.RecommendReasonItem item : payload.getItems()) {
             if (item == null || item.getScenicId() == null || item.getReason() == null) {
                 continue;
             }
@@ -241,61 +240,5 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
                 .llmUsed(false)
                 .llmCallLogId(null)
                 .build();
-    }
-
-    /**
-     * ScenicReasonCandidate 是推荐理由生成的候选项对象，包含景点的基本信息和排名分数等特征，供 LLM 生成推荐理由时参考
-      * 1. scenicId、name、regionName、category、level、score 等字段描述了景点的基本信息和特征，帮助 LLM 理解每个候选景点的特点
-      * 2. sourceTypes 字段表示该景点的推荐来源类型（如基于兴趣、基于行为等），提供更多维度的信息供 LLM 生成更个性化的推荐理由
-      * 3. rankScore 字段表示该景点在当前推荐列表中的综合排名分数，帮助 LLM 理解该景点相对于其他候选项的重要程度
-      * 4. 通过这个类可以将输入的候选景点列表转换为一个结构化的对象列表，便于构建用户提示并指导 LLM 生成针对每个候选景点的推荐理由
-      * 5. 在构建用户提示时，可以将这个候选项列表以 JSON 格式传递给 LLM，帮助 LLM 理解每个候选景点的详细信息，从而生成更有针对性的推荐理由
-      * 6. 这个类的设计可以根据实际需要进行扩展，比如添加更多的景点特征字段，或者添加一些辅助方法来格式化候选项信息
-     */
-    @Data
-    @lombok.Builder
-    private static class ScenicReasonCandidate {
-
-        private Long scenicId;
-
-        private String name;
-
-        private String regionName;
-
-        private String category;
-
-        private String level;
-
-        private Double score;
-
-        /**
-         * 推荐来源类型集合，表示该景点的推荐来源类型（如基于兴趣、基于行为等），提供更多维度的信息供 LLM 生成更个性化的推荐理由
-          * 1. 这个字段是一个 Set，允许一个景点有多个推荐来源类型，反映了实际推荐系统中可能存在的多样化推荐来源
-          * 2. 在构建用户提示时，可以将这个字段以 JSON 格式传递给 LLM，帮助 LLM 理解每个候选景点的推荐来源，从而生成更有针对性的推荐理由
-          * 3. 这个字段的设计可以根据实际需要进行调整，比如改为 List 或者添加更多的细节信息来描述推荐来源
-         */
-        private Set<String> sourceTypes;
-
-        private Double rankScore;
-    }
-
-    /**
-     * RecommendReasonPayload 用于解析 LLM 返回的推荐理由 JSON，包含一个推荐理由项列表，每个项包含景点ID和对应的推荐理由文本
-      * 1. items 列表包含多个 RecommendReasonItem 对象，每个对象对应一个景点的推荐理由
-      * 2. RecommendReasonItem 包含 scenicId 和 reason 两个字段，分别表示景点ID和推荐理由文本
-      * 3. 通过这个类可以将 LLM 返回的 JSON 字符串解析为 Java 对象，方便后续处理和使用
-     */
-    @Data
-    private static class RecommendReasonPayload {
-
-        private List<RecommendReasonItem> items;
-    }
-
-    @Data
-    private static class RecommendReasonItem {
-
-        private Long scenicId;
-
-        private String reason;
     }
 }

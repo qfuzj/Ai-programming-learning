@@ -4,11 +4,11 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * LLM聊天响应对象，包含生成的内容、使用的模型名称以及输入输出的Token数量等信息，用于接收LLM返回的聊天结果。
+ * 通用 LLM 响应对象。
  */
 @Data
 @Builder
-public class LlmChatResponse {
+public class LlmResponse {
 
     /**
      * LLM生成的回复内容，前端可以直接展示给用户，或者根据需要进行进一步处理（如格式化、提取关键信息等）
