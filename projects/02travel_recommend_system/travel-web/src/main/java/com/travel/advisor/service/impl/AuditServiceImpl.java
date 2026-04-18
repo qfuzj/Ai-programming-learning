@@ -9,13 +9,16 @@ import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.audit.AuditActionDTO;
 import com.travel.advisor.dto.audit.AuditQueryDTO;
 import com.travel.advisor.entity.ContentAudit;
-
+import com.travel.advisor.entity.ScenicSpot;
+import com.travel.advisor.entity.User;
 import com.travel.advisor.vo.audit.AuditVO;
 import com.travel.advisor.utils.BeanCopyUtils;
 import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.entity.UserReview;
 import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.mapper.ContentAuditMapper;
+import com.travel.advisor.mapper.ScenicSpotMapper;
+import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.service.AuditService;
 import com.travel.advisor.utils.SecurityUtils;
@@ -24,6 +27,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.time.LocalDateTime;
 
 @Service
@@ -35,6 +40,8 @@ public class AuditServiceImpl implements AuditService {
 
     private final ContentAuditMapper contentAuditMapper;
     private final UserReviewMapper userReviewMapper;
+    private final UserMapper userMapper;
+    private final ScenicSpotMapper scenicSpotMapper;
 
     /**
      * 获取管理员审核分页列表
@@ -76,6 +83,9 @@ public class AuditServiceImpl implements AuditService {
         return convertToVO(audit);
     }
 
+    /**
+     * 将 ContentAudit 实体转换为 AuditVO，并解析 JSON 字段
+     */
     private AuditVO convertToVO(ContentAudit audit) {
         AuditVO vo = BeanCopyUtils.copy(audit, AuditVO.class);
         if (StringUtils.hasText(audit.getContentSnapshot())) {
@@ -89,6 +99,7 @@ public class AuditServiceImpl implements AuditService {
             try {
                 vo.setAutoAuditResult(JsonUtils.fromJson(audit.getAutoAuditResult(), Object.class));
             } catch (Exception e) {
+                // ignore or log
             }
         }
         if (StringUtils.hasText(audit.getViolationType())) {
@@ -97,7 +108,43 @@ public class AuditServiceImpl implements AuditService {
             } catch (Exception e) {
             }
         }
+        enrichReviewSnapshot(vo, audit);
         return vo;
+    }
+
+    /**
+     * 如果审核内容是点评，则从 user_review 表中查询相关信息，并将用户和景点的关键信息添加到审核记录的 snapshot 中，方便前端展示
+     */
+    private void enrichReviewSnapshot(AuditVO vo, ContentAudit audit) {
+        if (!REVIEW_CONTENT_TYPE.equalsIgnoreCase(audit.getContentType())) {
+            return;
+        }
+
+        UserReview review = userReviewMapper.selectById(audit.getContentId());
+        if (review == null) {
+            return;
+        }
+
+        User user = userMapper.selectById(review.getUserId());
+        ScenicSpot scenicSpot = scenicSpotMapper.selectById(review.getScenicSpotId());
+
+        // 将原有 snapshot 中的键值对复制到新的 Map 中，并添加用户和景点相关信息
+        Map<String, Object> snapshotMap = new LinkedHashMap<>();
+        if (vo.getSnapshot() instanceof Map<?, ?> rawMap) {
+            rawMap.forEach((key, value) -> {
+                if (key instanceof String stringKey) {
+                    snapshotMap.put(stringKey, value);
+                }
+            });
+        }
+
+        snapshotMap.put("userId", review.getUserId());
+        snapshotMap.put("username", user == null ? null : user.getUsername());
+        snapshotMap.put("scenicId", review.getScenicSpotId());
+        snapshotMap.put("scenicName", scenicSpot == null ? null : scenicSpot.getName());
+        snapshotMap.put("rating", review.getRating());
+        snapshotMap.put("content", review.getContent());
+        vo.setSnapshot(snapshotMap);
     }
 
     /**

@@ -8,6 +8,11 @@
           body-style="padding: 12px"
           @click="emit('click', item.scenicId)"
         >
+          <div v-if="showRemove" class="card-actions">
+            <el-button type="danger" link class="remove-btn" @click.stop="emit('remove', item.id)">
+              删除
+            </el-button>
+          </div>
           <div class="card-inner">
             <el-image class="card-image" :src="item.coverImage || DEFAULT_IMAGE" fit="cover" />
             <div class="card-info">
@@ -41,14 +46,17 @@ interface Props {
   items: ScenicCardItem[];
   timeLabel: string;
   emptyText?: string;
+  showRemove?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
   emptyText: "暂无数据",
+  showRemove: false,
 });
 
 const emit = defineEmits<{
   click: [scenicId: number];
+  remove: [id: number];
 }>();
 
 function formatDate(time: string | null): string {
@@ -57,6 +65,17 @@ function formatDate(time: string | null): string {
 </script>
 
 <style scoped>
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.remove-btn {
+  padding: 0;
+  font-size: 12px;
+}
+
 .card-inner {
   display: flex;
   gap: 12px;

@@ -4,15 +4,17 @@
       <el-table-column prop="title" label="行程标题" min-width="200" show-overflow-tooltip>
         <template #default="{ row }">
           <el-link type="primary" @click="emit('detail', row)">{{ row.title }}</el-link>
-          <el-tag v-if="row.isPublic === 1" size="small" type="success" style="margin-left: 8px">公开</el-tag>
+          <el-tag v-if="row.isPublic === 1" size="small" type="success" style="margin-left: 8px">
+            公开
+          </el-tag>
         </template>
       </el-table-column>
 
-      <el-table-column prop="totalDays" label="总天数" width="100" />
-      <el-table-column prop="startDate" label="出发日期" width="120" />
-      <el-table-column prop="endDate" label="结束日期" width="120" />
+      <el-table-column prop="totalDays" label="总天数" width="120" />
+      <el-table-column prop="startDate" label="出发日期" width="140" />
+      <el-table-column prop="endDate" label="结束日期" width="140" />
 
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="status" label="状态" width="120">
         <template #default="{ row }">
           <el-tag :type="row.status === 2 ? 'success' : 'info'">
             {{ row.status === 2 ? "已发布" : "草稿" }}
@@ -20,9 +22,9 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="createdAt" label="创建时间" width="180" />
+      <el-table-column prop="createdAt" label="创建时间" width="200" />
 
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="emit('detail', row)">详情</el-button>
           <el-button link type="primary" @click="emit('edit', row)">编辑</el-button>

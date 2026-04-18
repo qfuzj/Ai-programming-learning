@@ -1,42 +1,49 @@
 <template>
   <div v-loading="loading" class="reviews-list-section">
     <template v-if="reviews.length > 0">
-      <div v-for="item in reviews" :key="item.id" class="review-item">
-        <div class="review-header">
-          <div class="scenic-info">
-            <h4 @click="emit('go-scenic', item.scenicId)">{{ item.scenicName || "未知景点" }}</h4>
-            <el-rate :model-value="item.score" disabled text-color="#ff9900" />
+      <div class="reviews-content">
+        <div
+          v-for="item in reviews"
+          :key="item.id"
+          class="review-item"
+          :class="{ compact: props.compact }"
+        >
+          <div class="review-header">
+            <div class="scenic-info">
+              <h4 @click="emit('go-scenic', item.scenicId)">{{ item.scenicName || "未知景点" }}</h4>
+              <el-rate :model-value="item.score" disabled text-color="#ff9900" />
+            </div>
+            <div class="review-meta">
+              <span class="status-tag" :class="getStatusClass(item.status)">
+                {{ getStatusText(item.status) }}
+              </span>
+              <span
+                v-if="isRejected(item.status) && (item.rejectReason || item.auditRemark)"
+                class="reject-reason"
+              >
+                拒绝原因：{{ item.rejectReason || item.auditRemark }}
+              </span>
+              <span class="time">{{ formatTime(item.createdAt) }}</span>
+            </div>
           </div>
-          <div class="review-meta">
-            <span class="status-tag" :class="getStatusClass(item.status)">
-              {{ getStatusText(item.status) }}
-            </span>
-            <span
-              v-if="isRejected(item.status) && (item.rejectReason || item.auditRemark)"
-              class="reject-reason"
-            >
-              拒绝原因：{{ item.rejectReason || item.auditRemark }}
-            </span>
-            <span class="time">{{ formatTime(item.createdAt) }}</span>
+          <div class="review-content">
+            {{ item.content }}
+          </div>
+          <div class="review-actions">
+            <el-button type="danger" link @click="emit('delete', item.id)">删除点评</el-button>
           </div>
         </div>
-        <div class="review-content">
-          {{ item.content }}
-        </div>
-        <div class="review-actions">
-          <el-button type="danger" link @click="emit('delete', item.id)">删除点评</el-button>
-        </div>
-      </div>
 
-      <div v-if="total > 0" class="pagination-wrapper">
-        <el-pagination
-          :current-page="currentPage"
-          background
-          layout="prev, pager, next"
-          :total="total"
-          :page-size="pageSize"
-          @current-change="(page) => emit('page-change', page)"
-        />
+        <div v-if="total > 0" class="pagination-wrapper">
+          <el-pagination
+            :current-page="currentPage"
+            background
+            layout="prev, pager, next"
+            :total="total"
+            :page-size="pageSize"
+            @current-change="(page) => emit('page-change', page)"
+          />
+        </div>
       </div>
     </template>
     <el-empty v-else description="暂无点评记录" />
@@ -52,9 +59,12 @@ interface Props {
   currentPage: number;
   pageSize: number;
   loading: boolean;
+  compact?: boolean;
 }
 
-defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  compact: false,
+});
 
 const emit = defineEmits<{
   delete: [id: number];
@@ -93,9 +103,26 @@ function isRejected(status: number | undefined): boolean {
 </script>
 
 <style scoped>
+.reviews-list-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+}
+
+.reviews-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
 .review-item {
-  padding: 24px 0;
+  padding: 16px 0;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.review-item.compact {
+  padding: 12px 0;
 }
 
 .review-item:last-child {
@@ -115,6 +142,11 @@ function isRejected(status: number | undefined): boolean {
   font-weight: 700;
   cursor: pointer;
   color: #1a1a1a;
+}
+
+.review-item.compact .scenic-info h4 {
+  margin-bottom: 6px;
+  font-size: 16px;
 }
 
 .scenic-info h4:hover {
@@ -171,11 +203,21 @@ function isRejected(status: number | undefined): boolean {
 }
 
 .review-content {
-  font-size: 15px;
+  font-size: 14px;
   color: #374151;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  margin-bottom: 16px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.review-item.compact .review-content {
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 8px;
 }
 
 .review-actions {
@@ -184,7 +226,8 @@ function isRejected(status: number | undefined): boolean {
 }
 
 .pagination-wrapper {
-  margin-top: 30px;
+  margin-top: auto;
+  padding-top: 24px;
   display: flex;
   justify-content: flex-end;
 }

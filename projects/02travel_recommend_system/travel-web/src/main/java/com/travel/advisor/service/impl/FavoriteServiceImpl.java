@@ -31,6 +31,9 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final UserFavoriteMapper userFavoriteMapper;
     private final ScenicSpotMapper scenicSpotMapper;
 
+    /**
+     * 添加收藏
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void addFavorite(Long scenicId) {
@@ -61,6 +64,13 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .setSql("favorite_count = favorite_count + 1"));
     }
 
+    /**
+     * 取消收藏
+      * 1. 获取当前用户ID，确保用户已登录
+      * 2. 验证景点ID是否存在，确保取消收藏的记录关联到有效的景点
+      * 3. 删除用户的收藏记录，如果记录不存在则抛出异常
+      * 4. 更新景点的收藏数量，确保数量不为负数
+     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void removeFavorite(Long scenicId) {
@@ -78,6 +88,44 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .setSql("favorite_count = CASE WHEN favorite_count > 0 THEN favorite_count - 1 ELSE 0 END"));
     }
 
+    /**
+     * 清空收藏
+      * 1. 获取当前用户ID，确保用户已登录
+      * 2. 查找用户所有已收藏的景点ID，以便更新数量
+      * 3. 删除用户的全部收藏
+      * 4. 批量更新相关景点的收藏数量，确保数量不为负数
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void clearFavorites() {
+        Long userId = getCurrentUserIdRequired();
+        
+        // 查找用户所有已收藏的景点ID，以便更新数量
+        List<UserFavorite> favorites = userFavoriteMapper.selectList(new LambdaQueryWrapper<UserFavorite>()
+            .eq(UserFavorite::getUserId, userId));
+            
+        if (favorites.isEmpty()) {
+            return;
+        }
+        
+        // 删除用户的全部收藏
+        userFavoriteMapper.delete(new LambdaQueryWrapper<UserFavorite>()
+            .eq(UserFavorite::getUserId, userId));
+            
+        // 批量更新相关景点的收藏数量
+        for (UserFavorite favorite : favorites) {
+            scenicSpotMapper.update(null, new LambdaUpdateWrapper<ScenicSpot>()
+                .eq(ScenicSpot::getId, favorite.getScenicSpotId())
+                .setSql("favorite_count = CASE WHEN favorite_count > 0 THEN favorite_count - 1 ELSE 0 END"));
+        }
+    }
+
+    /**
+     * 分页查询用户的收藏列表，返回包含景点信息的VO对象列表
+      * 1. 获取当前用户ID，确保用户已登录
+      * 2. 分页查询用户的收藏记录，并根据景点ID批量查询景点信息，避免N+1查询问题
+      * 3. 将查询结果转换为VO对象列表，并返回分页结果
+     */
     @Override
     public PageResult<FavoriteVO> pageFavorites(PageQuery pageQuery) {
         Long userId = getCurrentUserIdRequired();

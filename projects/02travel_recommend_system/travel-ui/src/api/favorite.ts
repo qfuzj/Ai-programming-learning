@@ -30,3 +30,7 @@ export function addFavorite(scenicId: number): Promise<void> {
 export function removeFavorite(scenicId: number): Promise<void> {
   return http.delete(`/api/user/favorites/${scenicId}`);
 }
+
+export function clearFavorites(): Promise<void> {
+  return http.delete(`/api/user/favorites/clear`);
+}

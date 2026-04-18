@@ -10,5 +10,7 @@ public interface FavoriteService {
 
     void removeFavorite(Long scenicId);
 
+    void clearFavorites();
+
     PageResult<FavoriteVO> pageFavorites(PageQuery pageQuery);
 }

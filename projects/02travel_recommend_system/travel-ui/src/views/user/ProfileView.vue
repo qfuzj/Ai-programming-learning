@@ -21,40 +21,91 @@
         <el-col :md="16" :sm="24">
           <div v-loading="tabLoading" class="main-content-section">
             <template v-if="activeTab === 'favorites'">
-              <ScenicCardGrid
-                :items="favoriteMapped"
-                time-label="收藏于"
-                empty-text="暂无收藏景区，去发现你喜欢的景点吧"
-                @click="goToScenic"
-              >
-                <template #empty>
-                  <el-empty description="暂无收藏景区，去发现你喜欢的景点吧">
-                    <el-button type="primary" @click="goToScenicList">去逛景点</el-button>
-                  </el-empty>
-                </template>
-              </ScenicCardGrid>
+              <div class="tab-panel">
+                <div class="tab-actions">
+                  <el-button
+                    type="danger"
+                    link
+                    :disabled="favoriteTotal === 0"
+                    @click="handleClearFavorites"
+                  >
+                    删除全部收藏
+                  </el-button>
+                </div>
+                <ScenicCardGrid
+                  :items="favoriteMapped"
+                  time-label="收藏于"
+                  empty-text="暂无收藏景区，去发现你喜欢的景点吧"
+                  show-remove
+                  @click="goToScenic"
+                  @remove="handleDeleteFavorite"
+                >
+                  <template #empty>
+                    <el-empty description="暂无收藏景区，去发现你喜欢的景点吧">
+                      <el-button type="primary" @click="goToScenicList">去逛景点</el-button>
+                    </el-empty>
+                  </template>
+                </ScenicCardGrid>
+                <div v-if="favoriteTotal > favoritePageSize" class="tab-pagination">
+                  <el-pagination
+                    :current-page="favoritePageNum"
+                    :page-size="favoritePageSize"
+                    :total="favoriteTotal"
+                    background
+                    layout="prev, pager, next"
+                    @current-change="handleFavoritePageChange"
+                  />
+                </div>
+              </div>
             </template>
 
             <template v-if="activeTab === 'reviews'">
-              <ReviewListSection
-                :reviews="reviews"
-                :total="reviewTotal"
-                :current-page="reviewCurrentPage"
-                :page-size="reviewPageSize"
-                :loading="tabLoading"
-                @delete="handleDeleteReview"
-                @page-change="handleReviewPageChange"
-                @go-scenic="handleGoScenicFromReview"
-              />
+              <div class="tab-panel">
+                <ReviewListSection
+                  :reviews="reviews"
+                  :total="reviewTotal"
+                  :current-page="reviewCurrentPage"
+                  :page-size="reviewPageSize"
+                  :loading="tabLoading"
+                  compact
+                  @delete="handleDeleteReview"
+                  @page-change="handleReviewPageChange"
+                  @go-scenic="handleGoScenicFromReview"
+                />
+              </div>
             </template>
 
             <template v-if="activeTab === 'history'">
-              <ScenicCardGrid
-                :items="historyMapped"
-                time-label="浏览于"
-                empty-text="暂无浏览记录"
-                @click="goToScenic"
-              />
+              <div class="tab-panel">
+                <div class="tab-actions">
+                  <el-button
+                    type="danger"
+                    link
+                    :disabled="historyTotal === 0"
+                    @click="handleClearHistory"
+                  >
+                    删除全部近期浏览
+                  </el-button>
+                </div>
+                <ScenicCardGrid
+                  :items="historyMapped"
+                  time-label="浏览于"
+                  empty-text="暂无浏览记录"
+                  show-remove
+                  @click="goToScenic"
+                  @remove="handleDeleteHistory"
+                />
+                <div v-if="historyTotal > historyPageSize" class="tab-pagination">
+                  <el-pagination
+                    :current-page="historyPageNum"
+                    :page-size="historyPageSize"
+                    :total="historyTotal"
+                    background
+                    layout="prev, pager, next"
+                    @current-change="handleHistoryPageChange"
+                  />
+                </div>
+              </div>
             </template>
           </div>
         </el-col>
@@ -105,6 +156,12 @@ const {
   portrait,
   historyList,
   favoriteList,
+  historyTotal,
+  favoriteTotal,
+  historyPageNum,
+  favoritePageNum,
+  historyPageSize,
+  favoritePageSize,
   tabLoading,
   allTags,
   selectedTagIds,
@@ -117,6 +174,10 @@ const {
   saveTags,
   goToScenic,
   goToScenicList,
+  removeHistoryItem,
+  clearHistoryItems,
+  removeFavoriteItem,
+  clearFavoriteItems,
 } = useProfile();
 
 const editDialogVisible = ref(false);
@@ -125,7 +186,7 @@ const activeTab = ref("favorites");
 const reviews = ref<ReviewItem[]>([]);
 const reviewTotal = ref(0);
 const reviewCurrentPage = ref(1);
-const reviewPageSize = ref(10);
+const reviewPageSize = ref(3);
 const favoritesLoaded = ref(false);
 const reviewsLoaded = ref(false);
 const historyLoaded = ref(false);
@@ -196,6 +257,88 @@ function handleReviewPageChange(page: number): void {
   void loadMyReviews();
 }
 
+function handleFavoritePageChange(page: number): void {
+  void loadFavorites(page, favoritePageSize.value);
+}
+
+function handleHistoryPageChange(page: number): void {
+  void loadHistory(page, historyPageSize.value);
+}
+
+async function handleDeleteHistory(id: number): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确定删除这条浏览记录吗？", "提示", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+    });
+    const success = await removeHistoryItem(id);
+    if (success) {
+      ElMessage.success("删除成功");
+    }
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("删除浏览记录失败");
+    }
+  }
+}
+
+async function handleClearHistory(): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确定清空全部近期浏览吗？此操作不可恢复。", "提示", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+    });
+    const success = await clearHistoryItems();
+    if (success) {
+      historyLoaded.value = true;
+      ElMessage.success("已清空近期浏览");
+    }
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("清空近期浏览失败");
+    }
+  }
+}
+
+async function handleDeleteFavorite(scenicId: number): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确定要取消收藏该景点吗？", "提示", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+    });
+    const success = await removeFavoriteItem(scenicId);
+    if (success) {
+      ElMessage.success("已取消收藏");
+    }
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("取消收藏失败");
+    }
+  }
+}
+
+async function handleClearFavorites(): Promise<void> {
+  try {
+    await ElMessageBox.confirm("确定清空全部收藏吗？此操作不可恢复。", "提示", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+    });
+    const success = await clearFavoriteItems();
+    if (success) {
+      favoritesLoaded.value = true;
+      ElMessage.success("已清空全部收藏");
+    }
+  } catch (error) {
+    if (error !== "cancel") {
+      ElMessage.error("清空收藏失败");
+    }
+  }
+}
+
 function handleGoScenicFromReview(id: number | undefined): void {
   if (id) {
     goToScenic(id);
@@ -220,21 +363,21 @@ async function handleSaveTags(ids: number[]): Promise<void> {
 watch(activeTab, (newTab) => {
   if (newTab === "favorites" && !favoritesLoaded.value) {
     favoritesLoaded.value = true;
-    void loadFavorites();
+    void loadFavorites(1, favoritePageSize.value);
   }
   if (newTab === "reviews" && !reviewsLoaded.value) {
     void loadMyReviews();
   }
   if (newTab === "history" && !historyLoaded.value) {
     historyLoaded.value = true;
-    void loadHistory();
+    void loadHistory(1, historyPageSize.value);
   }
 });
 
 onMounted(async () => {
   await loadProfile();
   favoritesLoaded.value = true;
-  void loadFavorites();
+  void loadFavorites(1, favoritePageSize.value);
 });
 </script>
 
@@ -253,7 +396,30 @@ onMounted(async () => {
   background: #fff;
   border-radius: 12px;
   border: 1px solid #e0e0e0;
-  min-height: 500px;
-  padding: 40px;
+  height: 560px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+}
+
+.tab-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.tab-pagination {
+  display: flex;
+  margin-top: auto;
+  justify-content: flex-end;
+  padding-top: 12px;
 }
 </style>

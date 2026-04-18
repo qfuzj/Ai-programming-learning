@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 对应-审核记录VO
+ * 审核记录VO
  */
 @Data
 public class AuditVO {

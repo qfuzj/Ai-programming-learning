@@ -15,16 +15,13 @@
             <el-menu-item index="/">发现</el-menu-item>
             <el-menu-item index="/scenic">景点</el-menu-item>
             <el-menu-item index="/ai/recommend">AI 推荐</el-menu-item>
-              <el-menu-item index="/ai/chat">AI 聊天</el-menu-item>
+            <el-menu-item index="/ai/chat">AI 聊天</el-menu-item>
           </el-menu>
         </div>
         <div class="header-right">
           <el-dropdown v-if="userStore.isAuthenticated" trigger="click" @command="handleCommand">
             <div class="user-dropdown">
-              <el-avatar
-                :size="32"
-                :src="displayAvatar"
-              >
+              <el-avatar :size="32" :src="displayAvatar">
                 {{ displayUserName.charAt(0) }}
               </el-avatar>
               <span class="user-name">

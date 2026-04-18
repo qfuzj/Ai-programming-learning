@@ -10,8 +10,18 @@ import {
   getMyPreferenceTags,
 } from "@/api/profile";
 import { getTags, type CommonTagItem } from "@/api/common";
-import { getBrowseHistoryPage, type BrowseHistoryItem } from "@/api/history";
-import { getFavorites, type FavoriteItem } from "@/api/favorite";
+import {
+  clearBrowseHistory,
+  deleteBrowseHistory,
+  getBrowseHistoryPage,
+  type BrowseHistoryItem,
+} from "@/api/history";
+import {
+  getFavoritesPage,
+  removeFavorite,
+  clearFavorites,
+  type FavoriteItem,
+} from "@/api/favorite";
 import type { ProfileInfo, ProfilePortraitSummary, UpdateProfilePayload } from "@/types/profile";
 
 export function useProfile() {
@@ -36,6 +46,12 @@ export function useProfile() {
 
   const historyList = ref<BrowseHistoryItem[]>([]);
   const favoriteList = ref<FavoriteItem[]>([]);
+  const historyTotal = ref(0);
+  const favoriteTotal = ref(0);
+  const historyPageNum = ref(1);
+  const favoritePageNum = ref(1);
+  const historyPageSize = ref(6);
+  const favoritePageSize = ref(6);
   const tabLoading = ref(false);
 
   const allTags = ref<CommonTagItem[]>([]);
@@ -96,11 +112,17 @@ export function useProfile() {
     }
   }
 
-  async function loadHistory(): Promise<void> {
+  async function loadHistory(
+    pageNum = historyPageNum.value,
+    pageSize = historyPageSize.value
+  ): Promise<void> {
     tabLoading.value = true;
     try {
-      const page = await getBrowseHistoryPage({ pageNum: 1, pageSize: 20 });
+      historyPageNum.value = pageNum;
+      historyPageSize.value = pageSize;
+      const page = await getBrowseHistoryPage({ pageNum, pageSize });
       historyList.value = page.records || [];
+      historyTotal.value = page.total || 0;
     } catch {
       ElMessage.error("获取浏览历史失败");
     } finally {
@@ -108,10 +130,17 @@ export function useProfile() {
     }
   }
 
-  async function loadFavorites(): Promise<void> {
+  async function loadFavorites(
+    pageNum = favoritePageNum.value,
+    pageSize = favoritePageSize.value
+  ): Promise<void> {
     tabLoading.value = true;
     try {
-      favoriteList.value = await getFavorites({ pageNum: 1, pageSize: 20 });
+      favoritePageNum.value = pageNum;
+      favoritePageSize.value = pageSize;
+      const page = await getFavoritesPage({ pageNum, pageSize });
+      favoriteList.value = page.records || [];
+      favoriteTotal.value = page.total || 0;
     } catch {
       ElMessage.error("获取收藏列表失败");
     } finally {
@@ -154,6 +183,62 @@ export function useProfile() {
     router.push("/scenic");
   }
 
+  async function removeHistoryItem(id: number): Promise<boolean> {
+    try {
+      await deleteBrowseHistory(id);
+      if (historyList.value.length === 1 && historyPageNum.value > 1) {
+        historyPageNum.value -= 1;
+      }
+      await loadHistory(historyPageNum.value, historyPageSize.value);
+      return true;
+    } catch {
+      ElMessage.error("删除浏览记录失败");
+      return false;
+    }
+  }
+
+  async function clearHistoryItems(): Promise<boolean> {
+    try {
+      await clearBrowseHistory();
+      historyList.value = [];
+      historyTotal.value = 0;
+      historyPageNum.value = 1;
+      return true;
+    } catch {
+      ElMessage.error("清空浏览记录失败");
+      return false;
+    }
+  }
+
+  async function removeFavoriteItem(scenicId: number): Promise<boolean> {
+    try {
+      await removeFavorite(scenicId);
+      if (favoriteList.value.length === 1 && favoritePageNum.value > 1) {
+        favoritePageNum.value -= 1;
+      }
+      await loadFavorites(favoritePageNum.value, favoritePageSize.value);
+      portrait.value = await getProfilePortrait();
+      return true;
+    } catch {
+      ElMessage.error("取消收藏失败");
+      return false;
+    }
+  }
+
+  async function clearFavoriteItems(): Promise<boolean> {
+    try {
+      await clearFavorites();
+      favoriteList.value = [];
+      favoriteTotal.value = 0;
+      favoritePageNum.value = 1;
+      portrait.value = await getProfilePortrait();
+      return true;
+    } catch {
+      ElMessage.error("清空收藏记录失败");
+      return false;
+    }
+  }
+
   return {
     loading,
     saving,
@@ -161,6 +246,12 @@ export function useProfile() {
     portrait,
     historyList,
     favoriteList,
+    historyTotal,
+    favoriteTotal,
+    historyPageNum,
+    favoritePageNum,
+    historyPageSize,
+    favoritePageSize,
     tabLoading,
     allTags,
     selectedTagIds,
@@ -173,5 +264,9 @@ export function useProfile() {
     saveTags,
     goToScenic,
     goToScenicList,
+    removeHistoryItem,
+    clearHistoryItems,
+    removeFavoriteItem,
+    clearFavoriteItems,
   };
 }

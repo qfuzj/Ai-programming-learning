@@ -32,6 +32,12 @@ public class FavoriteController {
         return Result.success();
     }
 
+    @DeleteMapping("/clear")
+    public Result<Void> clear() {
+        favoriteService.clearFavorites();
+        return Result.success();
+    }
+
     @GetMapping
     public Result<PageResult<FavoriteVO>> page(PageQuery pageQuery) {
         return Result.success(favoriteService.pageFavorites(pageQuery));

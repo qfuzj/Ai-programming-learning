@@ -1,7 +1,6 @@
 package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
@@ -19,10 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,15 +40,43 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
     public void report(BrowseHistoryCreateDTO dto) {
         Long userId = getCurrentUserIdRequired();
         ensureScenicExists(dto.getScenicId());
+        LocalDateTime now = LocalDateTime.now();
 
-        UserBrowseHistory history = new UserBrowseHistory();
-        history.setUserId(userId);
-        history.setScenicSpotId(dto.getScenicId());
-        history.setDurationSeconds(dto.getStayDuration() == null ? 0 : Math.max(0, dto.getStayDuration()));
-        history.setSource(dto.getSource());
-        history.setDeviceType(dto.getDeviceType());
-        history.setBrowseTime(LocalDateTime.now());
-        userBrowseHistoryMapper.insert(history);
+        List<UserBrowseHistory> existingRecords = userBrowseHistoryMapper.selectList(
+                new LambdaQueryWrapper<UserBrowseHistory>()
+                        .eq(UserBrowseHistory::getUserId, userId)
+                        .eq(UserBrowseHistory::getScenicSpotId, dto.getScenicId())
+                        .orderByDesc(UserBrowseHistory::getBrowseTime)
+                        .orderByDesc(UserBrowseHistory::getId));
+
+        if (existingRecords.isEmpty()) {
+            UserBrowseHistory history = new UserBrowseHistory();
+            history.setUserId(userId);
+            history.setScenicSpotId(dto.getScenicId());
+            history.setDurationSeconds(dto.getStayDuration() == null ? 0 : Math.max(0, dto.getStayDuration()));
+            history.setSource(dto.getSource());
+            history.setDeviceType(dto.getDeviceType());
+            history.setBrowseTime(now);
+            userBrowseHistoryMapper.insert(history);
+            return;
+        }
+
+        UserBrowseHistory latestRecord = existingRecords.get(0);
+        UserBrowseHistory update = new UserBrowseHistory();
+        update.setId(latestRecord.getId());
+        update.setDurationSeconds(dto.getStayDuration() == null ? 0 : Math.max(0, dto.getStayDuration()));
+        update.setSource(dto.getSource());
+        update.setDeviceType(dto.getDeviceType());
+        update.setBrowseTime(now);
+        userBrowseHistoryMapper.updateById(update);
+
+        if (existingRecords.size() > 1) {
+            List<Long> duplicateIds = existingRecords.stream()
+                    .skip(1)
+                    .map(UserBrowseHistory::getId)
+                    .toList();
+            userBrowseHistoryMapper.deleteByIds(duplicateIds);
+        }
     }
 
     /**
@@ -65,30 +89,38 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
     @Override
     public PageResult<BrowseHistoryVO> page(PageQuery pageQuery) {
         Long userId = getCurrentUserIdRequired();
-        Page<UserBrowseHistory> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());
-        Page<UserBrowseHistory> result = userBrowseHistoryMapper.selectPage(page, new LambdaQueryWrapper<UserBrowseHistory>()
-            .eq(UserBrowseHistory::getUserId, userId)
-            .orderByDesc(UserBrowseHistory::getBrowseTime)
-            .orderByDesc(UserBrowseHistory::getId));
-
-        List<UserBrowseHistory> records = result.getRecords();
+        List<UserBrowseHistory> records = userBrowseHistoryMapper.selectList(new LambdaQueryWrapper<UserBrowseHistory>()
+                .eq(UserBrowseHistory::getUserId, userId)
+                .orderByDesc(UserBrowseHistory::getBrowseTime)
+                .orderByDesc(UserBrowseHistory::getId));
         if (records.isEmpty()) {
             return PageResult.<BrowseHistoryVO>builder()
                 .records(Collections.emptyList())
-                .total(result.getTotal())
-                .pageNum(Math.toIntExact(result.getCurrent()))
-                .pageSize(Math.toIntExact(result.getSize()))
-                .totalPage(result.getPages())
+                .total(0L)
+                .pageNum(pageQuery.getPageNum())
+                .pageSize(pageQuery.getPageSize())
+                .totalPage(0L)
                 .build();
         }
 
+        LinkedHashMap<Long, UserBrowseHistory> latestHistoryMap = new LinkedHashMap<>();
+        for (UserBrowseHistory record : records) {
+            latestHistoryMap.putIfAbsent(record.getScenicSpotId(), record);
+        }
+        List<UserBrowseHistory> deduplicatedRecords = new java.util.ArrayList<>(latestHistoryMap.values());
+        int pageSize = pageQuery.getPageSize();
+        int pageNum = pageQuery.getPageNum();
+        int fromIndex = Math.min((pageNum - 1) * pageSize, deduplicatedRecords.size());
+        int toIndex = Math.min(fromIndex + pageSize, deduplicatedRecords.size());
+        List<UserBrowseHistory> pagedRecords = deduplicatedRecords.subList(fromIndex, toIndex);
+
         // 根据浏览记录中的景点ID批量查询景点信息，避免N+1查询问题
-        List<Long> scenicIds = records.stream().map(UserBrowseHistory::getScenicSpotId).distinct().toList();
+        List<Long> scenicIds = pagedRecords.stream().map(UserBrowseHistory::getScenicSpotId).distinct().toList();
         Map<Long, ScenicSpot> scenicMap = scenicSpotMapper.selectBatchIds(scenicIds).stream()
             .collect(Collectors.toMap(ScenicSpot::getId, scenic -> scenic));
 
         // 将用户浏览历史转换为VO对象，并添加景点信息
-        List<BrowseHistoryVO> vos = records.stream().map(item -> {
+        List<BrowseHistoryVO> vos = pagedRecords.stream().map(item -> {
             ScenicSpot scenicSpot = scenicMap.get(item.getScenicSpotId());
             if (scenicSpot == null) {
                 return null;
@@ -107,10 +139,10 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
 
         return PageResult.<BrowseHistoryVO>builder()
             .records(vos)
-            .total(result.getTotal())
-            .pageNum(Math.toIntExact(result.getCurrent()))
-            .pageSize(Math.toIntExact(result.getSize()))
-            .totalPage(result.getPages())
+            .total((long) deduplicatedRecords.size())
+            .pageNum(pageNum)
+            .pageSize(pageSize)
+            .totalPage(deduplicatedRecords.isEmpty() ? 0 : (deduplicatedRecords.size() + pageSize - 1L) / pageSize)
             .build();
     }
 
