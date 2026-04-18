@@ -360,7 +360,6 @@
 - 任务名称：用户行为页面
 - 状态：已完成
 - 已完成：
-  - `FavoritesView.vue`
   - `HistoryView.vue`
   - `MyReviewsView.vue`
 
@@ -436,7 +435,7 @@
   - 系统配置前后端类型与分页对齐
   - 用户管理前端冗余 `role` 字段清理
   - 字典接口兼容 `/dict` 与 `/api/dict`
-  - 收藏页与 `/favorites` 路由已接入
+  - 收藏内容已收口到个人中心页内展示
   - scenic 模块已移除 `ratingScore`，景点评分统一为 `score`
   - 文档同步更新
 
