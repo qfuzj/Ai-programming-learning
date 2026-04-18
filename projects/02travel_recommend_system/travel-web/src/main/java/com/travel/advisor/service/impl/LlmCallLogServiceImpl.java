@@ -21,20 +21,26 @@ public class LlmCallLogServiceImpl implements LlmCallLogService {
     private final LlmProperties llmProperties;
 
     /**
-     * 保存LLM调用日志，将用户ID、请求消息、LLM响应、调用状态、错误信息和响应时间等关键信息保存到LlmCallLog实体中，并通过LlmCallLogMapper将日志记录插入到数据库中。该方法在每次与LLM交互后调用，确保所有的请求和响应信息都被记录下来，便于后续分析和优化。
+     * 保存LLM调用日志，记录用户ID、调用类型、请求提示、请求消息、LLM响应内容、状态、错误信息和响应时间等信息，便于后续分析和优化LLM调用情况
+      * 1. 创建一个新的LlmCallLog对象，并设置各个字段的值，包括用户ID、调用类型、模型名称、提供商、请求提示、请求消息、响应内容、输入输出Token数量、总Token数量、调用成本金额、响应时间、状态、错误信息和重试次数等
+      * 2. 使用llmCallLogMapper将日志对象插入到数据库中，完成日志记录的保存
+      * 3. 返回保存后的日志ID，便于调用方进行后续查询和分析
      */
     @Override
-    public Long saveChatLog(Long userId,
-                           String requestMessages,
-                           LlmChatResponse response,
-                           Integer status,
-                           String errorMessage,
-                           Integer responseTimeMs) {
+    public Long saveCallLog(Long userId,
+                            String callType,
+                            String requestPrompt,
+                            String requestMessages,
+                            LlmChatResponse response,
+                            Integer status,
+                            String errorMessage,
+                            Integer responseTimeMs) {
         LlmCallLog log = new LlmCallLog();
         log.setUserId(userId);
-        log.setCallType("chat");
+        log.setCallType(callType);
         log.setModelName(response == null ? llmProperties.getModelName() : response.getModelName());
         log.setProvider(llmProperties.getProvider());
+        log.setRequestPrompt(requestPrompt);
         log.setRequestMessages(requestMessages);
         log.setResponseContent(response == null || response.getContent() == null ? "" : response.getContent());
         log.setInputTokens(response == null || response.getInputTokens() == null ? 0 : response.getInputTokens());
@@ -47,5 +53,15 @@ public class LlmCallLogServiceImpl implements LlmCallLogService {
         log.setRetryCount(0);
         llmCallLogMapper.insert(log);
         return log.getId();
+    }
+
+    @Override
+    public Long saveChatLog(Long userId,
+                            String requestMessages,
+                            LlmChatResponse response,
+                            Integer status,
+                            String errorMessage,
+                            Integer responseTimeMs) {
+        return saveCallLog(userId, "chat", null, requestMessages, response, status, errorMessage, responseTimeMs);
     }
 }

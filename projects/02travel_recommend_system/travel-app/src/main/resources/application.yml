@@ -87,3 +87,12 @@ app:
       secret: ${JWT_SECRET:ReplaceThisWithAtLeast32ByteSecretKey123456789}
       access-token-expire-seconds:  604800 # 暂时设置7天 后面根据需要设置 7200 2小时
       refresh-token-expire-seconds: 604800 # 7天
+
+llm:
+  enabled: ${LLM_ENABLED:true}
+  provider: ${LLM_PROVIDER:aliyun-dashscope}
+  model-name: ${LLM_MODEL_NAME:qwen-plus}
+  api-key: ${DASHSCOPE_API_KEY:}
+  base-url: ${LLM_BASE_URL:https://dashscope.aliyuncs.com/api/v1}
+  max-tokens: ${LLM_MAX_TOKENS:2048}
+  timeout-ms: ${LLM_TIMEOUT_MS:5000}

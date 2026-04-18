@@ -53,6 +53,8 @@ public class PromptBuilder {
                 .userId(userId)
                 .conversationId(conversationId)
                 .modelName(llmProperties.getModelName())
+                .jsonMode(false)
+                .timeoutMs(llmProperties.getTimeoutMs())
                 .messages(messages)
                 .build();
     }

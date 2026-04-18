@@ -12,9 +12,17 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "llm")
 public class LlmProperties {
 
-    private String provider = "mock";
+    private Boolean enabled = true;
 
-    private String modelName = "mock-chat-model";
+    private String provider = "aliyun-dashscope";
+
+    private String modelName = "qwen-plus";
+
+    private String apiKey;
+
+    private String baseUrl = "https://dashscope.aliyuncs.com/api/v1";
 
     private Integer maxTokens = 2048;
+
+    private Integer timeoutMs = 5000;
 }

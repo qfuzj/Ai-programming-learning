@@ -18,6 +18,7 @@ import com.travel.advisor.mapper.ScenicSpotTagMapper;
 import com.travel.advisor.service.RecommendService;
 import com.travel.advisor.recommend.recall.RecallStrategy;
 import com.travel.advisor.recommend.RecommendRankService;
+import com.travel.advisor.recommend.RecommendReasonLlmService;
 import com.travel.advisor.recommend.RecommendReasonBuilder;
 import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.utils.RedisUtils;
@@ -42,6 +43,7 @@ public class RecommendServiceImpl implements RecommendService {
     private final List<RecallStrategy> recallStrategies;
     private final RecommendRankService recommendRankService;
     private final RecommendReasonBuilder recommendReasonBuilder;
+    private final RecommendReasonLlmService recommendReasonLlmService;
     private final RecommendRecordMapper recommendRecordMapper;
     private final RecommendResultItemMapper recommendResultItemMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
@@ -217,6 +219,11 @@ public class RecommendServiceImpl implements RecommendService {
 
         // 截取当前页的推荐结果列表，供后续构建返回结果和记录推荐结果使用
         List<RankedRecommend> pageItems = ranked.subList(fromIndex, toIndex);
+        RecommendReasonLlmService.RecommendReasonResult llmReasonResult = recommendReasonLlmService
+                .generateReasons(userId, scene, pageItems);
+        Map<Long, String> llmReasons = llmReasonResult.getReasons() == null
+                ? Collections.emptyMap()
+                : llmReasonResult.getReasons();
 
         // 创建推荐记录对象，记录推荐请求的相关信息，包括用户ID、推荐类型、推荐场景、请求参数、使用的算法、LLM调用次数、候选总数、返回数量和响应时间等信息，并将其插入到数据库中
         RecommendRecord record = new RecommendRecord();
@@ -224,8 +231,9 @@ public class RecommendServiceImpl implements RecommendService {
         record.setRecommendType(recommendType.getCode());
         record.setScene(scene);
         record.setRequestParams(JsonUtils.toJson(pageQuery));
-        record.setAlgorithm("规则召回_V1");
-        record.setLlmUsed(0);
+        record.setAlgorithm(llmReasonResult.getLlmUsed() ? "规则召回+LLM理由_V1" : "规则召回_V1");
+        record.setLlmUsed(llmReasonResult.getLlmUsed() ? 1 : 0);
+        record.setLlmCallLogId(llmReasonResult.getLlmCallLogId());
         record.setTotalCandidates(ranked.size());
         record.setReturnedCount(pageItems.size());
         record.setResponseTimeMs((int) responseTimeMs);
@@ -243,7 +251,8 @@ public class RecommendServiceImpl implements RecommendService {
             item.setScenicSpotId(rankedRecommend.getScenicSpot().getId());
             item.setRankPosition(fromIndex + i + 1);
             item.setScore(rankedRecommend.getRankScore());
-            item.setReason(recommendReasonBuilder.build(rankedRecommend.getSourceTypes()));
+            String fallbackReason = recommendReasonBuilder.build(rankedRecommend.getSourceTypes());
+            item.setReason(llmReasons.getOrDefault(rankedRecommend.getScenicSpot().getId(), fallbackReason));
             item.setIsClicked(0);
             item.setIsFavorited(0);
             // 插入推荐结果项到数据库中，生成推荐结果项ID，供后续关联反馈数据使用

@@ -246,7 +246,13 @@
   - 首页推荐
   - 相似景点推荐
   - 多路召回基础策略
-  - 推荐理由生成
+  - 规则排序分 `rankScore`
+  - LLM 批量推荐理由生成
+- 当前实现边界：
+  - 推荐接口会对当前页候选结果批量调用阿里 DashScope
+  - 优先返回 LLM 生成的 `reason`
+  - 超时、异常、非预期 JSON 时自动降级为规则文案
+  - `RecommendRankService.reRankByLLM()` 仍旁路，暂未启用 LLM 精排
 
 ### 任务 21
 - 任务名称：推荐反馈模块
@@ -263,6 +269,11 @@
 ### 任务 22
 - 任务名称：LLM 调用网关
 - 状态：已完成
+- 实际能力：
+  - `DefaultLlmGateway` 已接入阿里 DashScope Java SDK
+  - `DASHSCOPE_API_KEY` 优先于配置项读取
+  - 推荐理由链路默认独立超时 `5000ms`
+  - 推荐调用日志已按 `callType = recommend` 落库
 
 ### 任务 23
 - 任务名称：对话模块基础代码
@@ -371,6 +382,8 @@
   - `ChatListView.vue`
   - `ChatDetailView.vue`
 - 说明：
+  - `AiRecommendView.vue` 已接入真实 `/api/user/recommend/home`
+  - 推荐页当前展示公共评分 `score`、规则排序分 `rankScore`、LLM 推荐理由 `reason`
   - 另有 `AiChatView.vue` 文件，但当前主路由使用的是 `ChatListView.vue` / `ChatDetailView.vue`
 
 ### 任务 34
