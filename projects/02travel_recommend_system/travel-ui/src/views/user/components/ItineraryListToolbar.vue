@@ -2,10 +2,13 @@
   <div class="toolbar-wrap">
     <div class="card-header">
       <span>我的行程</span>
-      <el-button type="primary" @click="emit('create')">
-        <el-icon><Plus /></el-icon>
-        新建行程
-      </el-button>
+      <div class="header-actions">
+        <el-button @click="emit('aiGenerate')">AI 生成草案</el-button>
+        <el-button type="primary" @click="emit('create')">
+          <el-icon><Plus /></el-icon>
+          新建行程
+        </el-button>
+      </div>
     </div>
 
     <div class="search-bar">
@@ -69,6 +72,7 @@ defineProps<Props>();
 
 const emit = defineEmits<{
   create: [];
+  aiGenerate: [];
   search: [];
   reset: [];
 }>();
@@ -80,6 +84,12 @@ const emit = defineEmits<{
   justify-content: space-between;
   align-items: center;
   font-weight: bold;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .search-bar {

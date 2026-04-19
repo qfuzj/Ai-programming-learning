@@ -24,5 +24,7 @@ public class LlmProperties {
 
     private Integer maxTokens = 2048;
 
-    private Integer timeoutMs = 5000;
+    private Integer timeoutMs = 10000;
+
+    private Integer itineraryTimeoutMs = 120000;
 }

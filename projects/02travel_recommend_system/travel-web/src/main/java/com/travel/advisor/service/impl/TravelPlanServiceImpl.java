@@ -173,26 +173,39 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         Long userId = getCurrentUserIdRequired();
         TravelPlan plan = getPlanByIdAndUser(planId, userId);
         validateDayNoInRange(plan, dto.getDayNo());
-        Integer itemType = resolveItemType(dto.getItemType());
 
         TravelPlanItem item = new TravelPlanItem();
         item.setTravelPlanId(planId);
-        item.setScenicSpotId(dto.getScenicSpotId());
-        item.setDayNo(dto.getDayNo());
-        item.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
-        item.setItemType(itemType);
-        item.setTitle(dto.getTitle());
-        item.setDescription(dto.getDescription());
-        item.setStartTime(dto.getStartTime());
-        item.setEndTime(dto.getEndTime());
-        item.setLocation(dto.getLocation());
-        item.setLongitude(dto.getLongitude());
-        item.setLatitude(dto.getLatitude());
-        item.setEstimatedCost(dto.getEstimatedCost());
-        item.setNotes(dto.getNotes());
-
+        fillPlanItemFields(item, planId, dto);
         travelPlanItemMapper.insert(item);
         return item.getId();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void updatePlanItem(Long planId, Long itemId, TravelPlanItemCreateDTO dto) {
+        Long userId = getCurrentUserIdRequired();
+        TravelPlan plan = getPlanByIdAndUser(planId, userId);
+        validateDayNoInRange(plan, dto.getDayNo());
+
+        TravelPlanItem existing = travelPlanItemMapper.selectOne(new LambdaQueryWrapper<TravelPlanItem>()
+                .eq(TravelPlanItem::getId, itemId)
+                .eq(TravelPlanItem::getTravelPlanId, planId));
+        if (existing == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "行程项不存在");
+        }
+
+        TravelPlanItem update = new TravelPlanItem();
+        update.setId(existing.getId());
+        update.setTravelPlanId(planId);
+        fillPlanItemFields(update, planId, dto);
+        // 编辑场景下若用户未显式传 sortOrder 且未改 startTime，fillPlanItemFields 会根据
+        // "同日最后一项 + 1" 推算出一个与现值无关的新顺序号，会把当前项莫名排到末尾。
+        // 因此显式保留原 sortOrder，避免编辑仅修改标题/备注时位置发生漂移。
+        if (dto.getSortOrder() == null && dto.getStartTime() == null) {
+            update.setSortOrder(existing.getSortOrder());
+        }
+        travelPlanItemMapper.updateById(update);
     }
 
     /**
@@ -257,6 +270,23 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         vo.setStatus(plan.getStatus());
         vo.setCreatedAt(plan.getCreateTime());
         vo.setUpdatedAt(plan.getUpdateTime());
+    }
+
+    private void fillPlanItemFields(TravelPlanItem item, Long planId, TravelPlanItemCreateDTO dto) {
+        Integer itemType = resolveItemType(dto.getItemType());
+        item.setScenicSpotId(dto.getScenicSpotId());
+        item.setDayNo(dto.getDayNo());
+        item.setSortOrder(resolveItemSortOrder(planId, dto));
+        item.setItemType(itemType);
+        item.setTitle(dto.getTitle());
+        item.setDescription(dto.getDescription());
+        item.setStartTime(dto.getStartTime());
+        item.setEndTime(dto.getEndTime());
+        item.setLocation(dto.getLocation());
+        item.setLongitude(dto.getLongitude());
+        item.setLatitude(dto.getLatitude());
+        item.setEstimatedCost(dto.getEstimatedCost());
+        item.setNotes(dto.getNotes());
     }
 
     /**
@@ -366,6 +396,25 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         if (dayNo > plan.getTotalDays()) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "天数超出计划范围");
         }
+    }
+
+    private Integer resolveItemSortOrder(Long planId, TravelPlanItemCreateDTO dto) {
+        if (dto.getSortOrder() != null) {
+            return dto.getSortOrder();
+        }
+        if (dto.getStartTime() != null) {
+            return dto.getStartTime().getHour() * 60 + dto.getStartTime().getMinute();
+        }
+        TravelPlanItem lastItem = travelPlanItemMapper.selectOne(new LambdaQueryWrapper<TravelPlanItem>()
+                .eq(TravelPlanItem::getTravelPlanId, planId)
+                .eq(TravelPlanItem::getDayNo, dto.getDayNo())
+                .orderByDesc(TravelPlanItem::getSortOrder)
+                .orderByDesc(TravelPlanItem::getId)
+                .last("limit 1"));
+        if (lastItem == null || lastItem.getSortOrder() == null) {
+            return 0;
+        }
+        return lastItem.getSortOrder() + 1;
     }
 
     /**

@@ -222,14 +222,14 @@
 
 ### 任务 18
 - 任务名称：AI 辅助行程生成
-- 状态：未完成
+- 状态：已完成基础闭环
 - 当前现状：
-  - 前端 `ItineraryAiGenerateView.vue` 已存在
-  - 前端 `generateItineraryByAi()` 仍为占位并显式报错
-  - 后端无 `/api/user/travel-plans/ai-generate`
-- 下一步建议：
-  - 先落后端生成草案接口
-  - 再打通“预览 -> 保存正式计划”
+  - 前端 `ItineraryAiGenerateView.vue` 已接入真实接口
+  - 后端已提供 `/api/user/travel-plans/ai-generate`
+  - 返回 AI 行程草案 JSON，失败时可降级为规则草案
+- 仍待继续：
+  - 将“AI 草案预览”进一步收口为可视化卡片，而不是原始 JSON
+  - 增加“将 AI 草案一键保存为正式行程”闭环
 
 ---
 
@@ -476,7 +476,7 @@
 建议按以下顺序继续：
 
 ### 优先级 A
-1. 完成 AI 行程生成后端接口与前端闭环
+1. 收口 AI 行程生成的预览与保存体验
 
 ### 优先级 B
 2. 为关键管理页补更完整的表单校验

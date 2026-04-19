@@ -20,5 +20,7 @@ public interface TravelPlanService {
 
     Long addPlanItem(Long planId, TravelPlanItemCreateDTO dto);
 
+    void updatePlanItem(Long planId, Long itemId, TravelPlanItemCreateDTO dto);
+
     void deletePlanItem(Long planId, Long itemId);
 }

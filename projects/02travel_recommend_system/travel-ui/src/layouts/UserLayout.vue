@@ -33,6 +33,7 @@
               <el-dropdown-menu>
                 <el-dropdown-item command="/profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="/itinerary">我的行程</el-dropdown-item>
+                <el-dropdown-item command="/itinerary/ai-generate">AI 生成行程</el-dropdown-item>
                 <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>

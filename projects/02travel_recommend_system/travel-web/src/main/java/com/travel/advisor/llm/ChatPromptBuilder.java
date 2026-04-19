@@ -9,17 +9,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * PromptBuilder 负责构建发送给 LLM 的聊天请求，整合系统提示、历史消息和上下文信息。
+ * ChatPromptBuilder 负责构建聊天场景使用的 LLM 请求。
  */
 @Component
 @RequiredArgsConstructor
-public class PromptBuilder {
+public class ChatPromptBuilder {
 
     private final LlmProperties llmProperties;
     private final ConversationContextManager conversationContextManager;
 
     /**
-     * 构建 LLM 聊天请求，包含系统提示、历史消息和上下文信息。
+     * 构建聊天场景的 LLM 请求，包含系统提示、历史消息和上下文信息。
      *
      * @param userId          用户 ID
      * @param conversationId  会话 ID

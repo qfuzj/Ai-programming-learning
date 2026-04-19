@@ -47,8 +47,8 @@ export function useItineraryList() {
       const res = await getItineraryPage(queryParams);
       list.value = res.records || [];
       total.value = res.total || 0;
-    } catch (error: any) {
-      ElMessage.error(error?.message || "获取行程列表失败");
+    } catch {
+      // axios 拦截器已统一弹错误提示，此处仅需断开流程，finally 释放 loading
     } finally {
       loading.value = false;
     }
@@ -69,7 +69,15 @@ export function useItineraryList() {
     dialogVisible.value = true;
   }
 
+  function handleAiGenerate(): void {
+    void router.push("/itinerary/ai-generate");
+  }
+
   function handleEdit(row: ItineraryItem): void {
+    if (!row.id) {
+      ElMessage.warning("当前行程缺少有效 ID，无法编辑");
+      return;
+    }
     dialogType.value = "edit";
     currentEditId.value = row.id;
     Object.assign(form, {
@@ -85,12 +93,16 @@ export function useItineraryList() {
   }
 
   async function handleDelete(row: ItineraryItem): Promise<void> {
+    if (!row.id) {
+      ElMessage.warning("当前行程缺少有效 ID，无法删除");
+      return;
+    }
     try {
       await deleteItinerary(row.id);
       ElMessage.success("删除成功");
       void fetchList();
-    } catch (error: any) {
-      ElMessage.error(error?.message || "删除失败");
+    } catch {
+      // axios 拦截器已弹错误提示
     }
   }
 
@@ -106,14 +118,18 @@ export function useItineraryList() {
       }
       dialogVisible.value = false;
       void fetchList();
-    } catch (error: any) {
-      ElMessage.error(error?.message || "保存失败");
+    } catch {
+      // axios 拦截器已弹错误提示
     } finally {
       submitLoading.value = false;
     }
   }
 
   function handleDetail(row: ItineraryItem): void {
+    if (!row.id) {
+      ElMessage.warning("当前行程缺少有效 ID，无法查看详情");
+      return;
+    }
     void router.push(`/itinerary/${row.id}`);
   }
 
@@ -144,6 +160,7 @@ export function useItineraryList() {
     fetchList,
     resetQuery,
     handleCreate,
+    handleAiGenerate,
     handleEdit,
     handleDelete,
     submitForm,

@@ -5,6 +5,7 @@
         :query="queryParams"
         :loading="loading"
         @create="handleCreate"
+        @ai-generate="handleAiGenerate"
         @search="fetchList"
         @reset="resetQuery"
       />
@@ -52,6 +53,7 @@ const {
   fetchList,
   resetQuery,
   handleCreate,
+  handleAiGenerate,
   handleEdit,
   handleDelete,
   submitForm,

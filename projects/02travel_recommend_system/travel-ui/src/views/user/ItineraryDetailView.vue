@@ -8,11 +8,14 @@
       :get-day-items="getDayItems"
       @update:active-day="activeDay = $event"
       @add-item="openAddItem"
+      @edit-item="openEditItem"
       @delete-item="handleDeleteItem"
     />
 
     <ItineraryItemDialog
       :visible="itemDialogVisible"
+      :mode="itemDialogMode"
+      :total-days="detail?.totalDays || 1"
       :form="itemForm"
       :submit-loading="submitLoading"
       @submit="submitItem"
@@ -35,10 +38,12 @@ const {
   detail,
   activeDay,
   itemDialogVisible,
+  itemDialogMode,
   submitLoading,
   itemForm,
   getDayItems,
   openAddItem,
+  openEditItem,
   submitItem,
   handleDeleteItem,
 } = useItineraryDetail();

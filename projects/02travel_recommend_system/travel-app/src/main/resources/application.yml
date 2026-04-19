@@ -95,4 +95,5 @@ llm:
   api-key: ${DASHSCOPE_API_KEY:}
   base-url: ${LLM_BASE_URL:https://dashscope.aliyuncs.com/api/v1}
   max-tokens: ${LLM_MAX_TOKENS:2048}
-  timeout-ms: ${LLM_TIMEOUT_MS:5000}
+  timeout-ms: ${LLM_TIMEOUT_MS:10000}
+  itinerary-timeout-ms: ${LLM_ITINERARY_TIMEOUT_MS:120000}

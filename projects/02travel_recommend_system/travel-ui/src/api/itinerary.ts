@@ -8,7 +8,7 @@ import type { PageQuery, PageResult } from "@/types/api";
  * 对应-行程计划详情 VO（View Object）
  */
 export interface ItineraryItem {
-  id: number;
+  id?: number;
   title: string;
   coverImage?: string;
   startDate?: string;
@@ -77,7 +77,7 @@ export interface ItineraryItemPayload {
 export interface ItineraryDayItem {
   dayNo: number;
   items: Array<{
-    id: number;
+    id?: number;
     scenicSpotId?: number;
     dayNo: number;
     sortOrder?: number;
@@ -119,6 +119,14 @@ export function addItineraryItem(planId: number, payload: ItineraryItemPayload):
   return http.post(`/api/user/travel-plans/${planId}/items`, payload);
 }
 
+export function updateItineraryItem(
+  planId: number,
+  itemId: number,
+  payload: ItineraryItemPayload
+): Promise<void> {
+  return http.put(`/api/user/travel-plans/${planId}/items/${itemId}`, payload);
+}
+
 export function deleteItineraryItem(planId: number, itemId: number): Promise<void> {
   return http.delete(`/api/user/travel-plans/${planId}/items/${itemId}`);
 }
@@ -126,12 +134,14 @@ export function deleteItineraryItem(planId: number, itemId: number): Promise<voi
 export function generateItineraryByAi(payload: {
   destination: string;
   days: number;
+  startDate: string;
+  endDate: string;
   budget?: number;
   companionType?: string;
   travelStyle?: string;
   preferredTags?: string[];
-}): Promise<unknown> {
-  void payload;
-  // TODO: 后端暂未提供 /api/user/travel-plans/ai-generate 接口，后续补充实现
-  return Promise.reject(new Error("后端暂未提供 /api/user/travel-plans/ai-generate 接口"));
+}): Promise<ItineraryItem> {
+  return http.post("/api/user/travel-plans/ai-generate", payload, {
+    timeout: 120000,
+  });
 }

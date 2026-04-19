@@ -54,7 +54,7 @@ public class MessageServiceImpl implements MessageService {
     private final ConversationService conversationService;
     private final LlmCallLogService llmCallLogService;
     private final LlmGateway llmGateway;
-    private final PromptBuilder promptBuilder;
+    private final ChatPromptBuilder chatPromptBuilder;
     private final ConversationContextManager conversationContextManager;
     private final SensitiveFilterService sensitiveFilterService;
     private final ChatFallbackService chatFallbackService;
@@ -117,7 +117,7 @@ public class MessageServiceImpl implements MessageService {
         historyMessages = truncateHistory(historyMessages);
 
         // 构建LLM请求对象
-        LlmRequest request = promptBuilder.buildChatRequest(
+        LlmRequest request = chatPromptBuilder.buildChatRequest(
                 userId, conversationId, conversation.getContextData(), historyMessages);
 
         // 调用 LLM 请求

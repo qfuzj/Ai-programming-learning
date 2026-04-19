@@ -2,9 +2,11 @@ package com.travel.advisor.controller.user;
 
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
+import com.travel.advisor.dto.plan.TravelPlanAiGenerateDTO;
 import com.travel.advisor.dto.plan.TravelPlanCreateDTO;
 import com.travel.advisor.dto.plan.TravelPlanQueryDTO;
 import com.travel.advisor.dto.plan.TravelPlanItemCreateDTO;
+import com.travel.advisor.service.TravelPlanAiService;
 import com.travel.advisor.service.TravelPlanService;
 import com.travel.advisor.vo.plan.TravelPlanDetailVO;
 import jakarta.validation.Valid;
@@ -24,6 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class TravelPlanController {
 
     private final TravelPlanService travelPlanService;
+    private final TravelPlanAiService travelPlanAiService;
+
+    @PostMapping("/ai-generate")
+    public Result<TravelPlanDetailVO> generateAiDraft(@Valid @RequestBody TravelPlanAiGenerateDTO dto) {
+        return Result.success(travelPlanAiService.generateDraft(dto));
+    }
 
     @PostMapping
     public Result<Long> createPlan(@Valid @RequestBody TravelPlanCreateDTO dto) {
@@ -55,6 +63,14 @@ public class TravelPlanController {
     @PostMapping("/{id}/items")
     public Result<Long> addPlanItem(@PathVariable Long id, @Valid @RequestBody TravelPlanItemCreateDTO dto) {
         return Result.success(travelPlanService.addPlanItem(id, dto));
+    }
+
+    @PutMapping("/{id}/items/{itemId}")
+    public Result<Void> updatePlanItem(@PathVariable Long id,
+                                       @PathVariable Long itemId,
+                                       @Valid @RequestBody TravelPlanItemCreateDTO dto) {
+        travelPlanService.updatePlanItem(id, itemId, dto);
+        return Result.success();
     }
 
     @DeleteMapping("/{id}/items/{itemId}")

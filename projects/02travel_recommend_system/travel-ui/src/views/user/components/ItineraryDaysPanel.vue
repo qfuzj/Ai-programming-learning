@@ -21,8 +21,8 @@
 
           <el-timeline v-if="getDayItems(day).length > 0" style="margin-top: 20px">
             <el-timeline-item
-              v-for="item in getDayItems(day)"
-              :key="item.id"
+              v-for="(item, index) in getDayItems(day)"
+              :key="item.id ?? `${day}-${index}-${item.title}`"
               :timestamp="(item.startTime || '') + (item.endTime ? ' ~ ' + item.endTime : '')"
               placement="top"
             >
@@ -30,11 +30,15 @@
                 <div class="item-header">
                   <h4>{{ item.title }}</h4>
                   <div class="item-actions">
+                    <el-button link type="primary" size="small" @click="emit('edit-item', item)">
+                      编辑
+                    </el-button>
                     <el-button
                       link
                       type="danger"
                       size="small"
-                      @click="emit('delete-item', item.id)"
+                      :disabled="item.id == null"
+                      @click="item.id != null && emit('delete-item', item.id)"
                     >
                       删除
                     </el-button>
@@ -72,6 +76,7 @@ defineProps<Props>();
 const emit = defineEmits<{
   "update:activeDay": [value: string];
   "add-item": [day: number];
+  "edit-item": [item: ItineraryDayItem["items"][number]];
   "delete-item": [itemId: number];
 }>();
 </script>
@@ -96,6 +101,12 @@ const emit = defineEmits<{
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .item-header h4 {

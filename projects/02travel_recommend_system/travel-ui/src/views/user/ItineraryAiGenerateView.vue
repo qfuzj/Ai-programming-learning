@@ -8,7 +8,14 @@
       @reset="resetForm"
     />
 
-    <ItineraryAiResult :loading="loading" :error-message="errorMessage" :result="result" />
+    <ItineraryAiResult
+      :loading="loading"
+      :save-loading="saveLoading"
+      :error-message="errorMessage"
+      :result="result"
+      :can-save="canSave"
+      @save="saveDraft"
+    />
   </PageStub>
 </template>
 
@@ -17,6 +24,16 @@ import { useItineraryAiGenerate } from "@/composables/useItineraryAiGenerate";
 import ItineraryAiForm from "./components/ItineraryAiForm.vue";
 import ItineraryAiResult from "./components/ItineraryAiResult.vue";
 
-const { form, loading, errorMessage, result, canSubmit, resetForm, generateDraft } =
-  useItineraryAiGenerate();
+const {
+  form,
+  loading,
+  saveLoading,
+  errorMessage,
+  result,
+  canSubmit,
+  canSave,
+  resetForm,
+  generateDraft,
+  saveDraft,
+} = useItineraryAiGenerate();
 </script>

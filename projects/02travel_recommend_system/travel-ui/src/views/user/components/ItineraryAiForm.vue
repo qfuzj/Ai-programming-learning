@@ -8,10 +8,30 @@
       </el-col>
       <el-col :span="12">
         <el-form-item label="天数">
-          <el-input-number v-model="form.days" :min="1" :max="15" style="width: 100%" />
+          <el-input-number
+            v-model="form.days"
+            :min="1"
+            :max="15"
+            :disabled="true"
+            style="width: 100%"
+          />
         </el-form-item>
       </el-col>
     </el-row>
+
+    <el-form-item label="出发日期 / 结束日期">
+      <el-date-picker
+        v-model="travelDateRange"
+        type="daterange"
+        range-separator="至"
+        start-placeholder="请选择出发日期"
+        end-placeholder="请选择结束日期"
+        value-format="YYYY-MM-DD"
+        unlink-panels
+        clearable
+        style="width: 100%"
+      />
+    </el-form-item>
 
     <el-row :gutter="12">
       <el-col :span="12">
@@ -63,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { ItineraryAiFormModel } from "@/types/itinerary-ai";
 
 interface Props {
@@ -71,12 +92,30 @@ interface Props {
   canSubmit: boolean;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
+const form = props.form;
 
 const emit = defineEmits<{
   submit: [];
   reset: [];
 }>();
+
+const travelDateRange = computed<[string, string] | []>({
+  get() {
+    if (props.form.startDate && props.form.endDate) {
+      return [props.form.startDate, props.form.endDate];
+    }
+    return [];
+  },
+  set(value) {
+    if (Array.isArray(value) && value.length === 2) {
+      [props.form.startDate, props.form.endDate] = value;
+      return;
+    }
+    props.form.startDate = undefined;
+    props.form.endDate = undefined;
+  },
+});
 </script>
 
 <style scoped>
