@@ -37,15 +37,17 @@
 
       <el-form-item label="状态" prop="status">
         <el-radio-group v-model="form.status">
-          <el-radio :label="1">草稿</el-radio>
-          <el-radio :label="2">已发布</el-radio>
+          <el-radio v-for="item in statusOptions" :key="item.code" :label="item.code">
+            {{ item.desc }}
+          </el-radio>
         </el-radio-group>
       </el-form-item>
 
       <el-form-item label="是否公开" prop="isPublic">
         <el-radio-group v-model="form.isPublic">
-          <el-radio :label="0">私有</el-radio>
-          <el-radio :label="1">公开</el-radio>
+          <el-radio v-for="item in publicOptions" :key="item.code" :label="item.code">
+            {{ item.desc }}
+          </el-radio>
         </el-radio-group>
       </el-form-item>
 
@@ -72,6 +74,11 @@
 import { reactive, ref, watch } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import type { ItineraryDialogType, ItineraryFormModel } from "@/types/itinerary-list";
+import { getPublicStatusDict, getTravelPlanStatusDict } from "@/api/dict";
+import { useDictOptions } from "@/composables/useDictOptions";
+
+const { options: statusOptions } = useDictOptions("travel-plan-status", getTravelPlanStatusDict);
+const { options: publicOptions } = useDictOptions("public-status", getPublicStatusDict);
 
 interface Props {
   visible: boolean;

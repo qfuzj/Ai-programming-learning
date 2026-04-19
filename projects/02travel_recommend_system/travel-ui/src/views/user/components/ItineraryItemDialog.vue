@@ -19,11 +19,12 @@
 
       <el-form-item label="活动类型" prop="itemType">
         <el-select v-model="form.itemType" placeholder="选择类型" style="width: 100%">
-          <el-option label="景点" :value="1" />
-          <el-option label="餐饮" :value="2" />
-          <el-option label="住宿" :value="3" />
-          <el-option label="交通" :value="4" />
-          <el-option label="其他" :value="5" />
+          <el-option
+            v-for="item in itemTypeOptions"
+            :key="item.code"
+            :label="item.desc"
+            :value="item.code"
+          />
         </el-select>
       </el-form-item>
 
@@ -85,7 +86,7 @@
         </el-col>
       </el-row>
 
-     <!--  <el-row :gutter="12">
+      <!--  <el-row :gutter="12">
         <el-col :span="12">
           <el-form-item label="经度">
             <el-input-number
@@ -132,6 +133,13 @@
 import { reactive, ref, watch } from "vue";
 import type { FormInstance, FormRules } from "element-plus";
 import type { ItineraryDayFormModel } from "@/types/itinerary-detail";
+import { getTravelPlanItemTypeDict } from "@/api/dict";
+import { useDictOptions } from "@/composables/useDictOptions";
+
+const { options: itemTypeOptions } = useDictOptions(
+  "travel-plan-item-type",
+  getTravelPlanItemTypeDict
+);
 
 interface Props {
   visible: boolean;

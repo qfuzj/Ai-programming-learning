@@ -52,9 +52,12 @@
         <el-col :span="12">
           <el-form-item label="性别">
             <el-select v-model="form.gender" style="width: 100%">
-              <el-option label="保密" :value="0" />
-              <el-option label="男" :value="1" />
-              <el-option label="女" :value="2" />
+              <el-option
+                v-for="item in genderOptions"
+                :key="item.code"
+                :label="item.desc"
+                :value="item.code"
+              />
             </el-select>
           </el-form-item>
         </el-col>
@@ -88,6 +91,10 @@ import { ElMessage } from "element-plus";
 import { Camera } from "@element-plus/icons-vue";
 import { getUploadToken, uploadCallback, getFileResource } from "@/api/file";
 import type { ProfileInfo, UpdateProfilePayload } from "@/types/profile";
+import { getGenderDict } from "@/api/dict";
+import { useDictOptions } from "@/composables/useDictOptions";
+
+const { options: genderOptions } = useDictOptions("gender", getGenderDict);
 
 interface Props {
   modelValue: boolean;
@@ -191,6 +198,7 @@ async function handleFileChange(event: Event): Promise<void> {
     form.avatar = fileResource.url || "";
     uploadProgress.value = 100;
     ElMessage.success("头像上传成功");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     ElMessage.error("头像上传失败，请重试");
   } finally {

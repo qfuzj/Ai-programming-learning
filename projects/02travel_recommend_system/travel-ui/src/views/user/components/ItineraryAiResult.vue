@@ -97,6 +97,14 @@
 
 <script setup lang="ts">
 import type { ItineraryItem } from "@/api/itinerary";
+import { getTravelPlanItemTypeDict, getTravelPlanStatusDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: itemTypeOptions } = useDictOptions(
+  "travel-plan-item-type",
+  getTravelPlanItemTypeDict
+);
+const { options: statusOptions } = useDictOptions("travel-plan-status", getTravelPlanStatusDict);
 
 interface Props {
   loading: boolean;
@@ -120,11 +128,7 @@ function formatTime(value?: string): string {
 }
 
 function formatItemType(itemType?: number): string {
-  if (itemType === 1) return "景点";
-  if (itemType === 2) return "餐饮";
-  if (itemType === 3) return "住宿";
-  if (itemType === 4) return "交通";
-  return "自定义";
+  return findDictDesc(itemTypeOptions.value, itemType, "自定义");
 }
 
 function formatBudget(value?: number): string {
@@ -132,9 +136,7 @@ function formatBudget(value?: number): string {
 }
 
 function formatStatus(status?: number): string {
-  if (status === 1) return "正常";
-  if (status === 2) return "已完成";
-  return "草稿";
+  return findDictDesc(statusOptions.value, status, "草稿");
 }
 </script>
 

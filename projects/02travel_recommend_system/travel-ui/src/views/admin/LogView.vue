@@ -7,7 +7,14 @@
 
       <el-form :inline="true" :model="query" class="filter-form">
         <el-form-item label="模块">
-          <el-input v-model="query.module" clearable placeholder="如 scenic" />
+          <el-select v-model="query.module" clearable placeholder="全部" style="width: 160px">
+            <el-option
+              v-for="item in moduleOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="动作">
           <el-input v-model="query.action" clearable placeholder="如 update" />
@@ -17,8 +24,12 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部" style="width: 120px">
-            <el-option label="成功" :value="1" />
-            <el-option label="失败" :value="0" />
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -40,7 +51,7 @@
         <el-table-column label="状态" width="90">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ scope.row.status === 1 ? "成功" : "失败" }}
+              {{ findDictDesc(statusOptions, scope.row.status, "-") }}
             </el-tag>
           </template>
         </el-table-column>
@@ -83,7 +94,7 @@
           {{ detailData.executionTimeMs ?? "-" }}
         </el-descriptions-item>
         <el-descriptions-item label="状态">
-          {{ detailData.status === 1 ? "成功" : "失败" }}
+          {{ findDictDesc(statusOptions, detailData.status, "-") }}
         </el-descriptions-item>
         <el-descriptions-item label="IP地址">
           {{ detailData.ipAddress || "-" }}
@@ -121,6 +132,17 @@ import {
   type OperationLogListItem,
   type OperationLogQuery,
 } from "@/api/log";
+import { getOperationLogModuleDict, getOperationLogStatusDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: moduleOptions } = useDictOptions(
+  "operation-log-module",
+  getOperationLogModuleDict,
+);
+const { options: statusOptions } = useDictOptions(
+  "operation-log-status",
+  getOperationLogStatusDict,
+);
 
 const loading = ref(false);
 const total = ref(0);

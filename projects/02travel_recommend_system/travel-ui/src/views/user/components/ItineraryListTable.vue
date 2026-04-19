@@ -5,7 +5,7 @@
         <template #default="{ row }">
           <el-link type="primary" @click="emit('detail', row)">{{ row.title }}</el-link>
           <el-tag v-if="row.isPublic === 1" size="small" type="success" style="margin-left: 8px">
-            公开
+            {{ findDictDesc(publicOptions, 1, "公开") }}
           </el-tag>
         </template>
       </el-table-column>
@@ -17,7 +17,7 @@
       <el-table-column prop="status" label="状态" width="120">
         <template #default="{ row }">
           <el-tag :type="row.status === 2 ? 'success' : 'info'">
-            {{ row.status === 2 ? "已发布" : "草稿" }}
+            {{ findDictDesc(statusOptions, row.status, "-") }}
           </el-tag>
         </template>
       </el-table-column>
@@ -58,6 +58,11 @@
 
 <script setup lang="ts">
 import type { ItineraryItem } from "@/api/itinerary";
+import { getPublicStatusDict, getTravelPlanStatusDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: statusOptions } = useDictOptions("travel-plan-status", getTravelPlanStatusDict);
+const { options: publicOptions } = useDictOptions("public-status", getPublicStatusDict);
 
 interface Props {
   loading: boolean;

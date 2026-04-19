@@ -7,19 +7,31 @@
 
       <el-form :inline="true" :model="query" class="filter-form">
         <el-form-item label="标签名称">
-          <el-input v-model="query.name" clearable style="width: 220px" placeholder="请输入标签名" />
+          <el-input
+            v-model="query.name"
+            clearable
+            style="width: 220px"
+            placeholder="请输入标签名"
+          />
         </el-form-item>
         <el-form-item label="类型">
-          <!-- 标签类型：1 景点标签 2 用户偏好标签 -->
           <el-select v-model="query.type" clearable style="width: 140px" placeholder="全部">
-            <el-option label="景点标签" :value="1" />
-            <el-option label="偏好标签" :value="2" />
+            <el-option
+              v-for="item in tagTypeOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" clearable style="width: 120px" placeholder="全部">
-            <el-option label="启用" :value="1" />
-            <el-option label="禁用" :value="0" />
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -55,17 +67,14 @@
         <el-table-column prop="category" label="分类" width="120" />
         <el-table-column label="颜色" width="100">
           <template #default="scope">
-            <span
-              class="color-block"
-              :style="{ backgroundColor: scope.row.color || '#dcdfe6' }"
-            />
+            <span class="color-block" :style="{ backgroundColor: scope.row.color || '#dcdfe6' }" />
           </template>
         </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" />
         <el-table-column label="状态" width="90">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'info'">
-              {{ scope.row.status === 1 ? "启用" : "禁用" }}
+              {{ findDictDesc(statusOptions, scope.row.status, "-") }}
             </el-tag>
           </template>
         </el-table-column>
@@ -105,27 +114,25 @@
           <el-input v-model="formModel.name" placeholder="请输入标签名称" />
         </el-form-item>
         <el-form-item label="类型" prop="type">
-          <!-- 标签类型选择框：根据业务规定，限制为 1: 景点标签、2: 用户偏好标签 -->
           <el-select v-model="formModel.type" style="width: 100%" @change="onFormTypeChange">
-            <el-option label="景点标签" :value="1" />
-            <el-option label="偏好标签" :value="2" />
+            <el-option
+              v-for="item in tagTypeOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="分类" prop="category">
           <!-- 标签分类选择框：支持下拉选择（主题/风格/设施等）并允许直接输入创建新分类 -->
-          <el-select 
-            v-model="formModel.category" 
-            placeholder="请选择或输入标签分类" 
+          <el-select
+            v-model="formModel.category"
+            placeholder="请选择或输入标签分类"
             style="width: 100%"
             filterable
             allow-create
           >
-            <el-option
-              v-for="cat in dynamicCategories"
-              :key="cat"
-              :label="cat"
-              :value="cat"
-            />
+            <el-option v-for="cat in dynamicCategories" :key="cat" :label="cat" :value="cat" />
           </el-select>
         </el-form-item>
         <el-form-item label="图标" prop="icon">
@@ -139,8 +146,12 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="formModel.status" style="width: 100%">
-            <el-option label="启用" :value="1" />
-            <el-option label="禁用" :value="0" />
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -166,6 +177,11 @@ import {
   type AdminTagQuery,
   type TagPayload,
 } from "@/api/common";
+import { getCommonStatusDict, getTagTypeDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: tagTypeOptions } = useDictOptions("tag-type", getTagTypeDict);
+const { options: statusOptions } = useDictOptions("common-status", getCommonStatusDict);
 
 const loading = ref(false);
 const submitting = ref(false);
@@ -217,19 +233,14 @@ async function onFormTypeChange(typeVal: number) {
 async function fetchCategoriesByType(typeVal: number) {
   try {
     const tags = await getTagsByType(typeVal);
-    remoteCategories.value = tags
-      .map((t) => t.category)
-      .filter((c): c is string => Boolean(c));
+    remoteCategories.value = tags.map((t) => t.category).filter((c): c is string => Boolean(c));
   } catch (error) {
     ElMessage.error("动态分类加载失败");
   }
 }
 
 function tagTypeText(type: number): string {
-  // 标签类型判断：1 表示景点标签，2 表示用户偏好标签
-  if (type === 1) return "景点标签";
-  if (type === 2) return "偏好标签";
-  return "-";
+  return findDictDesc(tagTypeOptions.value, type, "-");
 }
 
 async function loadTagList(): Promise<void> {

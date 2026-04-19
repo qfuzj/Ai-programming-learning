@@ -47,10 +47,12 @@
             placeholder="请选择"
             style="width: 100%"
           >
-            <el-option label="独自出行" value="solo" />
-            <el-option label="情侣" value="couple" />
-            <el-option label="家庭" value="family" />
-            <el-option label="朋友" value="friends" />
+            <el-option
+              v-for="item in companionOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
       </el-col>
@@ -58,10 +60,12 @@
 
     <el-form-item label="旅行风格（可选）">
       <el-select v-model="form.travelStyle" clearable placeholder="请选择" style="width: 100%">
-        <el-option label="经典打卡" value="classic" />
-        <el-option label="深度慢游" value="slow" />
-        <el-option label="美食优先" value="food" />
-        <el-option label="自然户外" value="outdoor" />
+        <el-option
+          v-for="item in styleOptions"
+          :key="item.code"
+          :label="item.desc"
+          :value="item.code"
+        />
       </el-select>
     </el-form-item>
 
@@ -85,6 +89,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ItineraryAiFormModel } from "@/types/itinerary-ai";
+import { getTravelCompanionTypeDict, getTravelStyleDict } from "@/api/dict";
+import { useDictOptions } from "@/composables/useDictOptions";
+
+const { options: companionOptions } = useDictOptions(
+  "travel-companion-type",
+  getTravelCompanionTypeDict
+);
+const { options: styleOptions } = useDictOptions("travel-style", getTravelStyleDict);
 
 interface Props {
   form: ItineraryAiFormModel;

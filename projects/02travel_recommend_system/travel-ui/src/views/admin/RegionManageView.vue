@@ -11,15 +11,22 @@
         </el-form-item>
         <el-form-item label="层级">
           <el-select v-model="query.level" clearable style="width: 120px" placeholder="全部">
-            <el-option label="省" :value="1" />
-            <el-option label="市" :value="2" />
-            <el-option label="区县" :value="3" />
+            <el-option
+              v-for="item in levelOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="热门">
           <el-select v-model="query.isHot" clearable style="width: 120px" placeholder="全部">
-            <el-option label="是" :value="1" />
-            <el-option label="否" :value="0" />
+            <el-option
+              v-for="item in yesNoOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -46,7 +53,7 @@
         <el-table-column label="热门" width="80">
           <template #default="scope">
             <el-tag :type="scope.row.isHot === 1 ? 'success' : 'info'">
-              {{ scope.row.isHot === 1 ? "是" : "否" }}
+              {{ findDictDesc(yesNoOptions, scope.row.isHot, "-") }}
             </el-tag>
           </template>
         </el-table-column>
@@ -84,9 +91,12 @@
       <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="88px">
         <el-form-item label="层级" prop="level">
           <el-select v-model="formModel.level" style="width: 100%" @change="onLevelChange">
-            <el-option label="省" :value="1" />
-            <el-option label="市" :value="2" />
-            <el-option label="区县" :value="3" />
+            <el-option
+              v-for="item in levelOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="父级ID" prop="parentId">
@@ -160,8 +170,12 @@
         </el-form-item>
         <el-form-item label="热门" prop="isHot">
           <el-select v-model="formModel.isHot" style="width: 100%">
-            <el-option label="否" :value="0" />
-            <el-option label="是" :value="1" />
+            <el-option
+              v-for="item in yesNoOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -188,6 +202,11 @@ import {
   type RegionPayload,
   type CommonRegionNode,
 } from "@/api/common";
+import { getRegionLevelDict, getYesNoFlagDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: levelOptions } = useDictOptions("region-level", getRegionLevelDict);
+const { options: yesNoOptions } = useDictOptions("yes-no-flag", getYesNoFlagDict);
 
 const loading = ref(false);
 const submitting = ref(false);
@@ -251,10 +270,7 @@ const fetchRegionTree = async (): Promise<void> => {
 const dialogTitle = computed(() => (editingId.value ? "编辑地区" : "新增地区"));
 
 function levelText(level: number): string {
-  if (level === 1) return "省";
-  if (level === 2) return "市";
-  if (level === 3) return "区县";
-  return "-";
+  return findDictDesc(levelOptions.value, level, "-");
 }
 
 async function loadRegionList(): Promise<void> {

@@ -32,8 +32,12 @@
             style="width: 120px"
             @change="emit('search')"
           >
-            <el-option label="草稿" :value="1" />
-            <el-option label="已发布" :value="2" />
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
 
@@ -45,8 +49,12 @@
             style="width: 120px"
             @change="emit('search')"
           >
-            <el-option label="私有" :value="0" />
-            <el-option label="公开" :value="1" />
+            <el-option
+              v-for="item in publicOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
 
@@ -62,6 +70,11 @@
 <script setup lang="ts">
 import { Plus } from "@element-plus/icons-vue";
 import type { ItineraryQuery } from "@/api/itinerary";
+import { getPublicStatusDict, getTravelPlanStatusDict } from "@/api/dict";
+import { useDictOptions } from "@/composables/useDictOptions";
+
+const { options: statusOptions } = useDictOptions("travel-plan-status", getTravelPlanStatusDict);
+const { options: publicOptions } = useDictOptions("public-status", getPublicStatusDict);
 
 interface Props {
   query: ItineraryQuery;

@@ -10,7 +10,14 @@
           <el-input v-model="query.keyword" clearable placeholder="如 llm.model" />
         </el-form-item>
         <el-form-item label="配置分组">
-          <el-input v-model="query.configGroup" clearable placeholder="如 llm / recommend" />
+          <el-select v-model="query.configGroup" clearable placeholder="全部" style="width: 180px">
+            <el-option
+              v-for="item in configGroupOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="onSearch">查询</el-button>
@@ -23,12 +30,20 @@
       <el-table :data="configList">
         <el-table-column prop="configKey" label="配置键" min-width="180" show-overflow-tooltip />
         <el-table-column prop="configValue" label="配置值" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="configType" label="类型" width="100" />
-        <el-table-column prop="configGroup" label="分组" width="120" />
+        <el-table-column label="类型" width="100">
+          <template #default="scope">
+            {{ findDictDesc(configTypeOptions, scope.row.configType, scope.row.configType) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="分组" width="120">
+          <template #default="scope">
+            {{ findDictDesc(configGroupOptions, scope.row.configGroup, scope.row.configGroup) }}
+          </template>
+        </el-table-column>
         <el-table-column label="前端可见" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.isPublic === 1 ? 'success' : 'info'">
-              {{ scope.row.isPublic === 1 ? "是" : "否" }}
+              {{ findDictDesc(yesNoOptions, scope.row.isPublic, "-") }}
             </el-tag>
           </template>
         </el-table-column>
@@ -96,6 +111,22 @@ import {
   type SystemConfigQuery,
   type SystemConfigUpdatePayload,
 } from "@/api/system-config";
+import {
+  getConfigGroupDict,
+  getConfigTypeDict,
+  getYesNoFlagDict,
+} from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: configGroupOptions } = useDictOptions(
+  "config-group",
+  getConfigGroupDict,
+);
+const { options: configTypeOptions } = useDictOptions(
+  "config-type",
+  getConfigTypeDict,
+);
+const { options: yesNoOptions } = useDictOptions("yes-no-flag", getYesNoFlagDict);
 
 const loading = ref(false);
 const saving = ref(false);

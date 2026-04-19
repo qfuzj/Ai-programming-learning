@@ -4,9 +4,12 @@
       <template #content>
         <div class="title-with-tags">
           <span class="text-large font-bold mr-3">{{ detail?.title || "行程详情" }}</span>
-          <el-tag v-if="detail?.status === 2" type="success" size="small">已发布</el-tag>
-          <el-tag v-else type="info" size="small">草稿</el-tag>
-          <el-tag v-if="detail?.isPublic === 1" type="success" size="small">公开</el-tag>
+          <el-tag :type="detail?.status === 2 ? 'success' : 'info'" size="small">
+            {{ findDictDesc(statusOptions, detail?.status, "-") }}
+          </el-tag>
+          <el-tag v-if="detail?.isPublic === 1" type="success" size="small">
+            {{ findDictDesc(publicOptions, 1, "公开") }}
+          </el-tag>
         </div>
       </template>
     </el-page-header>
@@ -25,6 +28,11 @@
 
 <script setup lang="ts">
 import type { ItineraryItem } from "@/api/itinerary";
+import { getPublicStatusDict, getTravelPlanStatusDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: statusOptions } = useDictOptions("travel-plan-status", getTravelPlanStatusDict);
+const { options: publicOptions } = useDictOptions("public-status", getPublicStatusDict);
 
 interface Props {
   detail: ItineraryItem | null;

@@ -17,10 +17,12 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.auditStatus" clearable style="width: 120px" placeholder="全部">
-            <el-option label="待审核" :value="0" />
-            <el-option label="通过" :value="1" />
-            <el-option label="拒绝" :value="2" />
-            <el-option label="人工复审" :value="3" />
+            <el-option
+              v-for="item in auditStatusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -185,6 +187,13 @@ import {
   type AuditItem,
   type AuditQuery,
 } from "@/api/audit";
+import { getContentAuditStatusDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: auditStatusOptions } = useDictOptions(
+  "content-audit-status",
+  getContentAuditStatusDict,
+);
 
 const loading = ref(false);
 const total = ref(0);
@@ -212,11 +221,7 @@ function formatRating(value?: number): string {
 }
 
 function statusText(status?: number): string {
-  if (status === 0) return "待审核";
-  if (status === 1) return "通过";
-  if (status === 2) return "拒绝";
-  if (status === 3) return "人工复审";
-  return "-";
+  return findDictDesc(auditStatusOptions.value, status, "-");
 }
 
 function statusTagType(status?: number): "warning" | "success" | "danger" | "info" {

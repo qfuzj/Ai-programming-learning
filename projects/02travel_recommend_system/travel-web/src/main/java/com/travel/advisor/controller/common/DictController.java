@@ -150,4 +150,158 @@ public class DictController {
                 .collect(Collectors.toList());
         return Result.success(list);
     }
+
+    /**
+     * 出游同伴类型字典（AI 行程生成表单）
+     */
+    @GetMapping("/travel-companion-type")
+    public Result<List<DictVO>> getTravelCompanionTypes() {
+        List<DictVO> list = Arrays.stream(TravelCompanionType.values())
+                .map(type -> new DictVO(type.getCode(), type.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 旅行风格字典（AI 行程生成表单）
+     */
+    @GetMapping("/travel-style")
+    public Result<List<DictVO>> getTravelStyles() {
+        List<DictVO> list = Arrays.stream(TravelStyle.values())
+                .map(style -> new DictVO(style.getCode(), style.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 公开状态字典（行程 / 景点可见性）
+     */
+    @GetMapping("/public-status")
+    public Result<List<DictVO>> getPublicStatuses() {
+        List<DictVO> list = Arrays.stream(PublicStatus.values())
+                .map(status -> new DictVO(status.getCode(), status.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 系统配置分组字典（admin 系统配置页）
+     */
+    @GetMapping("/config-group")
+    public Result<List<DictVO>> getConfigGroups() {
+        List<DictVO> list = Arrays.stream(ConfigGroup.values())
+                .map(group -> new DictVO(group.getCode(), group.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 系统配置值类型字典（admin 系统配置页）
+     */
+    @GetMapping("/config-type")
+    public Result<List<DictVO>> getConfigTypes() {
+        List<DictVO> list = Arrays.stream(ConfigType.values())
+                .map(type -> new DictVO(type.getCode(), type.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 操作日志模块字典（admin 操作日志筛选）
+     */
+    @GetMapping("/operation-log-module")
+    public Result<List<DictVO>> getOperationLogModules() {
+        List<DictVO> list = Arrays.stream(OperationLogModule.values())
+                .map(module -> new DictVO(module.getCode(), module.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 操作日志状态字典（admin 操作日志筛选）
+     */
+    @GetMapping("/operation-log-status")
+    public Result<List<DictVO>> getOperationLogStatuses() {
+        List<DictVO> list = Arrays.stream(OperationLogStatus.values())
+                .map(status -> new DictVO(status.getCode(), status.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 文件资源上传者类型字典（admin 文件管理）
+     */
+    @GetMapping("/file-resource-uploader-type")
+    public Result<List<DictVO>> getFileResourceUploaderTypes() {
+        List<DictVO> list = Arrays.stream(FileResourceUploaderType.values())
+                .map(type -> new DictVO(type.getCode(), type.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 性别字典
+     */
+    @GetMapping("/gender")
+    public Result<List<DictVO>> getGenders() {
+        List<DictVO> list = Arrays.stream(Gender.values())
+                .map(g -> new DictVO(g.getCode(), g.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 通用启停状态字典（用户 / 标签等）
+     */
+    @GetMapping("/common-status")
+    public Result<List<DictVO>> getCommonStatuses() {
+        List<DictVO> list = Arrays.stream(CommonStatus.values())
+                .map(s -> new DictVO(s.getCode(), s.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 标签类型字典
+     */
+    @GetMapping("/tag-type")
+    public Result<List<DictVO>> getTagTypes() {
+        List<DictVO> list = Arrays.stream(TagType.values())
+                .map(t -> new DictVO(t.getCode(), t.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 行政区划层级字典
+     */
+    @GetMapping("/region-level")
+    public Result<List<DictVO>> getRegionLevels() {
+        List<DictVO> list = Arrays.stream(RegionLevel.values())
+                .map(l -> new DictVO(l.getCode(), l.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 行程计划发布状态字典
+     */
+    @GetMapping("/travel-plan-status")
+    public Result<List<DictVO>> getTravelPlanStatuses() {
+        List<DictVO> list = Arrays.stream(TravelPlanStatus.values())
+                .map(s -> new DictVO(s.getCode(), s.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 通用是否标志字典（region.is_hot 等）
+     */
+    @GetMapping("/yes-no-flag")
+    public Result<List<DictVO>> getYesNoFlags() {
+        List<DictVO> list = Arrays.stream(YesNoFlag.values())
+                .map(f -> new DictVO(f.getCode(), f.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
 }

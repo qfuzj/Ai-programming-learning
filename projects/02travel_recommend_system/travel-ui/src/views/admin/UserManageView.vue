@@ -16,8 +16,12 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部" style="width: 120px">
-            <el-option label="正常" :value="1" />
-            <el-option label="禁用" :value="0" />
+            <el-option
+              v-for="item in statusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -52,7 +56,7 @@
         <el-table-column label="状态" width="90">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ scope.row.status === 1 ? "正常" : "禁用" }}
+              {{ findDictDesc(statusOptions, scope.row.status, "-") }}
             </el-tag>
           </template>
         </el-table-column>
@@ -118,7 +122,7 @@
           <el-descriptions-item label="手机号">{{ detailData.phone || "-" }}</el-descriptions-item>
           <el-descriptions-item label="邮箱">{{ detailData.email || "-" }}</el-descriptions-item>
           <el-descriptions-item label="状态">
-            {{ detailData.status === 1 ? "正常" : "禁用" }}
+            {{ findDictDesc(statusOptions, detailData.status, "-") }}
           </el-descriptions-item>
           <el-descriptions-item label="注册时间">
             {{ detailData.createdAt || "-" }}
@@ -142,6 +146,11 @@ import {
   type AdminUserItem,
   type AdminUserQuery,
 } from "@/api/user-admin";
+import { getCommonStatusDict, getGenderDict } from "@/api/dict";
+import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+
+const { options: statusOptions } = useDictOptions("common-status", getCommonStatusDict);
+const { options: genderOptions } = useDictOptions("gender", getGenderDict);
 
 const loading = ref(false);
 const total = ref(0);
@@ -157,9 +166,7 @@ const query = reactive<AdminUserQuery>({
 });
 
 function formatGender(gender: number | undefined): string {
-  if (gender === 1) return "男";
-  if (gender === 2) return "女";
-  return "未知";
+  return findDictDesc(genderOptions.value, gender, "未知");
 }
 
 async function loadUsers(): Promise<void> {

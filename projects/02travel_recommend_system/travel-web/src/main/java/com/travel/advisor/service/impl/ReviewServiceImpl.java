@@ -112,7 +112,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     /**
-     * 删除我的评论，首先验证评论是否存在且属于当前用户，如果验证通过则删除评论数据，同时删除相关的内容审核记录和文件资源关联记录，确保数据的一致性和完整性。
+     * 删除我的评论：校验归属 → 级联清理点赞 / 回复 / 文件资源 → 刷新景点评分。
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -131,6 +131,12 @@ public class ReviewServiceImpl implements ReviewService {
         if (affected == 0) {
             throw new BusinessException(ResultCode.NOT_FOUND, "点评不存在");
         }
+
+        // 级联清理：避免孤儿点赞 / 回复记录残留在表中
+        reviewLikeMapper.delete(new LambdaQueryWrapper<ReviewLike>()
+                .eq(ReviewLike::getReviewId, id));
+        reviewReplyMapper.delete(new LambdaQueryWrapper<ReviewReply>()
+                .eq(ReviewReply::getReviewId, id));
 
         fileService.deleteFilesByBiz(id, BizType.REVIEW);
         refreshScenicSpotScore(review.getScenicSpotId());

@@ -468,6 +468,7 @@
   - 前端系统配置编辑已补表单校验
   - 行程项类型 `TravelPlanItemType` 枚举已全链路对齐（实体/DTO/前端选项）
   - AI 生成天数有 `@Max(15)` + 日期差二次校验双保险
+  - AI 生成 DTO 的 `companionType` / `travelStyle` 新增 `TravelCompanionType` / `TravelStyle` 枚举 + `@Pattern` 正则校验
 - 未完成：
   - 前后端枚举说明文档未完全统一
   - 部分前端页面仍依赖隐式字段约定
