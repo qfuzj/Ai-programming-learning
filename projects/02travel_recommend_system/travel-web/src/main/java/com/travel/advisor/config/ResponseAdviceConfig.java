@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 /**
- * 统一结果包装器
+ * 全局响应包装器
  */
 @ControllerAdvice
 public class ResponseAdviceConfig implements ResponseBodyAdvice<Object> {
