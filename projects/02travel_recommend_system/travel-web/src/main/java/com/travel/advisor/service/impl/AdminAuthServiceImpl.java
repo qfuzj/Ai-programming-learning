@@ -78,7 +78,18 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         if (!"ADMIN".equalsIgnoreCase(loginUser.getRoleType())) {
             throw new BusinessException(ResultCode.FORBIDDEN, "非管理员token");
         }
-        if (!tokenService.verifyRefreshToken(loginUser, claims.getId(), dto.getRefreshToken())) {
+
+        String oldTokenId = claims.getId();
+        long refreshRemaining = Math.max(0,
+            claims.getExpiration().toInstant().getEpochSecond() - Instant.now().getEpochSecond());
+
+        // 反重放：旧 refreshToken 一旦被消费便进入 used 名单；再次出现视为重放/泄漏，撤销该管理员全部会话。
+        if (tokenService.isRefreshTokenUsed(oldTokenId)) {
+            tokenService.invalidateAdminSessions(loginUser.getUserId());
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "refreshToken已被使用，请重新登录");
+        }
+
+        if (!tokenService.verifyRefreshToken(loginUser, oldTokenId, dto.getRefreshToken())) {
             throw new BusinessException(ResultCode.UNAUTHORIZED, "refreshToken已失效");
         }
 
@@ -94,8 +105,9 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             .roleCode(adminUser.getRole())
             .loginType("username")
             .build());
-        // 轮换刷新：新 token 生效后，旧 refreshToken 立即失效。
-        tokenService.invalidateToken(loginUser, claims.getId(), 0);
+        // 轮换刷新：打 used 标记 + 删除 Redis 中旧 refresh 记录。
+        tokenService.markRefreshTokenUsed(oldTokenId, refreshRemaining);
+        tokenService.invalidateToken(loginUser, oldTokenId, 0);
         return buildLoginVO(adminUser, tokenPair);
     }
 

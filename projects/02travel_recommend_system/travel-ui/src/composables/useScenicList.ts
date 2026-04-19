@@ -87,6 +87,9 @@ export function useScenicList() {
     return foundName;
   }
 
+  /**
+   * 加载景点列表前先加载地区树和筛选选项，以便用户选择过滤条件。
+   */
   async function loadRegions(): Promise<void> {
     const regions = await getRegionTree();
     const walk = (nodes: ScenicRegionNode[]) => {
@@ -102,6 +105,9 @@ export function useScenicList() {
     regionTreeData.value = regions;
   }
 
+  /**
+   * 加载景点列表前先加载筛选选项，以便用户选择过滤条件。
+   */
   async function loadFilterOptions(): Promise<void> {
     try {
       const options = await getScenicFilterOptions();
@@ -113,6 +119,9 @@ export function useScenicList() {
     }
   }
 
+  /**
+   * 根据当前的 query 参数加载景点列表。该函数会在用户修改过滤条件或排序选项时被调用。
+   */
   async function loadScenicList(): Promise<void> {
     loading.value = true;
     try {
@@ -173,6 +182,9 @@ export function useScenicList() {
     }, 300);
   }
 
+  /**
+   * 组件初始化时先加载地区树和筛选选项，以便用户选择过滤条件，然后根据 URL 中的 keyword 参数加载景点列表。
+   */
   async function init(): Promise<void> {
     await Promise.all([loadRegions(), loadFilterOptions()]);
     query.keyword = (route.query.keyword as string) || "";

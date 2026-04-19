@@ -99,9 +99,21 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.BAD_REQUEST, "token类型错误");
         }
 
-        // refreshToken 必须同时满足：JWT合法 + Redis中仍存在同一 tokenId 记录。
         LoginUser loginUser = tokenService.parseLoginUser(dto.getRefreshToken());
-        if (!tokenService.verifyRefreshToken(loginUser, claims.getId(), dto.getRefreshToken())) {
+        String oldTokenId = claims.getId();
+        // 计算 refreshToken 的剩余有效期，单位秒。
+        long refreshRemaining = Math.max(0,
+            claims.getExpiration().toInstant().getEpochSecond() - Instant.now().getEpochSecond());
+
+        // 反重放：若该 refreshToken 已被消费过，认为存在泄漏/窃取风险，直接撤销该用户全部会话。
+        if (tokenService.isRefreshTokenUsed(oldTokenId)) {
+            // 撤销用户全部会话：删除该用户所有 accessToken/refreshToken 在 Redis 中的记录，使其无法再使用任何旧 token 进行刷新或访问。
+            tokenService.invalidateUserSessions(loginUser.getUserId());
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "refreshToken已被使用，请重新登录");
+        }
+
+        // refreshToken 必须同时满足：JWT合法 + Redis中仍存在同一 tokenId 记录。
+        if (!tokenService.verifyRefreshToken(loginUser, oldTokenId, dto.getRefreshToken())) {
             throw new BusinessException(ResultCode.UNAUTHORIZED, "refreshToken已失效");
         }
 
@@ -117,8 +129,10 @@ public class AuthServiceImpl implements AuthService {
             .roleCode("user")
             .loginType(loginUser.getLoginType())
             .build());
-        // 旧 refreshToken 立即作废，避免一个 refreshToken 被重复刷新。
-        tokenService.invalidateToken(loginUser, claims.getId(), 0);
+        // 标记旧 refreshToken 已使用，TTL = 其剩余有效期；下次再看到同 tokenId 提交会触发反重放分支。
+        tokenService.markRefreshTokenUsed(oldTokenId, refreshRemaining);
+        // 删除旧 refreshToken 在 Redis 中的存储，避免常规重复刷新。
+        tokenService.invalidateToken(loginUser, oldTokenId, 0);
         return buildLoginVO(user, tokenPair);
     }
 
@@ -173,6 +187,9 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /**
+     * 构建登录成功后的返回对象，包含 accessToken、refreshToken、用户信息等。
+     */
     private LoginVO buildLoginVO(User user, TokenService.TokenPair tokenPair) {
         UserInfoVO userInfoVO = new UserInfoVO();
         userInfoVO.setUserId(user.getId());
@@ -190,6 +207,9 @@ public class AuthServiceImpl implements AuthService {
         return vo;
     }
 
+    /**
+     * 从 Authorization 头中提取 token 字符串，要求格式为 "Bearer {token}"，否则抛出异常。
+     */
     private String extractToken(String authorization) {
         if (!StringUtils.hasText(authorization) || !authorization.startsWith("Bearer ")) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "Authorization格式错误");

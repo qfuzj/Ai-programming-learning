@@ -192,15 +192,26 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
 
     /**
      * 批量更新景点状态。
+     * 使用单条 UPDATE ... WHERE id IN (...) 保证同批 update_time 严格一致，
+     * 并在事务内先校验所有 ID 均存在，避免部分生效。
      */
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void batchUpdateStatus(ScenicStatusDTO dto) {
         if (dto == null || CollectionUtils.isEmpty(dto.getScenicIds())) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "景点ID不能为空");
         }
-        for (Long scenicId : dto.getScenicIds()) {
-            updateStatus(scenicId, dto.getStatus());
+        List<Long> ids = dto.getScenicIds();
+        Long existing = scenicSpotMapper.selectCount(
+                new LambdaQueryWrapper<ScenicSpot>().in(ScenicSpot::getId, ids));
+        if (existing == null || existing.intValue() != ids.size()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "部分景点不存在");
         }
+        LambdaUpdateWrapper<ScenicSpot> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.in(ScenicSpot::getId, ids)
+                .set(ScenicSpot::getStatus, dto.getStatus())
+                .set(ScenicSpot::getUpdateTime, LocalDateTime.now());
+        scenicSpotMapper.update(null, wrapper);
     }
 
     /**

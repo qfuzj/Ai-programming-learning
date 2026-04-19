@@ -7,7 +7,7 @@ import { ROUTE_PATHS } from "@/router/constants";
 // 是否正在刷新token
 let isRefreshing = false;
 // 刷新期间等待的请求队列
-let pendingRequests: Array<(token: string) => void> = [];
+let pendingRequests: Array<(tokens: { accessToken: string }) => void> = [];
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_APP_BASE_API,
@@ -74,8 +74,9 @@ async function handleTokenExpired(config: InternalAxiosRequestConfig): Promise<u
 
   if (isRefreshing) {
     return new Promise((resolve, reject) => {
-      pendingRequests.push((newToken: string) => {
-        config.headers.Authorization = `Bearer ${newToken}`;
+      // 刷新过程中其他请求先放到队列里，等刷新成功后再用新 token 重试
+      pendingRequests.push(({ accessToken }) => {
+        config.headers.Authorization = `Bearer ${accessToken}`;
         request(config).then(resolve).catch(reject); // 失败也能正确reject
       });
     });
@@ -85,17 +86,20 @@ async function handleTokenExpired(config: InternalAxiosRequestConfig): Promise<u
   try {
     const refreshUrl = getRefreshUrl(role);
 
-    const response = await axios.post<ApiResponse<{ accessToken: string }>>(refreshUrl, {
-      refreshToken,
-    });
+    const response = await axios.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
+      refreshUrl,
+      { refreshToken }
+    );
 
     const newToken = response.data?.data?.accessToken;
-    if (!newToken) {
+    const newRefreshToken = response.data?.data?.refreshToken;
+    if (!newToken || !newRefreshToken) {
       throw new Error("刷新令牌响应格式错误");
     }
     localStorage.setItem(TOKEN_KEY, newToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
 
-    pendingRequests.forEach((cb) => cb(newToken));
+    pendingRequests.forEach((cb) => cb({ accessToken: newToken }));
     pendingRequests = [];
 
     config.headers.Authorization = `Bearer ${newToken}`;
@@ -122,6 +126,11 @@ function redirectToLogin(): void {
   });
 }
 
+/**
+ * 根据用户角色获取对应的刷新令牌 URL
+ * @param role  用户角色，可能为 "ADMIN" 或 "USER"，如果没有则默认为用户端
+ * @returns  刷新令牌的 API URL
+ */
 function getRefreshUrl(role: string | null): string {
   const base = import.meta.env.VITE_APP_BASE_API;
   return role === "ADMIN"

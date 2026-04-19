@@ -21,6 +21,12 @@ public class TokenService {
     public static final String USER_TOKEN_PREFIX = "auth:user:token:";
     public static final String ADMIN_TOKEN_PREFIX = "auth:admin:token:";
     public static final String BLACKLIST_PREFIX = "auth:blacklist:";
+    /**
+     * 已使用的 refreshToken 标记前缀。用于 refresh token rotation 场景下检测重放：
+     * 旧 refreshToken 一旦被消费就在此处打一个和原 refresh 同生命周期的标记，
+     * 下次若再看到同一 tokenId 提交，即视为"旧 token 被重复使用"——属于可疑重放。
+     */
+    public static final String REFRESH_USED_PREFIX = "auth:refresh:used:";
 
     private final JwtUtils jwtUtils;
     private final JwtProperties jwtProperties;
@@ -47,6 +53,9 @@ public class TokenService {
         return new TokenPair(accessToken, refreshToken, tokenId, jwtProperties.getAccessTokenExpireSeconds());
     }
 
+    /**
+     * 验证 refreshToken 的合法性。要求 JWT 解析成功且 Redis 中存在对应 tokenId 的 refreshToken 记录，并且两者完全匹配。
+     */
     public boolean verifyRefreshToken(LoginUser loginUser, String tokenId, String refreshToken) {
         // 只有“前端提交的 refreshToken 与 Redis中保存值完全一致”才允许刷新。
         String tokenKey = buildTokenKey(loginUser.getRoleType(), loginUser.getUserId(), tokenId);
@@ -81,6 +90,33 @@ public class TokenService {
         return Boolean.TRUE.equals(redisUtils.hasKey(BLACKLIST_PREFIX + tokenId));
     }
 
+    /**
+     * 把一枚 refreshToken 标记为"已使用"。TTL 应与原 refreshToken 剩余有效期一致，
+     * 这样即使攻击者事后拿到旧 refreshToken，也能在其自然过期前被检测出重放。
+     *
+     * @param tokenId    refreshToken 的 jti
+     * @param ttlSeconds 剩余有效期秒数；&lt;=0 时不写入（token 已过期无需再标记）
+     */
+    public void markRefreshTokenUsed(String tokenId, long ttlSeconds) {
+        if (tokenId == null || tokenId.isEmpty() || ttlSeconds <= 0) {
+            return;
+        }
+        redisUtils.set(REFRESH_USED_PREFIX + tokenId, 1, Duration.ofSeconds(ttlSeconds));
+    }
+
+    /**
+     * 判断某 refreshToken 是否已被消费过——用于 refresh rotation 场景的重放检测。
+     */
+    public boolean isRefreshTokenUsed(String tokenId) {
+        if (tokenId == null || tokenId.isEmpty()) {
+            return false;
+        }
+        return Boolean.TRUE.equals(redisUtils.hasKey(REFRESH_USED_PREFIX + tokenId));
+    }
+
+    /**
+     * 从 JWT token 中解析出 LoginUser 对象。该方法会验证 token 的有效性（如签名、过期等），并提取其中的用户信息字段。
+     */
     public LoginUser parseLoginUser(String token) {
         Claims claims = jwtUtils.parseToken(token);
         return LoginUser.builder()
@@ -110,7 +146,9 @@ public class TokenService {
 
         for (String tokenKey : tokenKeys) {
             redisUtils.delete(tokenKey);
+            // tokenKey 格式：auth:{roleType}:token:{userId}:{tokenId}，提取 tokenId 以加入黑名单。
             String tokenId = tokenKey.substring(tokenKey.lastIndexOf(':') + 1);
+            // 失效当前 tokenId 对应的 accessToken，加入黑名单，TTL = accessToken 的过期时间，确保其自然过期后自动清理。
             redisUtils.set(BLACKLIST_PREFIX + tokenId, 1, Duration.ofSeconds(jwtProperties.getAccessTokenExpireSeconds()));
         }
     }

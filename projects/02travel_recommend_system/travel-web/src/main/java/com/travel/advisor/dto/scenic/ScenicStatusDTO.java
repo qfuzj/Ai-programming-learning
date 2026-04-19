@@ -5,6 +5,9 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * 批量修改景点状态的 DTO，用于接收前端请求中的景点 ID 列表和新的状态值。
+ */
 @Data
 public class ScenicStatusDTO {
 

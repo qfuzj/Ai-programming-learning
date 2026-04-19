@@ -113,15 +113,16 @@ const emit = defineEmits<{
 }>();
 
 const travelDateRange = computed<[string, string] | []>({
-  get() {
+  get(): [string, string] | [] {
     if (props.form.startDate && props.form.endDate) {
-      return [props.form.startDate, props.form.endDate];
+      return [props.form.startDate as string, props.form.endDate as string];
     }
     return [];
   },
   set(value) {
     if (Array.isArray(value) && value.length === 2) {
-      [props.form.startDate, props.form.endDate] = value;
+      props.form.startDate = value[0];
+      props.form.endDate = value[1];
       return;
     }
     props.form.startDate = undefined;

@@ -6,30 +6,42 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.page.PageQuery;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
+import com.travel.advisor.entity.RecommendRecord;
+import com.travel.advisor.entity.RecommendResultItem;
 import com.travel.advisor.entity.ScenicSpot;
 import com.travel.advisor.entity.UserFavorite;
 import com.travel.advisor.exception.BusinessException;
+import com.travel.advisor.mapper.RecommendRecordMapper;
+import com.travel.advisor.mapper.RecommendResultItemMapper;
 import com.travel.advisor.mapper.ScenicSpotMapper;
 import com.travel.advisor.mapper.UserFavoriteMapper;
 import com.travel.advisor.service.FavoriteService;
 import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.favorite.FavoriteVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FavoriteServiceImpl implements FavoriteService {
 
+    /** 收藏反馈回写的时间窗口：仅对该用户最近 N 天内产生的推荐记录回写 is_favorited 标志。 */
+    private static final int RECOMMEND_FEEDBACK_LOOKBACK_DAYS = 30;
+
     private final UserFavoriteMapper userFavoriteMapper;
     private final ScenicSpotMapper scenicSpotMapper;
+    private final RecommendRecordMapper recommendRecordMapper;
+    private final RecommendResultItemMapper recommendResultItemMapper;
 
     /**
      * 添加收藏
@@ -62,6 +74,9 @@ public class FavoriteServiceImpl implements FavoriteService {
         scenicSpotMapper.update(null, new LambdaUpdateWrapper<ScenicSpot>()
                 .eq(ScenicSpot::getId, scenicId)
                 .setSql("favorite_count = favorite_count + 1"));
+
+        // 反向回写推荐反馈：把该用户最近推荐过该景点的 result_item 标记为已收藏
+        syncRecommendFavoriteFlag(userId, scenicId, 1);
     }
 
     /**
@@ -86,6 +101,9 @@ public class FavoriteServiceImpl implements FavoriteService {
         scenicSpotMapper.update(null, new LambdaUpdateWrapper<ScenicSpot>()
                 .eq(ScenicSpot::getId, scenicId)
                 .setSql("favorite_count = CASE WHEN favorite_count > 0 THEN favorite_count - 1 ELSE 0 END"));
+
+        // 反向回写推荐反馈：把该用户最近推荐过该景点的 result_item 的 is_favorited 置回 0
+        syncRecommendFavoriteFlag(userId, scenicId, 0);
     }
 
     /**
@@ -171,6 +189,47 @@ public class FavoriteServiceImpl implements FavoriteService {
             .pageSize(Math.toIntExact(result.getSize()))
             .totalPage(result.getPages())
             .build();
+    }
+
+    /**
+     * 反向回写推荐反馈：将该用户最近 {@link #RECOMMEND_FEEDBACK_LOOKBACK_DAYS} 天内
+     * 推荐过该景点的 {@code recommend_result_item} 记录标记为 / 恢复为未收藏，
+     * 从而把"景点列表收藏 / 取消收藏"与"推荐链路的收藏反馈"打通。
+     *
+     * <p>异常仅记录日志不抛出——收藏主流程不应因反馈写回失败而失败。
+     * 数据体量较大时该更新以 userId + scenicId + 时间窗口过滤，SQL 成本受控。
+     *
+     * @param userId   当前用户 ID
+     * @param scenicId 目标景点 ID
+     * @param flag     1 = 已收藏；0 = 取消收藏
+     */
+    private void syncRecommendFavoriteFlag(Long userId, Long scenicId, int flag) {
+        try {
+            // 查找最近 N 天内该用户的推荐记录，获取其 ID 列表
+            LocalDateTime since = LocalDateTime.now().minusDays(RECOMMEND_FEEDBACK_LOOKBACK_DAYS);
+            List<Long> recentRecordIds = recommendRecordMapper.selectList(
+                    new LambdaQueryWrapper<RecommendRecord>()
+                            .select(RecommendRecord::getId)
+                            .eq(RecommendRecord::getUserId, userId)
+                            .ge(RecommendRecord::getCreateTime, since))
+                    .stream()
+                    .map(RecommendRecord::getId)
+                    .toList();
+            if (recentRecordIds.isEmpty()) {
+                return;
+            }
+            // 批量更新这些推荐记录中对应景点的 result_item 的 is_favorited 标志
+            recommendResultItemMapper.update(null,
+                    new LambdaUpdateWrapper<RecommendResultItem>()
+                            .in(RecommendResultItem::getRecommendRecordId, recentRecordIds)
+                            .eq(RecommendResultItem::getScenicSpotId, scenicId)
+                            .ne(RecommendResultItem::getIsFavorited, flag)
+                            .set(RecommendResultItem::getIsFavorited, flag));
+        } catch (Exception e) {
+            // 反馈回写是旁路副作用，失败不影响收藏主流程
+            log.warn("syncRecommendFavoriteFlag failed, userId={}, scenicId={}, flag={}, err={}",
+                    userId, scenicId, flag, e.getMessage());
+        }
     }
 
     /**
