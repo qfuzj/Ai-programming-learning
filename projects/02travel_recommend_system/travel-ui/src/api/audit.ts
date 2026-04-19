@@ -125,22 +125,41 @@ export function clearScenicReviewsCache(scenicId?: number): void {
   }
 }
 /**
+ * 审核快照：后端 `AuditVO.snapshot` 是 JSON 反序列化后的对象，
+ * 其具体结构取决于 `contentType`。当前前端仅消费 review 类型的字段，
+ * 其他类型的扩展字段通过 index signature 保留。
+ */
+export interface AuditSnapshot {
+  userId?: number;
+  username?: string;
+  scenicId?: number;
+  scenicName?: string;
+  rating?: number;
+  score?: number;
+  content?: string;
+  images?: string[];
+  [key: string]: unknown;
+}
+
+/**
  * 对应-审核记录VO
  */
 export interface AuditItem {
   id: number;
   contentType?: string;
   contentId?: number;
-  snapshot?: any;
+  snapshot?: AuditSnapshot;
   submitUserId?: number;
   auditStatus?: number;
-  autoAuditResult?: any;
+  /** LLM 自动审核结果原始 JSON，结构随策略版本演进，前端尚未消费 */
+  autoAuditResult?: unknown;
   autoAuditScore?: number;
   llmCallLogId?: number;
   auditorId?: number;
   auditRemark?: string;
   auditTime?: string;
-  violationType?: any;
+  /** 违规类型标签（可能为字符串 / 字符串数组 / 结构化对象），前端尚未消费 */
+  violationType?: unknown;
   createTime?: string;
   updateTime?: string;
 }

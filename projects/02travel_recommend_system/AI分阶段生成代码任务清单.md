@@ -7,7 +7,7 @@
 - 未完成模块
 - 下一阶段最有价值的收尾任务
 
-文档基线时间：2026-04-17  
+文档基线时间：2026-04-19  
 判定依据：当前前后端代码、路由、控制器、API 模块、最近联调修复结果。
 
 ---
@@ -22,8 +22,8 @@
 - 景点、收藏、浏览历史、点评、审核：已完成
 - 推荐模块（规则召回 + 反馈）：已完成
 - LLM 对话模块：已完成基础闭环
-- 行程 CRUD：已完成
-- AI 行程生成：未完成
+- 行程 CRUD（含行程项增删改）：已完成
+- AI 行程生成：已完成基础闭环（含结构化预览、一键保存 + 软回滚、LLM 失败降级为规则草案）
 
 ### 2.2 前端总体状态
 - 基础工程、路由、布局、鉴权：已完成
@@ -35,8 +35,9 @@
 - 管理后台工作台、景点、审核、用户、地区、标签、系统配置、日志、分析：已完成
 
 ### 2.3 当前主要缺口
-1. AI 行程生成后端接口未落地
-2. 部分文档、注释、类型仍在持续收口
+1. 演示数据、测试账号、演示脚本仍缺失
+2. SQL 与 entity 的字段级对齐待 Round 2 审计
+3. 部分文档、注释、类型仍在持续收口
 
 ---
 
@@ -217,19 +218,24 @@
   - 新增
   - 修改
   - 删除
-  - 行程项新增 / 删除
+  - 行程项新增 / 更新 / 删除
   - 创建带行程项版本
+- 最近完成的收口：
+  - 新增 `PUT /api/user/travel-plans/{id}/items/{itemId}` 更新行程项接口
+  - `updatePlanItem` 对未传 `sortOrder`/`startTime` 的请求保留原值，避免位置漂移
 
 ### 任务 18
 - 任务名称：AI 辅助行程生成
 - 状态：已完成基础闭环
 - 当前现状：
-  - 前端 `ItineraryAiGenerateView.vue` 已接入真实接口
-  - 后端已提供 `/api/user/travel-plans/ai-generate`
-  - 返回 AI 行程草案 JSON，失败时可降级为规则草案
-- 仍待继续：
-  - 将“AI 草案预览”进一步收口为可视化卡片，而不是原始 JSON
-  - 增加“将 AI 草案一键保存为正式行程”闭环
+  - 前端 `ItineraryAiGenerateView.vue` 已接入 `/api/user/travel-plans/ai-generate`、且拆分为 `ItineraryAiForm.vue` + `ItineraryAiResult.vue` 两个子组件
+  - 后端 `TravelPlanAiServiceImpl` 已提供基于阐释 prompt + 候选景点注入 + JSON 解析 + 降级规则草案的完整链路
+  - 调用写入 `llm_call_log`，`call_type = itinerary_generate`
+  - AI 草案可一键保存为正式行程，保存失败时前端自动软回滚主计划
+- 最近完成的收口：
+  - `normalizeDateRange` 增加 `actualDays ≤ 15` 二次校验，堵住日期差绕过 `@Max`
+  - `parsePayload` 在去 Markdown 围栏后补充“首 `{` 至尾 `}` 切片”兑底
+  - `queryScenicCandidates` 移除全站 Top-N 兑底，避免异地景点误导 LLM
 
 ---
 
@@ -252,7 +258,7 @@
   - 推荐接口会对当前页候选结果批量调用阿里 DashScope
   - 优先返回 LLM 生成的 `reason`
   - 超时、异常、非预期 JSON 时自动降级为规则文案
-  - `RecommendRankService.reRankByLLM()` 仍旁路，暂未启用 LLM 精排
+  - `RecommendRankService` 内 LLM 精排仅保留扩展点注释，未启用
 
 ### 任务 21
 - 任务名称：推荐反馈模块
@@ -388,14 +394,13 @@
 
 ### 任务 34
 - 任务名称：行程计划页面
-- 状态：部分完成
+- 状态：已完成
 - 已完成：
   - `ItineraryListView.vue`
   - `ItineraryCreateView.vue`
-  - `ItineraryDetailView.vue`
-  - `ItineraryAiGenerateView.vue` 页面骨架
-- 未完成：
-  - AI 生成后端闭环未完成
+  - `ItineraryDetailView.vue`（含行程项编辑弹框）
+  - `ItineraryAiGenerateView.vue` + `components/ItineraryAiForm.vue` + `components/ItineraryAiResult.vue`
+  - `composables/useItineraryList.ts`、`useItineraryDetail.ts`、`useItineraryAiGenerate.ts` 抽离逻辑
 
 ### 任务 35
 - 任务名称：用户中心页面
@@ -450,6 +455,9 @@
   - 字典接口兼容 `/dict` 与 `/api/dict`
   - 收藏内容已收口到个人中心页内展示
   - scenic 模块已移除 `ratingScore`，景点评分统一为 `score`
+  - AI 行程生成闭环：结构化预览 + 一键保存 + 软回滚
+  - `PUT /travel-plans/{id}/items/{itemId}` 行程项编辑接口上线
+  - `useItinerary*` / `useScenic*` / `useProfile` 统一清理 axios 拦截器重复 toast（19 处）
   - 文档同步更新
 
 ### 任务 39
@@ -458,6 +466,8 @@
 - 已完成：
   - 大部分状态枚举已存在于后端 `common.enums`
   - 前端系统配置编辑已补表单校验
+  - 行程项类型 `TravelPlanItemType` 枚举已全链路对齐（实体/DTO/前端选项）
+  - AI 生成天数有 `@Max(15)` + 日期差二次校验双保险
 - 未完成：
   - 前后端枚举说明文档未完全统一
   - 部分前端页面仍依赖隐式字段约定
@@ -476,15 +486,16 @@
 建议按以下顺序继续：
 
 ### 优先级 A
-1. 收口 AI 行程生成的预览与保存体验
+1. 设定代码审查 Round 2：逐批消费《代码审查发现清单.md》中的 P0/P1 项
+2. 准备演示数据、初始化脚本、测试账号说明
 
 ### 优先级 B
-2. 为关键管理页补更完整的表单校验
-3. 清理遗留的旧命名、旧注释、旧文档引用
+3. 为关键管理页补更完整的表单校验
+4. 清理遗留的旧命名、旧注释、旧文档引用
 
 ### 优先级 C
-4. 准备演示数据、初始化脚本、测试账号说明
 5. 继续补管理端与用户端页面的细节交互优化
+6. SQL 与 entity 字段级对齐审计
 
 ---
 

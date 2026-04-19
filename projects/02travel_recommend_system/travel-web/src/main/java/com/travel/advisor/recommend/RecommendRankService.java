@@ -74,18 +74,7 @@ public class RecommendRankService {
                 ).sorted(Comparator.comparing(RankedRecommend::getRankScore, Comparator.reverseOrder()))
                 .limit(limit).toList();
 
-        // 5. LLM 精排扩展点：后续可在这里根据上下文和候选结果进行二次重排。
-        // TODO: 可以在此处将ranked列表交给大模型，结合用户画像（UserContext）进行语义化打分修正
-        return reRankByLLM(ranked);
-    }
-
-    /**
-     * LLM 精排扩展点：后续可在这里根据上下文和候选结果进行二次重排。
-     *
-     * @param currentRanked - 当前基于规则打分和过滤后的推荐结果列表，包含景点信息、综合得分和来源类型集合。
-     * @return 经过LLM精排后的推荐结果列表，理论上应该在原有基础上进行微调排序，以提升个性化和相关性。
-     */
-    private List<RankedRecommend> reRankByLLM(List<RankedRecommend> currentRanked) {
-        return currentRanked;
+        // 5. LLM 精排扩展点：如需基于用户画像 / 上下文做语义化重排，在此处接入；当前未实现。
+        return ranked;
     }
 }
