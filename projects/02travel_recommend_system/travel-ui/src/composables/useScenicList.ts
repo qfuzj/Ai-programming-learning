@@ -147,7 +147,7 @@ export function useScenicList() {
       item.isFavorite = true;
       ElMessage.success(`已收藏 ${item.name}`);
     } catch {
-      ElMessage.error("收藏操作失败，请稍后重试");
+      // axios 拦截器已弹错误提示
     }
   }
 

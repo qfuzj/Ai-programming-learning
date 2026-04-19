@@ -79,9 +79,8 @@ export function useProfile() {
       if (profileResult.status === "fulfilled") {
         Object.assign(profile, profileResult.value);
         syncUserStore(profileResult.value);
-      } else {
-        ElMessage.error("获取个人资料失败");
       }
+      // 失败分支无需弹 toast：axios 拦截器已对每个失败请求统一提示
 
       if (portraitResult.status === "fulfilled") {
         portrait.value = portraitResult.value;
@@ -105,7 +104,7 @@ export function useProfile() {
       await loadProfile();
       return true;
     } catch {
-      ElMessage.error("保存失败，请检查数据");
+      // axios 拦截器已弹错误提示
       return false;
     } finally {
       saving.value = false;
@@ -124,7 +123,7 @@ export function useProfile() {
       historyList.value = page.records || [];
       historyTotal.value = page.total || 0;
     } catch {
-      ElMessage.error("获取浏览历史失败");
+      // axios 拦截器已弹错误提示
     } finally {
       tabLoading.value = false;
     }
@@ -142,7 +141,7 @@ export function useProfile() {
       favoriteList.value = page.records || [];
       favoriteTotal.value = page.total || 0;
     } catch {
-      ElMessage.error("获取收藏列表失败");
+      // axios 拦截器已弹错误提示
     } finally {
       tabLoading.value = false;
     }
@@ -155,7 +154,7 @@ export function useProfile() {
       selectedTagIds.value = myTags.map((t: { id: number | string }) => Number(t.id));
       return true;
     } catch {
-      ElMessage.error("标签数据加载失败");
+      // axios 拦截器已弹错误提示
       return false;
     }
   }
@@ -168,7 +167,7 @@ export function useProfile() {
       portrait.value = await getProfilePortrait();
       return true;
     } catch {
-      ElMessage.error("保存失败，请重试");
+      // axios 拦截器已弹错误提示
       return false;
     } finally {
       tagSaving.value = false;
@@ -192,7 +191,7 @@ export function useProfile() {
       await loadHistory(historyPageNum.value, historyPageSize.value);
       return true;
     } catch {
-      ElMessage.error("删除浏览记录失败");
+      // axios 拦截器已弹错误提示
       return false;
     }
   }
@@ -205,7 +204,7 @@ export function useProfile() {
       historyPageNum.value = 1;
       return true;
     } catch {
-      ElMessage.error("清空浏览记录失败");
+      // axios 拦截器已弹错误提示
       return false;
     }
   }
@@ -220,7 +219,7 @@ export function useProfile() {
       portrait.value = await getProfilePortrait();
       return true;
     } catch {
-      ElMessage.error("取消收藏失败");
+      // axios 拦截器已弹错误提示
       return false;
     }
   }
@@ -234,7 +233,7 @@ export function useProfile() {
       portrait.value = await getProfilePortrait();
       return true;
     } catch {
-      ElMessage.error("清空收藏记录失败");
+      // axios 拦截器已弹错误提示
       return false;
     }
   }

@@ -100,7 +100,7 @@ export function useScenicDetail() {
         ElMessage.success("已保存至我的收藏！");
       }
     } catch {
-      ElMessage.error("操作失败，请稍后重试");
+      // axios 拦截器已弹错误提示
     }
   }
 
