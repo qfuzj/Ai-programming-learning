@@ -54,7 +54,7 @@ public class RegionServiceImpl implements RegionService {
 
     /**
      * 私有方法，基于数据库构建区域树结构并返回顶级节点列表
-     * 
+     * <p>
      * 将 Region 按 level、sortOrder 正序排序查询
      * 将查询出的 Region 转换为 RegionTreeVO，并建立父子关系
      * 返回顶层（parentId 为 0）的 RegionTreeVO 列表

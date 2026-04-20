@@ -8,9 +8,13 @@ import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.tag.TagCreateDTO;
 import com.travel.advisor.dto.tag.TagQueryDTO;
 import com.travel.advisor.dto.tag.TagUpdateDTO;
+import com.travel.advisor.entity.ScenicSpotTag;
 import com.travel.advisor.entity.Tag;
+import com.travel.advisor.entity.UserPreferenceTag;
 import com.travel.advisor.exception.BusinessException;
+import com.travel.advisor.mapper.ScenicSpotTagMapper;
 import com.travel.advisor.mapper.TagMapper;
+import com.travel.advisor.mapper.UserPreferenceTagMapper;
 import com.travel.advisor.service.TagService;
 import com.travel.advisor.utils.BeanCopyUtils;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,8 @@ import java.util.List;
 public class TagServiceImpl implements TagService {
 
     private final TagMapper tagMapper;
+    private final ScenicSpotTagMapper scenicSpotTagMapper;
+    private final UserPreferenceTagMapper userPreferenceTagMapper;
 
     @Override
     public List<Tag> listByType(Integer type) {
@@ -85,6 +91,18 @@ public class TagServiceImpl implements TagService {
         Tag existing = tagMapper.selectById(id);
         if (existing == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "标签不存在");
+        }
+        Long spotRefCount = scenicSpotTagMapper.selectCount(
+                new LambdaQueryWrapper<ScenicSpotTag>()
+                        .eq(ScenicSpotTag::getTagId, id));
+        if (spotRefCount != null && spotRefCount > 0) {
+            throw new BusinessException(ResultCode.CONFLICT, "该标签已被景点引用，无法删除");
+        }
+        Long prefRefCount = userPreferenceTagMapper.selectCount(
+                new LambdaQueryWrapper<UserPreferenceTag>()
+                        .eq(UserPreferenceTag::getTagId, id));
+        if (prefRefCount != null && prefRefCount > 0) {
+            throw new BusinessException(ResultCode.CONFLICT, "该标签已被用户偏好引用，无法删除");
         }
         tagMapper.deleteById(id);
     }

@@ -109,3 +109,26 @@ export const useUserStore = defineStore("user", () => {
     logout,
   };
 });
+
+/**
+ * 多页签登录态同步：监听 localStorage 变化，
+ * 当其他页签执行登录/登出时，当前页签同步更新 ref 状态。
+ */
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e: StorageEvent) => {
+    const store = useUserStore();
+    if (e.key === TOKEN_KEY) {
+      store.token = e.newValue ?? "";
+    }
+    if (e.key === REFRESH_TOKEN_KEY) {
+      store.refreshToken = e.newValue ?? "";
+    }
+    if (e.key === ROLE_KEY) {
+      store.role = (e.newValue as UserRole | null) ?? "";
+    }
+    // Token 被清除 → 视为登出，清空 profile
+    if (!store.token) {
+      store.profile = null;
+    }
+  });
+}

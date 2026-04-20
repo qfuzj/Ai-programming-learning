@@ -1,6 +1,7 @@
 package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.enums.BizType;
 import com.travel.advisor.common.enums.ContentAuditStatus;
@@ -248,15 +249,18 @@ public class ReviewServiceImpl implements ReviewService {
 
         if (existLike != null) {
             reviewLikeMapper.deleteById(existLike.getId());
-            review.setLikeCount(Math.max(0, review.getLikeCount() - 1));
+            userReviewMapper.update(null, new LambdaUpdateWrapper<UserReview>()
+                    .eq(UserReview::getId, reviewId)
+                    .setSql("like_count = CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END"));
         } else {
             ReviewLike reviewLike = new ReviewLike();
             reviewLike.setReviewId(reviewId);
             reviewLike.setUserId(userId);
             reviewLikeMapper.insert(reviewLike);
-            review.setLikeCount((review.getLikeCount() == null ? 0 : review.getLikeCount()) + 1);
+            userReviewMapper.update(null, new LambdaUpdateWrapper<UserReview>()
+                    .eq(UserReview::getId, reviewId)
+                    .setSql("like_count = like_count + 1"));
         }
-        userReviewMapper.updateById(review);
     }
 
     /**

@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BrowseHistoryServiceImpl implements BrowseHistoryService {
 
+    private static final int MAX_HISTORY_PER_USER = 200;
+
     private final UserBrowseHistoryMapper userBrowseHistoryMapper;
     private final ScenicSpotMapper scenicSpotMapper;
 
@@ -76,6 +78,26 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
                     .map(UserBrowseHistory::getId)
                     .toList();
             userBrowseHistoryMapper.deleteByIds(duplicateIds);
+        }
+
+        // 每用户保留近 MAX_HISTORY_PER_USER 条，淘汰最旧记录
+        evictOldRecords(userId);
+    }
+
+    private void evictOldRecords(Long userId) {
+        Long total = userBrowseHistoryMapper.selectCount(new LambdaQueryWrapper<UserBrowseHistory>()
+                .eq(UserBrowseHistory::getUserId, userId));
+        if (total != null && total > MAX_HISTORY_PER_USER) {
+            List<UserBrowseHistory> oldest = userBrowseHistoryMapper.selectList(
+                    new LambdaQueryWrapper<UserBrowseHistory>()
+                            .eq(UserBrowseHistory::getUserId, userId)
+                            .orderByAsc(UserBrowseHistory::getBrowseTime)
+                            .orderByAsc(UserBrowseHistory::getId)
+                            .last("LIMIT " + (total - MAX_HISTORY_PER_USER)));
+            if (!oldest.isEmpty()) {
+                userBrowseHistoryMapper.deleteByIds(
+                        oldest.stream().map(UserBrowseHistory::getId).toList());
+            }
         }
     }
 
