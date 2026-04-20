@@ -105,12 +105,7 @@ public class ConversationServiceImpl implements ConversationService {
         return conversation;
     }
 
-    /**
-     * 将 LlmConversation 实体转换为 ChatConversationVO 视图对象，便于前端展示会话信息。
-     *
-     * @param conversation - 数据库中的会话实体对象，包含会话的所有字段信息。
-     * @return ChatConversationVO - 包含会话ID、标题、类型、消息数量、总token数、最后消息时间、状态等信息的视图对象。
-     */
+    /** LlmConversation → ChatConversationVO */
     private ChatConversationVO toVO(LlmConversation conversation) {
         ChatConversationVO vo = new ChatConversationVO();
         vo.setConversationId(conversation.getId());

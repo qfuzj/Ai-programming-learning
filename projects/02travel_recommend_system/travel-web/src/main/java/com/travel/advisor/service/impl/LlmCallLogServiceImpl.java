@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
-/**
- * LLM调用日志服务实现类，负责将每次与LLM交互的请求和响应信息记录到数据库中，便于后续分析和优化。实现了LlmCallLogService接口，提供保存聊天日志的方法，将用户ID、请求消息、LLM响应、调用状态、错误信息和响应时间等关键信息保存到LlmCallLog实体中，并通过LlmCallLogMapper将日志记录插入到数据库中。
- */
+/** LLM 调用日志服务实现 */
 @Service
 @RequiredArgsConstructor
 public class LlmCallLogServiceImpl implements LlmCallLogService {
@@ -20,12 +18,7 @@ public class LlmCallLogServiceImpl implements LlmCallLogService {
     private final LlmCallLogMapper llmCallLogMapper;
     private final LlmProperties llmProperties;
 
-    /**
-     * 保存LLM调用日志，记录用户ID、调用类型、请求提示、请求消息、LLM响应内容、状态、错误信息和响应时间等信息，便于后续分析和优化LLM调用情况
-      * 1. 创建一个新的LlmCallLog对象，并设置各个字段的值，包括用户ID、调用类型、模型名称、提供商、请求提示、请求消息、响应内容、输入输出Token数量、总Token数量、调用成本金额、响应时间、状态、错误信息和重试次数等
-      * 2. 使用llmCallLogMapper将日志对象插入到数据库中，完成日志记录的保存
-      * 3. 返回保存后的日志ID，便于调用方进行后续查询和分析
-     */
+    /** 保存 LLM 调用日志，返回日志 ID */
     @Override
     public Long saveCallLog(Long userId,
                             String callType,

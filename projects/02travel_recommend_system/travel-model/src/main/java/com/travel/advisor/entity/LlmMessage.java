@@ -17,24 +17,16 @@ public class LlmMessage {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    /**
-     * 会话ID，关联到 LLM 会话表
-     */
+    /** 会话 ID */
     private Long conversationId;
 
-    /**
-     * 消息角色，如 "user"、"assistant"、"system" 等
-     */
+    /** 角色：user / assistant / system */
     private String role;
 
-    /**
-     * 消息内容，可以是文本、JSON 或其他格式，根据 contentType 字段区分
-     */
+    /** 消息内容 */
     private String content;
 
-    /**
-     * 内容类型，1 表示文本，2 图片
-     */
+    /** 内容类型：1 文本 2 图片 3 卡片 */
     private Integer contentType;
 
     /**
@@ -42,19 +34,13 @@ public class LlmMessage {
      */
     private String extraData;
 
-    /**
-     * 消耗token数量，记录每条消息的token使用情况，便于后续分析和优化
-     */
+    /** 消耗 tokens */
     private Integer tokensUsed;
 
-    /**
-     * 关联的LLM调用日志ID，便于追踪每条消息对应的LLM调用记录
-     */
+    /** 关联 LLM 调用日志 ID */
     private Long llmCallLogId;
 
-    /**
-     * 是否敏感内容，0 表示非敏感，1 表示敏感，便于后续内容审核和过滤
-     */
+    /** 是否敏感：0 否 1 是 */
     private Integer isSensitive;
 
     private LocalDateTime createTime;

@@ -99,7 +99,7 @@ public class ScenicDetailVO {
     /**
      * 浏览次数
      */
-    private Integer viewCount;
+    private Long viewCount;
 
     /**
      * 收藏次数
@@ -124,7 +124,7 @@ public class ScenicDetailVO {
     /**
      * 建议游玩小时数
      */
-    private Integer suggestedHours;
+    private String suggestedHours;
 
     /**
      * 游玩小贴士

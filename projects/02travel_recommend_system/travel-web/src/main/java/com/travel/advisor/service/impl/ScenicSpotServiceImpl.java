@@ -524,7 +524,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             scenicSpot.setRatingCount(0);
         }
         if (scenicSpot.getViewCount() == null) {
-            scenicSpot.setViewCount(0);
+            scenicSpot.setViewCount(0L);
         }
         if (scenicSpot.getFavoriteCount() == null) {
             scenicSpot.setFavoriteCount(0);

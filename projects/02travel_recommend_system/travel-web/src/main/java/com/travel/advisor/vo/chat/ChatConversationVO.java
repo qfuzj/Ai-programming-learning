@@ -4,17 +4,13 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/**
- * LLM会话VO类，用于前端展示会话列表和会话详情，包含会话的基本信息和统计数据，便于用户快速浏览和管理自己的会话记录
- */
+/** 聊天会话 VO */
 @Data
 public class ChatConversationVO {
 
     private Long conversationId;
 
-    /**
-     * 会话标题，用户可自定义，便于区分不同的会话
-     */
+    /** 会话标题 */
     private String title;
 
     /**

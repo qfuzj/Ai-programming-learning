@@ -40,7 +40,7 @@ export interface ScenicDetail extends ScenicItem {
   reviewCount?: number;
   hotScore?: number;
   bestSeason?: string;
-  suggestedHours?: number;
+  suggestedHours?: string;
   tips?: string;
   sortOrder?: number;
   isRecommended?: number;
@@ -105,7 +105,7 @@ export interface ScenicCreatePayload {
   level?: string;
   category?: string;
   bestSeason?: string;
-  suggestedHours?: number;
+  suggestedHours?: string;
   tips?: string;
   status?: number;
   sortOrder?: number;
@@ -177,7 +177,7 @@ interface ScenicDetailRaw extends ScenicItemRaw {
   ratingCount?: number;
   viewCount?: number;
   bestSeason?: string;
-  suggestedHours?: number;
+  suggestedHours?: string;
   tips?: string;
   sortOrder?: number;
   isRecommended?: number;

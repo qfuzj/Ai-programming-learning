@@ -20,9 +20,7 @@ public class LlmConversation {
 
     private Long userId;
 
-    /**
-     * 会话标题，用户可自定义，便于区分不同的会话
-     */
+    /** 会话标题 */
     private String title;
 
     /**
@@ -30,24 +28,16 @@ public class LlmConversation {
      */
     private Integer conversationType;
 
-    /**
-     * 会话上下文数据，存储为 JSON 字符串，包含用户输入、AI 回复、当前景点等信息
-     */
+    /** 上下文数据（JSON） */
     private String contextData;
 
-    /**
-     * 消息数量，记录会话中用户和 AI 之间的消息总数，便于统计和分析
-     */
+    /** 消息数量 */
     private Integer messageCount;
 
-    /**
-     * 消耗的总 token 数量，记录会话中用户输入和 AI 回复所使用的 token 数量，便于统计和分析
-     */
+    /** 消耗总 tokens */
     private Integer totalTokens;
 
-    /**
-     * 最后一条消息的时间，记录会话中最后一条消息的时间，便于统计和分析
-     */
+    /** 最后消息时间 */
     private LocalDateTime lastMessageAt;
 
     /**

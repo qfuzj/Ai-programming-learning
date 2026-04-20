@@ -28,36 +28,24 @@ public class RecommendResultItem {
      */
     private Long scenicSpotId;
 
-    /**
-     * 推荐结果中的排名位置，从1开始，表示第几位推荐
-     */
+    /** 排名位置 */
     private Integer rankPosition;
 
-    /**
-     * 推荐算法计算出的得分，数值越大表示推荐结果越相关，范围通常在0到1之间
-     */
+    /** 推荐得分（0-1） */
     private Double score;
 
-    /**
-     * 推荐理由，简要说明为什么这个景点被推荐给用户，可以是算法生成的文本或者预定义的模板内容
-     */
+    /** 推荐理由 */
     private String reason;
 
-    /**
-     * 用户交互状态，表示用户是否点击过该推荐结果，0表示未点击，1表示已点击
-     */
+    /** 是否被点击：0 否 1 是 */
     @TableField("is_clicked")
     private Integer isClicked;
 
-    /**
-     * 用户收藏状态，表示用户是否收藏过该推荐结果，0表示未收藏，1表示已收藏
-     */
+    /** 是否被收藏：0 否 1 是 */
     @TableField("is_favorited")
     private Integer isFavorited;
 
-    /**
-     * 用户点击推荐结果的时间，只有当isClicked为1时才有值，记录用户点击推荐结果的具体时间点，用于分析用户行为和优化推荐算法
-     */
+    /** 点击时间 */
     private LocalDateTime clickTime;
 
     private LocalDateTime createTime;

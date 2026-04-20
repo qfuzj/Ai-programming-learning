@@ -128,17 +128,17 @@ public class MessageServiceImpl implements MessageService {
         Integer tokenUsage;
         String modelName;
         try {
-            // 调用LLM服务获取回复，将构建好的请求对象发送给LLM服务，获取LLM生成的回复内容、使用的token数量和模型名称等信息，便于后续保存回复消息和更新会话统计信息。
+            // 调用 LLM 获取回复
             response = llmGateway.generate(request);
-            // 将LLM调用的请求和响应信息保存到调用日志中，记录调用状态为成功，便于后续分析LLM调用的效果和性能，以及排查可能出现的问题。
+            // 记录成功调用日志
             callLogId = llmCallLogService.saveChatLog(userId, JsonUtils.toJson(request.getMessages()), response, LLMCallLogStatus.SUCCESS.getCode(), null, (int) (System.currentTimeMillis() - start));
             assistantReply = response.getContent();
             tokenUsage = response.getTotalTokens() == null ? 0 : response.getTotalTokens();
             modelName = response.getModelName();
         } catch (Exception ex) {
-            // 将LLM调用的请求和异常信息保存到调用日志中，记录调用状态为失败，便于后续分析LLM调用失败的原因和频率，以及改进系统的稳定性和用户体验。
+            // 记录失败调用日志
             llmCallLogService.saveChatLog(userId, JsonUtils.toJson(request.getMessages()), null, LLMCallLogStatus.FAILED.getCode(), ex.getMessage(), (int) (System.currentTimeMillis() - start));
-            // 获取LLM调用失败的兜底回复内容，便于在LLM服务不可用或发生异常时，仍能为用户提供有意义的回复，提升系统的鲁棒性和用户体验。
+            // 兜底回复
             assistantReply = chatFallbackService.getFallbackReply(ex);
             tokenUsage = 0;
             modelName = "fallback";
@@ -224,16 +224,16 @@ public class MessageServiceImpl implements MessageService {
             return Collections.emptyList();
         }
 
-        // 计算历史消息的总token数量，如果不超过预设的最大token限制，则直接返回原始历史消息列表，避免不必要的处理和性能开销。
+        // 未超限则直接返回
         int total = history.stream().mapToInt(this::estimateTokens).sum();
         if (total <= HISTORY_MAX_TOKENS) {
             return history;
         }
 
-        // 摘要接口预留：将被截断的历史消息压缩成摘要消息，便于保留对话上下文的连续性，同时减少token数量，优化LLM调用的效果和性能。
+        // 摘要压缩：截断历史 → 摘要消息，减少 token
         List<LlmMessage> summaryMessages = summarizeHistory(history);
 
-        // 摘要消息的token数量，如果摘要消息的token数量已经接近或超过最大token限制，则直接返回摘要消息，避免后续添加历史消息导致超限。
+        // 摘要已占用的 token
         int used = summaryMessages.stream().mapToInt(this::estimateTokens).sum();
 
         // 从最新消息往前贪心选取，addFirst 保证最终顺序为旧→新

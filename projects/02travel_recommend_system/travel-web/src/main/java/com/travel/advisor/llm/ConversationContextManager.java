@@ -90,12 +90,7 @@ public class ConversationContextManager {
         return "你是旅行助手，请结合以下上下文回答用户：" + contextData;
     }
 
-    /**
-     * 构建景点上下文信息，查询景点的详细信息和关联标签，并将这些信息封装成 JSON 对象返回，便于在上下文中提供丰富的景点信息，帮助 LLM 理解当前景点的特点和用户可能的兴趣点。
-     *
-     * @param scenicId 景点ID，由前端传入，表示要查询哪个景点的详细信息和关联标签。
-     * @return 包含景点详细信息和关联标签的 JSON 对象，如果景点不存在或无法获取详细信息，则返回一个标记 exists=false 的 JSON 对象，便于 LLM 理解当前景点不可用。
-     */
+    /** 构建景点上下文 JSON；景点不存在时返回 exists=false */
     private ObjectNode buildScenicContextNode(Long scenicId) {
         ScenicSpot scenicSpot = scenicSpotMapper.selectById(scenicId);
         ObjectNode scenicNode = objectMapper.createObjectNode();
@@ -129,13 +124,7 @@ public class ConversationContextManager {
         return value == null ? "" : value;
     }
 
-    /**
-     * 对文本进行简化处理，如果文本长度超过指定的最大长度，则截取前面部分并添加省略号，便于在上下文中提供简洁的信息，避免过长的文本导致 LLM 理解困难或上下文过载。
-     *
-     * @param value     需要简化的文本，如果为 null 则返回空字符串。
-     * @param maxLength 最大长度，如果文本长度超过该值，则进行截取处理。
-     * @return 简化后的文本，如果原文本长度不超过 maxLength 则返回原文本，否则返回截取后的文本加上省略号。
-     */
+    /** 超长文本截断加省略号 */
     private String abbreviate(String value, int maxLength) {
         if (!StringUtils.hasText(value)) {
             return "";

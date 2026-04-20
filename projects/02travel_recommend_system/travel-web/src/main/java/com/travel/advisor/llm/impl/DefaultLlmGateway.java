@@ -100,7 +100,7 @@ public class DefaultLlmGateway implements LlmGateway {
         int timeoutMs = request.getTimeoutMs() == null || request.getTimeoutMs() <= 0
                 ? llmProperties.getTimeoutMs()
                 : request.getTimeoutMs();
-        // 将毫秒数转换为 Duration 对象，便于构建连接选项
+        // ms → Duration
         Duration timeout = Duration.ofMillis(timeoutMs);
         // 使用构建器模式创建 ConnectionOptions，三个方向的超时设置为相同的值
         return ConnectionOptions.builder()

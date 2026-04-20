@@ -88,7 +88,7 @@ public class ScenicSpot {
     /**
      * 浏览次数
      */
-    private Integer viewCount;
+    private Long viewCount;
 
     /**
      * 收藏次数
@@ -101,9 +101,9 @@ public class ScenicSpot {
     private String bestSeason;
 
     /**
-     * 建议游玩时长，单位为小时
+     * 建议游玩时长
      */
-    private Integer suggestedHours;
+    private String suggestedHours;
 
     /**
      * 旅游小贴士，如"建议早上前往，避开人流高峰"

@@ -39,13 +39,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
     private final LlmCallLogService llmCallLogService;
     private final RegionMapper regionMapper;
 
-    /**
-     * 生成推荐理由的核心方法，接收用户ID、场景信息和候选景点列表，调用LLM生成推荐理由，并记录调用日志
-     * 1. 构建LLM请求，整合场景信息和候选景点列表，形成清晰的指令，指导LLM生成针对每个候选景点的推荐理由
-     * 2. 调用LLM获取推荐理由，并解析LLM返回的JSON结果，提取每个景点对应的推荐理由文本，形成景点ID到推荐理由的映射
-     * 3. 记录LLM调用日志，保存请求和响应内容，以及调用结果状态，便于后续分析和优化推荐理由生成的效果
-     * 4. 返回生成的推荐理由结果对象，包含景点ID到推荐理由的映射、是否使用LLM以及LLM调用日志ID等信息，供调用方使用
-     */
+    /** 生成推荐理由：构建 prompt → 调用 LLM → 解析结果 → 记录日志 */
     @Override
     public RecommendReasonResult generateReasons(Long userId, String scene, List<RankedRecommend> pageItems) {
         if (pageItems == null || pageItems.isEmpty()) {
@@ -92,7 +86,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
                         .llmCallLogId(callLogId)
                         .build();
             }
-            // 记录调用日志，标记为成功，并保存请求和响应内容，便于后续分析和优化
+            // 记录成功日志
             Long callLogId = llmCallLogService.saveCallLog(
                     userId,
                     CALL_TYPE,
@@ -108,7 +102,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
                     .llmCallLogId(callLogId)
                     .build();
         } catch (Exception ex) {
-            // 记录调用日志，标记为失败，并捕获异常信息，便于后续分析和优化
+            // 记录失败日志
             Long callLogId = llmCallLogService.saveCallLog(
                     userId,
                     CALL_TYPE,
@@ -215,13 +209,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
         return normalized.trim();
     }
 
-    /**
-     * 解析异常信息，判断是否包含超时相关的关键词，如果包含则返回 TIMEOUT 状态，否则返回 FAILED 状态
-      * 1. 从异常对象开始，循环检查当前异常及其所有原因链中的异常信息
-      * 2. 将异常信息转换为小写，并检查是否包含 "timeout" 关键词，如果包含则认为是超时异常
-      * 3. 如果在整个异常链中都没有找到超时相关的关键词，则默认认为是一般的失败异常
-      * 4. 通过这种方式可以更准确地识别出由于超时导致的调用失败，便于后续针对超时问题进行优化和处理
-     */
+    /** 判断异常是否为超时：遍历 cause 链检查 timeout 关键词 */
     private LLMCallLogStatus resolveStatus(Throwable ex) {
         Throwable current = ex;
         while (current != null) {

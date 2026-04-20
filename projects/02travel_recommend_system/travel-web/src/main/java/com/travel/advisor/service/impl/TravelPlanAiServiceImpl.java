@@ -85,13 +85,7 @@ public class TravelPlanAiServiceImpl implements TravelPlanAiService {
     private final LlmProperties llmProperties;
     private final LlmCallLogService llmCallLogService;
 
-    /**
-     * 生成旅行计划草稿
-     * 1. 接收用户输入的旅行计划生成请求，包含目的地、天数、预算、同行人类型、旅行风格和偏好标签等信息
-     * 2. 根据目的地信息查询相关的景点候选项，构建供LLM生成行程草稿的用户提示，整合用户输入和景点候选项形成清晰的指令
-     * 3. 调用LLM生成行程草稿，并解析LLM返回的JSON结果，提取行程标题、描述和每天的行程安排等信息，形成结构化的行程草稿对象
-     * 4. 记录LLM调用日志，保存请求和响应内容，以及调用结果状态，便于后续分析和优化行程生成的效果
-     */
+    /** 生成旅行计划草稿：查询候选景点 → 构建 prompt → 调用 LLM → 解析结果 */
     @Override
     public TravelPlanDetailVO generateDraft(TravelPlanAiGenerateDTO dto) {
         Long userId = getCurrentUserIdRequired();
@@ -210,15 +204,7 @@ public class TravelPlanAiServiceImpl implements TravelPlanAiService {
         return scenicSpotMapper.selectList(wrapper);
     }
 
-    /**
-     * 将 ScenicSpot 对象转换为 TravelPlanAiScenicCandidate 对象，提取景点的基本信息和特征，供LLM生成行程草稿时参考
-     * 1. scenicId、name、category、level、score 等字段描述了景点的基本信息和特征，帮助LLM理解每个候选景点的特点
-     * 2. address、openTime、ticketPrice、suggestedHours 等字段提供了更多维度的信息供LLM生成更个性化的行程安排
-     * 3. 通过这个方法可以将数据库查询到的 ScenicSpot 对象转换为一个结构化的
-     * TravelPlanAiScenicCandidate对象，便于构建用户提示并指导LLM生成针对每个候选景点的行程安排
-     * 4. 在构建用户提示时，可以将这个候选项列表以JSON格式传递给LLM，帮助LLM理解每个候选景点的详细信息，从而生成更有针对性的行程安排
-     * 5. 这个方法的设计可以根据实际需要进行扩展，比如添加更多的景点特征字段，或者添加一些辅助方法来格式化候选项信息
-     */
+    /** ScenicSpot → LLM prompt 候选项 */
     private TravelPlanAiScenicCandidate toPromptCandidate(ScenicSpot scenicSpot) {
         return TravelPlanAiScenicCandidate.builder()
                 .scenicId(scenicSpot.getId())
