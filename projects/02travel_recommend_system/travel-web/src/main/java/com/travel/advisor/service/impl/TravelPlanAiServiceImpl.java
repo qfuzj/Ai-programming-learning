@@ -149,13 +149,7 @@ public class TravelPlanAiServiceImpl implements TravelPlanAiService {
     }
 
     /**
-     * 解析目的地信息，优先进行精确匹配，如果没有找到则进行模糊匹配，最终返回匹配到的 Region 对象或者 null
-     * 1. 首先检查输入的目的地字符串是否为空或仅包含空白字符，如果是则直接返回 null，表示没有有效的目的地信息
-     * 2. 使用 regionMapper 进行数据库查询，首先尝试精确匹配目的地名称，按照行政级别升序排序并限制结果为1条，如果找到了匹配的 Region
-     * 则返回该对象
-     * 3. 如果没有找到精确匹配的 Region，则进行模糊匹配，使用 like 查询目的地名称，按照行政级别升序排序并限制结果为1条，如果找到了匹配的
-     * Region 则返回该对象
-     * 4. 如果两次查询都没有找到匹配的 Region，则返回 null，表示无法解析出有效的目的地区域信息
+     * 解析目的地：精确匹配优先，未命中则模糊匹配，均无结果返回 null。
      */
     private Region resolveDestinationRegion(String destination) {
         if (destination == null || destination.isBlank()) {
@@ -245,12 +239,7 @@ public class TravelPlanAiServiceImpl implements TravelPlanAiService {
     }
 
     /**
-     * 解析LLM返回的行程草案内容
-     * 1. 验证输入内容是否为空或仅包含空白字符，如果是则返回 null，表示无法解析出有效的行程草案信息
-     * 2. 对输入内容进行预处理，去除可能存在的 Markdown 代码块标记（```json ... ```），以提取出纯净的 JSON 字符串
-     * 3. 使用 JsonUtils 将预处理后的字符串解析为 TravelPlanAiDraftPayload 对象，如果解析过程中发生任何异常（如 JSON
-     * 格式错误），则捕获异常并返回 null，表示解析失败
-     * 4. 如果解析成功，则返回解析得到的 TravelPlanAiDraftPayload 对象，供后续构建行程草稿VO使用
+     * 解析 LLM 返回的行程草案 JSON 内容，解析失败时返回 null
      */
     private TravelPlanAiDraftPayload parsePayload(String content) {
         if (content == null || content.isBlank()) {

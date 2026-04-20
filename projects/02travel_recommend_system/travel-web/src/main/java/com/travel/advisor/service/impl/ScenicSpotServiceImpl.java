@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.page.PageResult;
+import com.travel.advisor.common.enums.FileResourceStatus;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.scenic.*;
 import com.travel.advisor.entity.*;
@@ -45,6 +46,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     private final RegionMapper regionMapper;
     private final RegionService regionService;
     private final UserReviewMapper userReviewMapper;
+    private final FileResourceMapper fileResourceMapper;
 
     @Override
     public List<ScenicSpot> listByIdsWithStatus(Collection<Long> ids, Integer status) {
@@ -241,6 +243,12 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         findById(scenicSpotId);
         if (!StringUtils.hasText(dto.getImageUrl()) && dto.getFileResourceId() == null) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "图片URL或文件资源ID至少填写一个");
+        }
+        if (dto.getFileResourceId() != null) {
+            FileResource fileResource = fileResourceMapper.selectById(dto.getFileResourceId());
+            if (fileResource == null || fileResource.getStatus().equals(FileResourceStatus.DELETED.getCode())) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "文件资源不存在或已删除");
+            }
         }
         ScenicImage scenicImage = new ScenicImage();
         scenicImage.setScenicSpotId(scenicSpotId);
@@ -554,6 +562,14 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         scenicImageMapper.delete(new LambdaQueryWrapper<ScenicImage>().eq(ScenicImage::getScenicSpotId, scenicSpotId));
         if (CollectionUtils.isEmpty(imageIds)) {
             return;
+        }
+        // 校验所有 fileResourceId 有效
+        List<FileResource> files = fileResourceMapper.selectBatchIds(imageIds);
+        if (files.size() != imageIds.size()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "部分文件资源不存在");
+        }
+        if (files.stream().anyMatch(f -> f.getStatus().equals(FileResourceStatus.DELETED.getCode()))) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "部分文件资源已删除");
         }
         final int[] index = {0};
         List<ScenicImage> scenicImages = imageIds.stream().map(imageId -> {
