@@ -1,5 +1,6 @@
 package com.travel.advisor.controller.admin;
 
+import com.travel.advisor.annotation.OperationLog;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.audit.AuditActionDTO;
@@ -33,6 +34,7 @@ public class AuditController {
     }
 
     @PostMapping("/{id}/approve")
+    @OperationLog(module = "audit", action = "approve", description = "审核通过")
     public Result<Void> approve(@PathVariable Long id,
                                 @Valid @RequestBody(required = false) AuditActionDTO dto) {
         auditService.approve(id, dto);
@@ -40,6 +42,7 @@ public class AuditController {
     }
 
     @PostMapping("/{id}/reject")
+    @OperationLog(module = "audit", action = "reject", description = "审核拒绝")
     public Result<Void> reject(@PathVariable Long id,
                                @Valid @RequestBody AuditActionDTO dto) {
         auditService.reject(id, dto);
@@ -47,6 +50,7 @@ public class AuditController {
     }
 
     @PostMapping("/{id}/hide")
+    @OperationLog(module = "audit", action = "hide", description = "隐藏内容")
     public Result<Void> hide(@PathVariable Long id,
                              @Valid @RequestBody(required = false) AuditActionDTO dto) {
         auditService.hide(id, dto);

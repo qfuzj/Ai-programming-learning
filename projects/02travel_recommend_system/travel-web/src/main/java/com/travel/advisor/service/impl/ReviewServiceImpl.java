@@ -285,14 +285,28 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     /**
-     * 分页查询评论回复列表
+     * 分页查询评论回复列表。
+     * 支持 {@code sortBy}：{@code time_asc}（默认）、{@code time_desc}、{@code hot}。
+     * 当前 {@code review_reply} 表无 like_count 字段，{@code hot} 暂等价 {@code time_desc}，
+     * 待后续引入热度字段时切换为真实热度排序。
      */
     @Override
-    public PageResult<ReviewReplyVO> pageReplies(Long reviewId, PageQuery query) {
+    public PageResult<ReviewReplyVO> pageReplies(Long reviewId, PageQuery query, String sortBy) {
         Page<ReviewReply> page = new Page<>(query.getPageNum(), query.getPageSize());
-        Page<ReviewReply> result = reviewReplyMapper.selectPage(page, new LambdaQueryWrapper<ReviewReply>()
-                .eq(ReviewReply::getReviewId, reviewId)
-                .orderByAsc(ReviewReply::getCreateTime));
+        LambdaQueryWrapper<ReviewReply> wrapper = new LambdaQueryWrapper<ReviewReply>()
+                .eq(ReviewReply::getReviewId, reviewId);
+        String mode = sortBy == null ? "time_asc" : sortBy.toLowerCase();
+        switch (mode) {
+            case "time_desc":
+            case "hot":
+                // 热度字段尚未引入，暂按时间倒序降级，保留关键字以便后续切换。
+                wrapper.orderByDesc(ReviewReply::getCreateTime);
+                break;
+            case "time_asc":
+            default:
+                wrapper.orderByAsc(ReviewReply::getCreateTime);
+        }
+        Page<ReviewReply> result = reviewReplyMapper.selectPage(page, wrapper);
 
         List<ReviewReply> records = result.getRecords();
         List<ReviewReplyVO> voList = Collections.emptyList();

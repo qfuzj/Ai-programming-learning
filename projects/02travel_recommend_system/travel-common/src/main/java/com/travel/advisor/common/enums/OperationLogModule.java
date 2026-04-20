@@ -15,7 +15,8 @@ public enum OperationLogModule {
     REVIEW("review", "评论管理"),
     CONFIG("config", "系统配置"),
     TAG("tag", "标签管理"),
-    RECOMMEND("recommend", "推荐系统");
+    RECOMMEND("recommend", "推荐系统"),
+    AUDIT("audit", "内容审核");
 
     private final String code;
     private final String desc;

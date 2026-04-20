@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -58,7 +59,9 @@ public class ReviewController {
     }
 
     @GetMapping("/reviews/{reviewId}/replies")
-    public Result<PageResult<ReviewReplyVO>> pageReplies(@PathVariable Long reviewId, PageQuery pageQuery) {
-        return Result.success(reviewService.pageReplies(reviewId, pageQuery));
+    public Result<PageResult<ReviewReplyVO>> pageReplies(@PathVariable Long reviewId,
+                                                         PageQuery pageQuery,
+                                                         @RequestParam(required = false) String sortBy) {
+        return Result.success(reviewService.pageReplies(reviewId, pageQuery, sortBy));
     }
 }
