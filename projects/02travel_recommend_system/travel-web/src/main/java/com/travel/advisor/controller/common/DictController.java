@@ -262,12 +262,12 @@ public class DictController {
     }
 
     /**
-     * 标签类型字典
+     * 标签作用域字典
      */
-    @GetMapping("/tag-type")
-    public Result<List<DictVO>> getTagTypes() {
-        List<DictVO> list = Arrays.stream(TagType.values())
-                .map(t -> new DictVO(t.getCode(), t.getDesc()))
+    @GetMapping("/tag-scope")
+    public Result<List<DictVO>> getTagScopes() {
+        List<DictVO> list = Arrays.stream(TagScope.values())
+                .map(s -> new DictVO(s.getCode(), s.getDesc()))
                 .collect(Collectors.toList());
         return Result.success(list);
     }

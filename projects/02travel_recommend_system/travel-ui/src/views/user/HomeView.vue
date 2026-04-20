@@ -139,7 +139,7 @@ import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { Search, House, OfficeBuilding, Camera, ForkSpoon, Star } from "@element-plus/icons-vue";
 import { getScenicHotList, type ScenicItem } from "@/api/scenic";
-import { getTagsByType, type CommonTagItem } from "@/api/common";
+import { type CommonTagItem } from "@/api/common";
 import { getMyPreferenceTags } from "@/api/profile";
 
 const router = useRouter();

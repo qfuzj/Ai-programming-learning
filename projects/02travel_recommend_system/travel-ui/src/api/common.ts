@@ -13,7 +13,7 @@ export interface CommonRegionNode {
 export interface CommonTagItem {
   id: number;
   name: string;
-  type?: number;
+  scope?: string;
   category?: string;
   icon?: string;
   color?: string;
@@ -59,7 +59,7 @@ export interface AdminRegionQuery extends PageQuery {
 export interface AdminTagItem {
   id: number;
   name: string;
-  type: number;
+  scope?: string;
   category?: string;
   icon?: string;
   color?: string;
@@ -69,7 +69,7 @@ export interface AdminTagItem {
 
 export interface TagPayload {
   name: string;
-  type?: number;
+  scope?: string;
   category?: string;
   icon?: string;
   color?: string;
@@ -79,7 +79,7 @@ export interface TagPayload {
 
 export interface AdminTagQuery extends PageQuery {
   name?: string;
-  type?: number;
+  scope?: string;
   category?: string;
   status?: number;
 }
@@ -92,15 +92,8 @@ export function getTags(): Promise<CommonTagItem[]> {
   return http.get("/api/common/tags");
 }
 
-export async function getTagsByType(type: number | string): Promise<CommonTagItem[]> {
-  const normalizedType = Number(type);
-
-  if (!Number.isNaN(normalizedType)) {
-    return http.get("/api/common/tags", { params: { type: normalizedType } });
-  }
-
-  const tags = await getTags();
-  return tags.filter((tag) => tag.category === type);
+export function getTagsByScope(scope: string): Promise<CommonTagItem[]> {
+  return http.get("/api/common/tags", { params: { scope } });
 }
 
 export function getAdminRegionPage(query: AdminRegionQuery): Promise<PageResult<AdminRegionItem>> {

@@ -301,35 +301,18 @@
           <el-input v-model="formModel.name" placeholder="请输入景点名称" />
         </el-form-item>
         <el-form-item label="地区" prop="regionId">
-          <el-select v-model="formModel.regionId" placeholder="请选择地区" filterable>
-            <el-option
-              v-for="item in regionOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <el-cascader
+            v-model="formModel.regionId"
+            :options="provinceOptions"
+            :props="regionCascaderProps"
+            placeholder="请选择省/市/区县"
+            filterable
+            clearable
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="地址" prop="address">
           <el-input v-model="formModel.address" placeholder="请输入详细地址" />
-        </el-form-item>
-        <el-form-item label="经度">
-          <el-input-number
-            v-model="formModel.longitude"
-            :precision="6"
-            :step="0.000001"
-            :controls="false"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="纬度">
-          <el-input-number
-            v-model="formModel.latitude"
-            :precision="6"
-            :step="0.000001"
-            :controls="false"
-            style="width: 100%"
-          />
         </el-form-item>
         <el-form-item label="封面图URL" prop="coverImage">
           <el-input v-model="formModel.coverImage" placeholder="请输入封面图 URL" />
@@ -379,13 +362,10 @@
         <el-form-item label="最佳季节">
           <el-input v-model="formModel.bestSeason" placeholder="例如：春秋" />
         </el-form-item>
-        <el-form-item label="建议时长(小时)">
-          <el-input-number
+        <el-form-item label="建议游玩时长">
+          <el-input
             v-model="formModel.suggestedHours"
-            :min="0"
-            :precision="1"
-            :step="0.5"
-            style="width: 100%"
+            placeholder="例如：2-3 小时 / 半天 / 1 天"
           />
         </el-form-item>
         <el-form-item label="游玩提示">
@@ -481,8 +461,6 @@ interface ScenicFormModel {
   name: string;
   regionId?: number;
   address: string;
-  longitude?: number;
-  latitude?: number;
   coverImage: string;
   description: string;
   detailContent: string;
@@ -492,7 +470,7 @@ interface ScenicFormModel {
   level: string;
   category: string;
   bestSeason: string;
-  suggestedHours?: number;
+  suggestedHours?: string;
   tips: string;
   sortOrder?: number;
   isRecommended: number;
@@ -515,6 +493,15 @@ const formRef = ref<FormInstance>();
 
 const regionOptions = ref<OptionItem[]>([]);
 const provinceOptions = ref<CommonRegionNode[]>([]);
+
+// 级联选择器配置：支持省/市/区县任意层级选中，只回传当前节点 id
+const regionCascaderProps = {
+  value: "id",
+  label: "name",
+  children: "children",
+  emitPath: false,
+  checkStrictly: true,
+};
 const cityOptions = ref<CommonRegionNode[]>([]);
 const tagOptions = ref<CommonTagItem[]>([]);
 
@@ -530,8 +517,6 @@ const formModel = reactive<ScenicFormModel>({
   name: "",
   regionId: undefined,
   address: "",
-  longitude: undefined,
-  latitude: undefined,
   coverImage: "",
   description: "",
   detailContent: "",
@@ -598,8 +583,8 @@ function formatInteger(value?: number): string {
   return String(Math.trunc(value));
 }
 
-function formatHours(value?: number): string {
-  if (value == null || Number.isNaN(Number(value))) {
+function formatHours(value?: string | number): string {
+  if (value == null || value === "" || Number.isNaN(Number(value))) {
     return "-";
   }
   return `${value} 小时`;
@@ -631,8 +616,6 @@ function resetFormModel(): void {
   formModel.name = "";
   formModel.regionId = undefined;
   formModel.address = "";
-  formModel.longitude = undefined;
-  formModel.latitude = undefined;
   formModel.coverImage = "";
   formModel.description = "";
   formModel.detailContent = "";
@@ -730,8 +713,6 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.name = detail.name;
     formModel.regionId = detail.regionId;
     formModel.address = detail.address || "";
-    formModel.longitude = detail.longitude;
-    formModel.latitude = detail.latitude;
     formModel.coverImage = detail.coverImage || "";
     formModel.description = detail.description || "";
     formModel.detailContent = detail.detailContent || "";
@@ -765,8 +746,6 @@ async function submitForm(): Promise<void> {
     name: formModel.name,
     regionId: Number(formModel.regionId),
     address: formModel.address,
-    longitude: formModel.longitude,
-    latitude: formModel.latitude,
     coverImage: formModel.coverImage || undefined,
     description: formModel.description || undefined,
     detailContent: formModel.detailContent || undefined,

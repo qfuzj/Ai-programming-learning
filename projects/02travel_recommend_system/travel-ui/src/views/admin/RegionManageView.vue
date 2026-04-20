@@ -119,21 +119,17 @@
             />
           </el-select>
 
-          <!-- 区县：从市列表选 -->
-          <el-select
+          <!-- 区县：级联先选省、再选市（parentId 只取最终叶子节点 id） -->
+          <el-cascader
             v-else-if="formModel.level === 3"
             v-model="formModel.parentId"
-            placeholder="请选择所属城市"
+            :options="provinceList"
+            :props="cascaderProps"
+            placeholder="请选择所属省份 → 城市"
             filterable
+            clearable
             style="width: 100%"
-          >
-            <el-option
-              v-for="item in cityList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item label="地区名称" prop="name">
           <el-input v-model="formModel.name" placeholder="请输入地区名称" />
@@ -221,6 +217,14 @@ const provinceList = computed(() => {
 const cityList = computed(() => {
   return regionTree.value.flatMap((p) => p.children || []);
 });
+
+// 级联选择器配置：仅允许选中市（level=2）作为 parentId
+const cascaderProps = {
+  value: "id",
+  label: "name",
+  children: "children",
+  emitPath: false,
+};
 
 const formVisible = ref(false);
 const editingId = ref<number | null>(null);

@@ -14,10 +14,10 @@
             placeholder="请输入标签名"
           />
         </el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="query.type" clearable style="width: 140px" placeholder="全部">
+        <el-form-item label="作用域">
+          <el-select v-model="query.scope" clearable style="width: 140px" placeholder="全部">
             <el-option
-              v-for="item in tagTypeOptions"
+              v-for="item in tagScopeOptions"
               :key="item.code"
               :label="item.desc"
               :value="item.code"
@@ -61,8 +61,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="name" label="标签名称" min-width="140" />
-        <el-table-column label="类型" width="120">
-          <template #default="scope">{{ tagTypeText(scope.row.type) }}</template>
+        <el-table-column label="作用域" width="120">
+          <template #default="scope">{{ tagScopeText(scope.row.scope) }}</template>
         </el-table-column>
         <el-table-column prop="category" label="分类" width="120" />
         <el-table-column label="颜色" width="100">
@@ -113,10 +113,10 @@
         <el-form-item label="标签名" prop="name">
           <el-input v-model="formModel.name" placeholder="请输入标签名称" />
         </el-form-item>
-        <el-form-item label="类型" prop="type">
-          <el-select v-model="formModel.type" style="width: 100%" @change="onFormTypeChange">
+        <el-form-item label="作用域" prop="scope">
+          <el-select v-model="formModel.scope" style="width: 100%" @change="onFormScopeChange">
             <el-option
-              v-for="item in tagTypeOptions"
+              v-for="item in tagScopeOptions"
               :key="item.code"
               :label="item.desc"
               :value="item.code"
@@ -172,15 +172,15 @@ import {
   deleteAdminTag,
   getAdminTagPage,
   updateAdminTag,
-  getTagsByType,
+  getTagsByScope,
   type AdminTagItem,
   type AdminTagQuery,
   type TagPayload,
 } from "@/api/common";
-import { getCommonStatusDict, getTagTypeDict } from "@/api/dict";
+import { getCommonStatusDict, getTagScopeDict } from "@/api/dict";
 import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
 
-const { options: tagTypeOptions } = useDictOptions("tag-type", getTagTypeDict);
+const { options: tagScopeOptions } = useDictOptions("tag-scope", getTagScopeDict);
 const { options: statusOptions } = useDictOptions("common-status", getCommonStatusDict);
 
 const loading = ref(false);
@@ -196,14 +196,14 @@ const query = reactive<AdminTagQuery>({
   pageNum: 1,
   pageSize: 10,
   name: "",
-  type: undefined,
+  scope: undefined,
   category: "",
   status: undefined,
 });
 
 const formModel = reactive<TagPayload>({
   name: "",
-  type: 1,
+  scope: "SCENIC",
   category: "",
   icon: "",
   color: "",
@@ -217,30 +217,30 @@ const formRules: FormRules<TagPayload> = {
 
 const dialogTitle = computed(() => (editingId.value ? "编辑标签" : "新增标签"));
 
-// 保存基于当前选择 type 从后端加载的分类选项
+// 保存基于当前选择 scope 从后端加载的分类选项
 const remoteCategories = ref<string[]>([]);
 const dynamicCategories = computed(() => {
   return Array.from(new Set([...remoteCategories.value]));
 });
 
-// 监听新增/编辑表单中类型的变化，动态拉取对应类型的 category
-async function onFormTypeChange(typeVal: number) {
-  formModel.category = ""; // 类型改变时，清空已选分类
-  await fetchCategoriesByType(typeVal);
+// 监听新增/编辑表单中作用域的变化，动态拉取对应 scope 的 category
+async function onFormScopeChange(scopeVal: string) {
+  formModel.category = ""; // 作用域改变时，清空已选分类
+  await fetchCategoriesByScope(scopeVal);
 }
 
-// 核心：请求后端数据，获取该类型下所有的分类集合
-async function fetchCategoriesByType(typeVal: number) {
+// 核心：请求后端数据，获取该 scope 下所有的分类集合
+async function fetchCategoriesByScope(scopeVal: string) {
   try {
-    const tags = await getTagsByType(typeVal);
+    const tags = await getTagsByScope(scopeVal);
     remoteCategories.value = tags.map((t) => t.category).filter((c): c is string => Boolean(c));
   } catch (error) {
     ElMessage.error("动态分类加载失败");
   }
 }
 
-function tagTypeText(type: number): string {
-  return findDictDesc(tagTypeOptions.value, type, "-");
+function tagScopeText(scope?: string): string {
+  return findDictDesc(tagScopeOptions.value, scope ?? "", "-");
 }
 
 async function loadTagList(): Promise<void> {
@@ -267,7 +267,7 @@ function onSearch(): void {
 
 function onReset(): void {
   query.name = "";
-  query.type = undefined;
+  query.scope = undefined;
   query.category = "";
   query.status = undefined;
   query.pageNum = 1;
@@ -281,7 +281,7 @@ function onSizeChange(): void {
 
 function resetFormModel(): void {
   formModel.name = "";
-  formModel.type = 1;
+  formModel.scope = "SCENIC";
   formModel.category = "";
   formModel.icon = "";
   formModel.color = "";
@@ -293,20 +293,20 @@ function openCreate(): void {
   editingId.value = null;
   resetFormModel();
   formVisible.value = true;
-  void fetchCategoriesByType(Number(formModel.type || 1));
+  void fetchCategoriesByScope(formModel.scope || "SCENIC");
 }
 
 function openEdit(row: AdminTagItem): void {
   editingId.value = row.id;
   formModel.name = row.name;
-  formModel.type = row.type;
+  formModel.scope = row.scope ?? "SCENIC";
   formModel.category = row.category ?? "";
   formModel.icon = row.icon ?? "";
   formModel.color = row.color ?? "";
   formModel.sortOrder = row.sortOrder ?? 0;
   formModel.status = row.status ?? 1;
   formVisible.value = true;
-  void fetchCategoriesByType(Number(formModel.type || 1));
+  void fetchCategoriesByScope(formModel.scope || "SCENIC");
 }
 
 async function handleSubmit(): Promise<void> {
@@ -319,7 +319,6 @@ async function handleSubmit(): Promise<void> {
   try {
     const payload: TagPayload = {
       ...formModel,
-      type: Number(formModel.type),
       category: formModel.category || undefined,
       icon: formModel.icon || undefined,
       color: formModel.color || undefined,

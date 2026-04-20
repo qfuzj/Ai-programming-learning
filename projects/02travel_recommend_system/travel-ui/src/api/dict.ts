@@ -96,8 +96,8 @@ export function getCommonStatusDict(): Promise<DictItem[]> {
   return http.get("/api/dict/common-status");
 }
 
-export function getTagTypeDict(): Promise<DictItem[]> {
-  return http.get("/api/dict/tag-type");
+export function getTagScopeDict(): Promise<DictItem[]> {
+  return http.get("/api/dict/tag-scope");
 }
 
 export function getRegionLevelDict(): Promise<DictItem[]> {

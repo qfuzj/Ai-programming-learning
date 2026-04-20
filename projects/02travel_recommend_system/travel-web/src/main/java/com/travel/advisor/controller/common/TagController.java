@@ -19,7 +19,7 @@ public class TagController {
     private final TagService tagService;
 
     @GetMapping
-    public Result<List<Tag>> list(@RequestParam(required = false) Integer type) {
-        return Result.success(tagService.listByType(type));
+    public Result<List<Tag>> list(@RequestParam(required = false) String scope) {
+        return Result.success(tagService.listByScope(scope));
     }
 }

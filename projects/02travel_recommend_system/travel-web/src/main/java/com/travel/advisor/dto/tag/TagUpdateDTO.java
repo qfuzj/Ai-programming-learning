@@ -15,6 +15,8 @@ public class TagUpdateDTO {
 
     private String color;
 
+    private String scope;
+
     private Integer sortOrder;
 
     private Integer status;

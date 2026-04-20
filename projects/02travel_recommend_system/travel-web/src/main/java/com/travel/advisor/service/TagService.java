@@ -12,9 +12,9 @@ import java.util.List;
 public interface TagService {
 
     /**
-     * 查询所有启用的标签
+     * 按 scope 查询标签（含 BOTH）
      */
-    List<Tag> listByType(Integer type);
+    List<Tag> listByScope(String scope);
 
     /**
      * 管理端分页查询标签

@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class TagQueryDTO {
     private String name;
-    private Integer type;
+    private String scope;
     private String category;
     private Integer status;
 }

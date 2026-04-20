@@ -1,6 +1,6 @@
 <template>
   <el-dialog v-model="visible" title="编辑偏好标签" width="560px" destroy-on-close>
-    <div v-for="group in tagGroups" :key="group.type" class="tag-group">
+    <div v-for="group in tagGroups" :key="group.scope" class="tag-group">
       <div class="tag-group-title">{{ group.label }}</div>
       <div class="tag-group-list">
         <el-tag
@@ -36,7 +36,7 @@ import { computed, ref, watch } from "vue";
 import type { CommonTagItem } from "@/api/common";
 
 interface TagGroup {
-  type: number;
+  scope: string;
   label: string;
   tags: CommonTagItem[];
 }
@@ -67,12 +67,22 @@ watch(
   }
 );
 
-const tagGroups = computed<TagGroup[]>(() =>
-  [
-    { type: 1, label: "景点标签", tags: props.allTags.filter((t) => t.type === 1) },
-    { type: 2, label: "偏好标签", tags: props.allTags.filter((t) => t.type === 2) },
-  ].filter((g) => g.tags.length > 0)
-);
+const SCOPE_LABEL: Record<string, string> = {
+  SCENIC: "景点标签",
+  PREFERENCE: "偏好标签",
+  BOTH: "通用标签",
+};
+
+const tagGroups = computed<TagGroup[]>(() => {
+  const scopes = ["SCENIC", "PREFERENCE", "BOTH"] as const;
+  return scopes
+    .map((s) => ({
+      scope: s,
+      label: SCOPE_LABEL[s] ?? s,
+      tags: props.allTags.filter((t) => t.scope === s),
+    }))
+    .filter((g) => g.tags.length > 0);
+});
 
 function toggleTag(id: number): void {
   const index = selectedIds.value.indexOf(id);

@@ -17,13 +17,13 @@ public class Tag {
 
     private String name;
 
-    private Integer type;
-
     private String category;
 
     private String icon;
 
     private String color;
+
+    private String scope;
 
     private Integer sortOrder;
 

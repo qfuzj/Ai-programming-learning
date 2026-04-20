@@ -31,13 +31,20 @@ public class TagServiceImpl implements TagService {
     private final ScenicSpotTagMapper scenicSpotTagMapper;
     private final UserPreferenceTagMapper userPreferenceTagMapper;
 
+    /**
+     * 根据作用域筛选并返回激活标签的列表
+     * <p>
+     * 仅返回状态为1（激活）的标签
+     * 按 sortOrder 升序排序
+     * scope 不为空时，筛选为给定 scope 或 "BOTH" 的标签
+     */
     @Override
-    public List<Tag> listByType(Integer type) {
+    public List<Tag> listByScope(String scope) {
         LambdaQueryWrapper<Tag> queryWrapper = new LambdaQueryWrapper<Tag>()
                 .eq(Tag::getStatus, 1)
                 .orderByAsc(Tag::getSortOrder);
-        if (type != null) {
-            queryWrapper.eq(Tag::getType, type);
+        if (scope != null && !scope.isBlank()) {
+            queryWrapper.and(w -> w.eq(Tag::getScope, scope).or().eq(Tag::getScope, "BOTH"));
         }
         return tagMapper.selectList(queryWrapper);
     }
@@ -46,8 +53,8 @@ public class TagServiceImpl implements TagService {
     public PageResult<Tag> page(TagQueryDTO dto, PageQuery pageQuery) {
         LambdaQueryWrapper<Tag> queryWrapper = new LambdaQueryWrapper<Tag>()
                 .orderByAsc(Tag::getSortOrder);
-        if (dto != null && dto.getType() != null) {
-            queryWrapper.eq(Tag::getType, dto.getType());
+        if (dto != null && StringUtils.hasText(dto.getScope())) {
+            queryWrapper.eq(Tag::getScope, dto.getScope());
         }
         if (dto != null && StringUtils.hasText(dto.getName())) {
             queryWrapper.like(Tag::getName, dto.getName());
