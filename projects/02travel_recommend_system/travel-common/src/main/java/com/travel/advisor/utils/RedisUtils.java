@@ -64,6 +64,14 @@ public class RedisUtils {
         return redisTemplate.hasKey(key);
     }
 
+    public Long increment(String key) {
+        return redisTemplate.opsForValue().increment(key);
+    }
+
+    public Long increment(String key, long delta) {
+        return redisTemplate.opsForValue().increment(key, delta);
+    }
+
     public Boolean expire(String key, Duration duration) {
         return redisTemplate.expire(key, duration);
     }

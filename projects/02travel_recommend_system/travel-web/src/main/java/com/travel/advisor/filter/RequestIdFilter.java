@@ -12,6 +12,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * 请求ID过滤器，用于生成和传递请求ID
+ */
 @Component
 public class RequestIdFilter extends OncePerRequestFilter {
 
@@ -25,7 +28,9 @@ public class RequestIdFilter extends OncePerRequestFilter {
             requestId = UUID.randomUUID().toString();
         }
 
+        // 设置请求ID到上下文
         RequestContext.setRequestId(requestId);
+        // 设置请求ID到响应头
         response.setHeader(REQUEST_ID_HEADER, requestId);
 
         try {

@@ -3,6 +3,7 @@ package com.travel.advisor.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.page.PageResult;
+import com.travel.advisor.common.page.PageUtils;
 import com.travel.advisor.common.enums.TravelPlanItemType;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.plan.TravelPlanCreateDTO;
@@ -68,7 +69,7 @@ public class TravelPlanServiceImpl implements TravelPlanService {
     @Override
     public PageResult<TravelPlanDetailVO> pageMyPlans(TravelPlanQueryDTO pageQuery) {
         Long userId = getCurrentUserIdRequired();
-        validatePageSize(pageQuery.getPageSize());
+        PageUtils.validatePageSize(pageQuery.getPageSize());
 
         Page<TravelPlan> page = new Page<>(pageQuery.getPageNum(), pageQuery.getPageSize());
         LambdaQueryWrapper<TravelPlan> wrapper = new LambdaQueryWrapper<TravelPlan>()
@@ -417,16 +418,6 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         return lastItem.getSortOrder() + 1;
     }
 
-    /**
-     * 验证分页查询的pageSize参数，确保用户请求的每页数据量不会超过系统设定的最大值。该方法会检查传入的pageSize参数，如果pageSize不为null且大于100，则抛出一个业务异常，提示用户pageSize不能大于100。通过这种验证，可以防止用户请求过多的数据导致系统性能问题，同时也可以引导用户合理使用分页功能，提升系统的稳定性和响应速度。
-     * 
-     * @param pageSize
-     */
-    private void validatePageSize(Integer pageSize) {
-        if (pageSize != null && pageSize > 100) {
-            throw new BusinessException(ResultCode.BAD_REQUEST, "pageSize 不能大于 100");
-        }
-    }
 
     /**
      * 解析行程项的类型，确保传入的itemType参数是合法的行程项类型。如果itemType为null，则默认设置为自定义类型（ITEM_TYPE_CUSTOM）。如果itemType不为null，则会调用TravelPlanItemType枚举类的fromCode方法验证该类型是否合法，如果不合法则抛出一个业务异常，提示用户itemType非法。通过这种方式，可以保证行程项的数据合法性和系统的一致性，避免出现不符合预期的行程项类型。

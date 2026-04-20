@@ -13,6 +13,7 @@ import com.travel.advisor.security.LoginUser;
 import com.travel.advisor.security.TokenService;
 import com.travel.advisor.service.AuthService;
 import com.travel.advisor.service.CaptchaService;
+import com.travel.advisor.utils.RedisUtils;
 import com.travel.advisor.vo.auth.LoginVO;
 import com.travel.advisor.vo.auth.RegisterVO;
 import com.travel.advisor.vo.auth.UserInfoVO;
@@ -22,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 
@@ -33,9 +35,16 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final CaptchaService captchaService;
     private final TokenService tokenService;
+    private final RedisUtils redisUtils;
+
+    private static final String REGISTER_LIMIT_PREFIX = "auth:limit:register:";
+    private static final String RESET_LIMIT_PREFIX = "auth:limit:reset:";
+    private static final int REGISTER_MAX_PER_HOUR = 5;
+    private static final int RESET_MAX_PER_HOUR = 5;
 
     @Override
     public RegisterVO register(UserRegisterDTO dto) {
+        checkRateLimit(REGISTER_LIMIT_PREFIX + dto.getUsername(), REGISTER_MAX_PER_HOUR);
         captchaService.validateCaptcha(dto.getCaptchaId(), dto.getCaptchaCode());
         if (!dto.getPassword().equals(dto.getConfirmPassword())) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "两次密码输入不一致");
@@ -148,7 +157,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void resetPassword(ResetPasswordDTO dto) {
-//        captchaService.validateCaptcha(dto.getCaptchaId(), dto.getCaptchaCode());
+        checkRateLimit(RESET_LIMIT_PREFIX + dto.getPhone(), RESET_MAX_PER_HOUR);
+        captchaService.validateCaptcha(dto.getCaptchaId(), dto.getCaptchaCode());
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
             .eq(User::getPhone, dto.getPhone())
             .last("limit 1"));
@@ -177,6 +187,12 @@ public class AuthServiceImpl implements AuthService {
         return userMapper.selectOne(queryWrapper);
     }
 
+    /**
+     * 在注册前检查用户名或手机号是否已存在，并抛出冲突异常。
+
+    使用 LambdaQueryWrapper 同时匹配用户名和手机号
+超过 0 时抛出 BusinessException(CONFLICT, "用户名或手机号已存在")
+     */
     private void checkUserExists(String username, String phone) {
         Long count = userMapper.selectCount(new LambdaQueryWrapper<User>()
             .eq(User::getUsername, username)
@@ -184,6 +200,17 @@ public class AuthServiceImpl implements AuthService {
             .eq(User::getPhone, phone));
         if (count != null && count > 0) {
             throw new BusinessException(ResultCode.CONFLICT, "用户名或手机号已存在");
+        }
+    }
+
+    /** Redis 滑动窗口限流：key 每小时最大请求次数 */
+    private void checkRateLimit(String key, int maxPerHour) {
+        Long count = redisUtils.increment(key);
+        if (count != null && count == 1) {
+            redisUtils.expire(key, Duration.ofHours(1));
+        }
+        if (count != null && count > maxPerHour) {
+            throw new BusinessException(ResultCode.TOO_MANY_REQUESTS, "操作过于频繁，请稍后再试");
         }
     }
 

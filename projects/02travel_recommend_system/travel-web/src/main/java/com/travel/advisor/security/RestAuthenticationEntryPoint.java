@@ -1,6 +1,7 @@
 package com.travel.advisor.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travel.advisor.common.context.RequestContext;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.common.result.ResultCode;
 import jakarta.servlet.ServletException;
@@ -27,6 +28,9 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(Result.fail(ResultCode.UNAUTHORIZED)));
+        Result<Void> result = Result.fail(ResultCode.UNAUTHORIZED);
+        result.setRequestId(RequestContext.getRequestId());
+        result.setTimestamp(System.currentTimeMillis());
+        response.getWriter().write(objectMapper.writeValueAsString(result));
     }
 }
