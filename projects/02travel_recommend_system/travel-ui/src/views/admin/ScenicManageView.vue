@@ -12,64 +12,12 @@
             v-model="query.keyword"
             placeholder="景点名"
             clearable
-            style="width: 200px"
+            style="width: 140px"
             @keyup.enter="onSearch"
           />
         </el-form-item>
-        <el-form-item label="省份">
-          <el-select
-            v-model="query.provinceId"
-            clearable
-            placeholder="请选择省份"
-            style="width: 160px"
-            @change="onProvinceChange"
-          >
-            <el-option
-              v-for="item in provinceOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="城市">
-          <el-select
-            v-model="query.cityId"
-            clearable
-            placeholder="请选择城市"
-            style="width: 160px"
-            :disabled="!query.provinceId"
-          >
-            <el-option
-              v-for="item in cityOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 120px">
-            <el-option
-              v-for="item in commonStatusOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="等级">
-          <el-select v-model="query.level" clearable placeholder="全部" style="width: 140px">
-            <el-option
-              v-for="item in scenicLevelOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="景点分类">
-          <el-select v-model="query.category" clearable placeholder="全部" style="width: 160px">
+          <el-select v-model="query.category" clearable placeholder="全部" style="width: 120px">
             <el-option
               v-for="item in scenicCategoryOptions"
               :key="item.code"
@@ -83,7 +31,7 @@
             v-model="query.tagScope"
             clearable
             placeholder="全部"
-            style="width: 140px"
+            style="width: 100px"
             @change="onTagScopeChange"
           >
             <el-option
@@ -99,7 +47,7 @@
             v-model="query.tagCategory"
             clearable
             placeholder="全部"
-            style="width: 160px"
+            style="width: 120px"
             :disabled="!query.tagScope"
             @change="onTagCategoryChange"
           >
@@ -111,7 +59,7 @@
             v-model="query.tagId"
             clearable
             placeholder="全部"
-            style="width: 160px"
+            style="width: 120px"
             :disabled="!query.tagCategory"
           >
             <el-option
@@ -122,13 +70,63 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="onSearch">查询</el-button>
+        <el-form-item label="省份">
+          <el-select
+            v-model="query.provinceId"
+            clearable
+            placeholder="请选择省份"
+            style="width: 120px"
+            @change="onProvinceChange"
+          >
+            <el-option
+              v-for="item in provinceOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item label="城市">
+          <el-select
+            v-model="query.cityId"
+            clearable
+            placeholder="请选择城市"
+            style="width: 120px"
+            :disabled="!query.provinceId"
+          >
+            <el-option
+              v-for="item in cityOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.status" clearable placeholder="全部" style="width: 100px">
+            <el-option
+              v-for="item in commonStatusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="等级">
+          <el-select v-model="query.level" clearable placeholder="全部" style="width: 100px">
+            <el-option
+              v-for="item in scenicLevelOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item style="margin-left: auto">
+          <el-button type="primary" @click="onSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="success" @click="openCreateDialog">新增景点</el-button>
         </el-form-item>
       </el-form>
@@ -366,198 +364,205 @@
     <el-dialog
       v-model="formVisible"
       :title="isEdit ? '编辑景点' : '新增景点'"
-      width="640px"
+      width="620px"
+      class="scenic-form-dialog"
       :close-on-click-modal="false"
       destroy-on-close
     >
-      <el-form ref="formRef" :model="formModel" :rules="rules" label-width="100px">
-        <el-form-item label="景点名称" prop="name">
-          <el-input v-model="formModel.name" placeholder="请输入景点名称" />
-        </el-form-item>
-        <el-form-item label="地区" prop="regionId">
-          <el-cascader
-            v-model="formModel.regionId"
-            :options="provinceOptions"
-            :props="regionCascaderProps"
-            placeholder="请选择省/市/区县"
-            filterable
-            clearable
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="地址" prop="address">
-          <el-input v-model="formModel.address" placeholder="请输入详细地址" />
-        </el-form-item>
-        <el-form-item label="封面图URL" prop="coverImage">
-          <el-input v-model="formModel.coverImage" placeholder="请输入封面图 URL" />
-        </el-form-item>
-        <el-form-item label="简介" prop="description">
-          <el-input
-            v-model="formModel.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入简介"
-          />
-        </el-form-item>
-        <el-form-item label="详细内容">
-          <el-input
-            v-model="formModel.detailContent"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入详细内容"
-          />
-        </el-form-item>
-        <el-form-item label="开放时间">
-          <el-input v-model="formModel.openTime" placeholder="例如：08:00-17:30" />
-        </el-form-item>
-        <el-form-item label="票务说明">
-          <el-input
-            v-model="formModel.ticketInfo"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入票务说明"
-          />
-        </el-form-item>
-        <el-form-item label="票价">
-          <el-input-number
-            v-model="formModel.ticketPrice"
-            :min="0"
-            :precision="2"
-            :step="1"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="等级">
-          <el-select
-            v-model="formModel.level"
-            clearable
-            placeholder="请选择等级"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in scenicLevelOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="分类">
-          <el-select
-            v-model="formModel.category"
-            clearable
-            placeholder="请选择分类"
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in scenicCategoryOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="最佳季节">
-          <el-input v-model="formModel.bestSeason" placeholder="例如：春秋" />
-        </el-form-item>
-        <el-form-item label="建议游玩时长">
-          <el-input v-model="formModel.suggestedHours" placeholder="例如：2-3 小时 / 半天 / 1 天" />
-        </el-form-item>
-        <el-form-item label="游玩提示">
-          <el-input
-            v-model="formModel.tips"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入游玩提示"
-          />
-        </el-form-item>
-        <el-form-item label="标签作用域">
-          <el-select
-            v-model="formModel.tagScope"
-            clearable
-            placeholder="请选择标签作用域"
-            style="width: 100%"
-            @change="onFormTagScopeChange"
-          >
-            <el-option
-              v-for="item in tagScopeOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标签分类">
-          <el-select
-            v-model="formModel.tagCategory"
-            clearable
-            placeholder="请选择标签分类"
-            style="width: 100%"
-            :disabled="!formModel.tagScope"
-            @change="onFormTagCategoryChange"
-          >
-            <el-option
-              v-for="item in formTagCategoryOptions"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标签" prop="tagIds">
-          <el-select
-            v-model="formModel.tagIds"
-            multiple
-            placeholder="请选择标签"
-            filterable
-            :disabled="!formModel.tagCategory"
-          >
-            <el-option
-              v-for="item in formTagOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="图片ID列表">
-          <el-select
-            v-model="imageIdTagValues"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="输入数字后回车，可多选"
-            style="width: 100%"
-          >
-            <el-option v-for="item in imageIdTagValues" :key="item" :label="item" :value="item" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="formModel.status">
-            <el-radio :value="1">上架</el-radio>
-            <el-radio :value="0">下架</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="排序值">
-          <el-input-number
-            v-model="formModel.sortOrder"
-            :precision="0"
-            :step="1"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="是否推荐">
-          <el-radio-group v-model="formModel.isRecommended">
-            <el-radio :value="1">是</el-radio>
-            <el-radio :value="0">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
+      <div class="dialog-body-scroll">
+        <el-form ref="formRef" :model="formModel" :rules="rules" label-position="top">
+          <div class="form-section">
+            <div class="form-section-title">基本信息</div>
+            <div class="form-section-content">
+              <el-form-item label="景点名称" prop="name">
+                <el-input v-model="formModel.name" placeholder="请输入景点名称" />
+              </el-form-item>
+              <el-form-item label="地区" prop="regionId">
+                <el-cascader
+                  v-model="formModel.regionId"
+                  :options="provinceOptions"
+                  :props="regionCascaderProps"
+                  placeholder="请选择省/市/区县"
+                  filterable
+                  clearable
+                  style="width: 100%"
+                />
+              </el-form-item>
+              <el-form-item label="地址" prop="address">
+                <el-input v-model="formModel.address" placeholder="请输入详细地址" />
+              </el-form-item>
+              <el-form-item label="封面图URL" prop="coverImage">
+                <el-input v-model="formModel.coverImage" placeholder="请输入封面图 URL" />
+              </el-form-item>
+              <el-form-item label="开放时间">
+                <el-input v-model="formModel.openTime" placeholder="例如：08:00-17:30" />
+              </el-form-item>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">描述信息</div>
+            <div class="form-section-content">
+              <el-form-item label="简介" prop="description">
+                <el-input
+                  v-model="formModel.description"
+                  type="textarea"
+                  :rows="2"
+                  placeholder="请输入简介"
+                />
+              </el-form-item>
+              <el-form-item label="详细内容">
+                <el-input
+                  v-model="formModel.detailContent"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="请输入详细内容"
+                />
+              </el-form-item>
+              <el-form-item label="票务说明">
+                <el-input
+                  v-model="formModel.ticketInfo"
+                  type="textarea"
+                  :rows="2"
+                  placeholder="请输入票务说明"
+                />
+              </el-form-item>
+              <el-form-item label="游玩提示">
+                <el-input
+                  v-model="formModel.tips"
+                  type="textarea"
+                  :rows="2"
+                  placeholder="请输入游玩提示"
+                />
+              </el-form-item>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">景点属性</div>
+            <div class="form-section-content">
+              <div class="form-row-grid">
+                <el-form-item label="票价">
+                  <el-input-number
+                    v-model="formModel.ticketPrice"
+                    :min="0"
+                    :precision="2"
+                    :step="1"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+                <el-form-item label="等级">
+                  <el-select
+                    v-model="formModel.level"
+                    clearable
+                    placeholder="请选择等级"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in scenicLevelOptions"
+                      :key="item.code"
+                      :label="item.desc"
+                      :value="item.code"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+              <div class="form-row-grid">
+                <el-form-item label="分类">
+                  <el-select
+                    v-model="formModel.category"
+                    clearable
+                    placeholder="请选择分类"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in scenicCategoryOptions"
+                      :key="item.code"
+                      :label="item.desc"
+                      :value="item.code"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="最佳季节">
+                  <el-input v-model="formModel.bestSeason" placeholder="例如：春秋" />
+                </el-form-item>
+              </div>
+              <div class="form-row-grid">
+                <el-form-item label="建议游玩时长">
+                  <el-input
+                    v-model="formModel.suggestedHours"
+                    placeholder="例如：2-3 小时 / 半天 / 1 天"
+                  />
+                </el-form-item>
+                <el-form-item label="状态" prop="status">
+                  <el-radio-group v-model="formModel.status">
+                    <el-radio :value="1">上架</el-radio>
+                    <el-radio :value="0">下架</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </div>
+              <div class="form-row-grid">
+                <el-form-item label="排序值">
+                  <el-input-number
+                    v-model="formModel.sortOrder"
+                    :precision="0"
+                    :step="1"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+                <el-form-item label="是否推荐">
+                  <el-radio-group v-model="formModel.isRecommended">
+                    <el-radio :value="1">是</el-radio>
+                    <el-radio :value="0">否</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">标签与图片</div>
+            <div class="form-section-content">
+              <el-form-item label="标签" prop="tagIds">
+                <el-cascader
+                  v-model="tagCascaderValue"
+                  :options="tagCascaderOptions"
+                  :props="tagCascaderProps"
+                  placeholder="请选择标签"
+                  style="width: 100%"
+                  filterable
+                  collapse-tags
+                  :show-all-levels="false"
+                />
+              </el-form-item>
+              <el-form-item label="图片ID列表">
+                <el-select
+                  v-model="imageIdTagValues"
+                  multiple
+                  filterable
+                  allow-create
+                  default-first-option
+                  placeholder="输入数字后回车，可多选"
+                  style="width: 100%"
+                >
+                  <el-option
+                    v-for="item in imageIdTagValues"
+                    :key="item"
+                    :label="item"
+                    :value="item"
+                  />
+                </el-select>
+              </el-form-item>
+            </div>
+          </div>
+        </el-form>
+      </div>
 
       <template #footer>
-        <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">提交</el-button>
+        <div class="dialog-footer">
+          <el-button @click="formVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="submitForm">提交</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -565,7 +570,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
-import { ElMessage, type FormInstance, type FormRules } from "element-plus";
+import { ElMessage, type CascaderOption, type FormInstance, type FormRules } from "element-plus";
 import {
   createAdminScenic,
   getAdminScenicDetail,
@@ -628,8 +633,6 @@ interface ScenicFormModel {
   tips: string;
   sortOrder?: number;
   isRecommended: number;
-  tagScope?: string;
-  tagCategory?: string;
   tagIds: number[];
   imageIds: number[];
   status: number;
@@ -663,11 +666,64 @@ const tagOptions = ref<CommonTagItem[]>([]);
 const tagScopeOptions = ref<DictItem[]>([]);
 const tagCategoryOptions = ref<string[]>([]);
 const searchTagOptions = ref<CommonTagItem[]>([]);
-const formTagCategoryOptions = ref<string[]>([]);
-const formTagOptions = ref<CommonTagItem[]>([]);
 const scenicLevelOptions = ref<DictItem[]>([]);
 const scenicCategoryOptions = ref<DictItem[]>([]);
 const commonStatusOptions = ref<DictItem[]>([]);
+
+const tagCascaderProps = {
+  multiple: true,
+  checkStrictly: false,
+  emitPath: true,
+};
+
+const tagCascaderOptions = computed<CascaderOption[]>(() => {
+  const scopeMap = new Map<string, { label: string; categories: Map<string, CascaderOption[]> }>();
+  for (const tag of tagOptions.value) {
+    if (!tag.scope || !tag.category) continue;
+    if (!scopeMap.has(tag.scope)) {
+      const scopeLabel = tagScopeOptions.value.find((s) => s.code === tag.scope)?.desc ?? tag.scope;
+      scopeMap.set(tag.scope, { label: scopeLabel, categories: new Map() });
+    }
+    const scopeData = scopeMap.get(tag.scope)!;
+    if (!scopeData.categories.has(tag.category)) {
+      scopeData.categories.set(tag.category, []);
+    }
+    scopeData.categories.get(tag.category)!.push({
+      value: tag.id,
+      label: tag.name,
+    } as CascaderOption);
+  }
+  return Array.from(scopeMap.entries()).map(([scopeValue, scopeData]) => ({
+    value: scopeValue,
+    label: scopeData.label,
+    children: Array.from(scopeData.categories.entries()).map(([catValue, tags]) => ({
+      value: catValue,
+      label: catValue,
+      children: tags,
+    })),
+  })) as CascaderOption[];
+});
+
+const tagCascaderValue = computed<(string | number)[][]>({
+  get() {
+    return formModel.tagIds
+      .map((id) => {
+        const tag = tagOptions.value.find((t) => t.id === id);
+        if (!tag) return null;
+        return [tag.scope, tag.category, tag.id];
+      })
+      .filter((item): item is [string, string, number] => item !== null);
+  },
+  set(val) {
+    if (!val || val.length === 0) {
+      formModel.tagIds = [];
+      return;
+    }
+    formModel.tagIds = Array.from(
+      new Set(val.map((path) => Number(path[path.length - 1])).filter((id) => Number.isFinite(id)))
+    );
+  },
+});
 
 const query = reactive<SearchQuery>({
   pageNum: 1,
@@ -700,8 +756,6 @@ const formModel = reactive<ScenicFormModel>({
   tips: "",
   sortOrder: undefined,
   isRecommended: 0,
-  tagScope: undefined,
-  tagCategory: undefined,
   tagIds: [],
   imageIds: [],
   status: 1,
@@ -801,13 +855,9 @@ function resetFormModel(): void {
   formModel.tips = "";
   formModel.sortOrder = undefined;
   formModel.isRecommended = 0;
-  formModel.tagScope = undefined;
-  formModel.tagCategory = undefined;
   formModel.tagIds = [];
   formModel.imageIds = [];
   formModel.status = 1;
-  formTagCategoryOptions.value = [];
-  formTagOptions.value = [];
 }
 
 async function loadMetaData(): Promise<void> {
@@ -826,35 +876,6 @@ async function loadMetaData(): Promise<void> {
   scenicCategoryOptions.value = categories;
   commonStatusOptions.value = statuses;
   tagScopeOptions.value = scopes;
-}
-
-async function onFormTagScopeChange(scope?: string): Promise<void> {
-  formModel.tagCategory = undefined;
-  formModel.tagIds = [];
-  formTagOptions.value = [];
-  if (scope) {
-    try {
-      formTagCategoryOptions.value = await getTagCategories(scope);
-    } catch {
-      formTagCategoryOptions.value = [];
-    }
-  } else {
-    formTagCategoryOptions.value = [];
-  }
-}
-
-async function onFormTagCategoryChange(category?: string): Promise<void> {
-  formModel.tagIds = [];
-  if (category && formModel.tagScope) {
-    try {
-      const allTags = await getTagsByScope(formModel.tagScope);
-      formTagOptions.value = allTags.filter((t) => t.category === category);
-    } catch {
-      formTagOptions.value = [];
-    }
-  } else {
-    formTagOptions.value = [];
-  }
 }
 
 async function onTagScopeChange(scope?: string): Promise<void> {
@@ -990,37 +1011,9 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.imageIds = (detail.images ?? [])
       .map((item) => Number(item.fileResourceId))
       .filter((id) => Number.isFinite(id));
-    // 回填标签选择器的scope和category
-    await restoreTagSelection(detail.tagIds ?? []);
     formVisible.value = true;
   } catch {
     ElMessage.error("加载编辑数据失败");
-  }
-}
-
-async function restoreTagSelection(tagIds: number[]): Promise<void> {
-  if (tagIds.length === 0) return;
-  // 从已加载的标签列表中查找第一个已选标签的信息
-  const firstTag = tagOptions.value.find((t) => t.id === tagIds[0]);
-  if (!firstTag) return;
-  formModel.tagScope = firstTag.scope;
-  formModel.tagCategory = firstTag.category;
-  // 加载分类列表
-  if (firstTag.scope) {
-    try {
-      formTagCategoryOptions.value = await getTagCategories(firstTag.scope);
-    } catch {
-      formTagCategoryOptions.value = [];
-    }
-  }
-  // 加载该分类下的标签列表
-  if (firstTag.scope && firstTag.category) {
-    try {
-      const allTags = await getTagsByScope(firstTag.scope);
-      formTagOptions.value = allTags.filter((t) => t.category === firstTag.category);
-    } catch {
-      formTagOptions.value = [];
-    }
   }
 }
 
@@ -1103,7 +1096,20 @@ onMounted(async () => {
 }
 
 .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
   margin-bottom: 12px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.filter-form :deep(.el-form-item__label) {
+  padding-right: 6px;
 }
 
 .pagination-row {
@@ -1180,5 +1186,97 @@ onMounted(async () => {
 
 .page-container {
   padding: 0px;
+}
+
+.scenic-form-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-right: 0;
+}
+
+.scenic-form-dialog :deep(.el-dialog__title) {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.scenic-form-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.scenic-form-dialog .dialog-body-scroll {
+  max-height: calc(85vh - 120px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.scenic-form-dialog .form-section {
+  margin-bottom: 24px;
+}
+
+.scenic-form-dialog .form-section:last-child {
+  margin-bottom: 0;
+}
+
+.scenic-form-dialog .form-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.scenic-form-dialog :deep(.el-form-item__label) {
+  font-size: 13px;
+  color: #606266;
+  line-height: 20px;
+  padding-bottom: 4px;
+}
+
+.scenic-form-dialog :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.scenic-form-dialog :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.scenic-form-dialog .form-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.scenic-form-dialog .form-row-grid :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.scenic-form-dialog :deep(.el-input__wrapper),
+.scenic-form-dialog :deep(.el-textarea__inner),
+.scenic-form-dialog :deep(.el-input-number .el-input__wrapper) {
+  border-radius: 4px;
+}
+
+.scenic-form-dialog :deep(.el-input__wrapper),
+.scenic-form-dialog :deep(.el-textarea__inner) {
+  border-color: #dcdfe6;
+}
+
+.scenic-form-dialog :deep(.el-input__wrapper.is-focus),
+.scenic-form-dialog :deep(.el-textarea__inner:focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.scenic-form-dialog .dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.scenic-form-dialog :deep(.el-dialog__footer) {
+  padding: 0;
+  border-top: none;
 }
 </style>

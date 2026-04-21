@@ -7,7 +7,7 @@
 
       <el-form :inline="true" :model="query" class="filter-form">
         <el-form-item label="模块">
-          <el-select v-model="query.module" clearable placeholder="全部" style="width: 160px">
+          <el-select v-model="query.module" clearable placeholder="全部" style="width: 120px">
             <el-option
               v-for="item in moduleOptions"
               :key="item.code"
@@ -17,13 +17,18 @@
           </el-select>
         </el-form-item>
         <el-form-item label="动作">
-          <el-input v-model="query.action" clearable placeholder="如 update" />
+          <el-input v-model="query.action" clearable placeholder="如 update" style="width: 120px" />
         </el-form-item>
         <el-form-item label="管理员">
-          <el-input v-model="query.adminUsername" clearable placeholder="管理员用户名" />
+          <el-input
+            v-model="query.adminUsername"
+            clearable
+            placeholder="管理员用户名"
+            style="width: 140px"
+          />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 120px">
+          <el-select v-model="query.status" clearable placeholder="全部" style="width: 100px">
             <el-option
               v-for="item in statusOptions"
               :key="item.code"
@@ -32,10 +37,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="primary" @click="onSearch">查询</el-button>
-        </el-form-item>
-        <el-form-item>
           <el-button @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
@@ -137,11 +140,11 @@ import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
 
 const { options: moduleOptions } = useDictOptions(
   "operation-log-module",
-  getOperationLogModuleDict,
+  getOperationLogModuleDict
 );
 const { options: statusOptions } = useDictOptions(
   "operation-log-status",
-  getOperationLogStatusDict,
+  getOperationLogStatusDict
 );
 
 const loading = ref(false);
@@ -219,7 +222,20 @@ onMounted(() => {
 }
 
 .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
   margin-bottom: 12px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.filter-form :deep(.el-form-item__label) {
+  padding-right: 6px;
 }
 
 .pagination-row {

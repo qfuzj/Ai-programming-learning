@@ -7,10 +7,15 @@
 
       <el-form :inline="true" :model="query" class="filter-form">
         <el-form-item label="配置键">
-          <el-input v-model="query.keyword" clearable placeholder="如 llm.model" />
+          <el-input
+            v-model="query.keyword"
+            clearable
+            placeholder="如 llm.model"
+            style="width: 160px"
+          />
         </el-form-item>
         <el-form-item label="配置分组">
-          <el-select v-model="query.configGroup" clearable placeholder="全部" style="width: 180px">
+          <el-select v-model="query.configGroup" clearable placeholder="全部" style="width: 140px">
             <el-option
               v-for="item in configGroupOptions"
               :key="item.code"
@@ -19,10 +24,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="primary" @click="onSearch">查询</el-button>
-        </el-form-item>
-        <el-form-item>
           <el-button @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
@@ -68,33 +71,49 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="editDialogVisible" title="编辑配置" width="560px">
-      <el-form ref="editFormRef" :model="editing" :rules="editRules" label-position="top">
-        <el-form-item label="配置键">
-          <el-input v-model="editing.configKey" disabled />
-        </el-form-item>
-        <el-form-item label="配置值" prop="configValue">
-          <el-input v-model="editing.configValue" type="textarea" :rows="4" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="配置类型">
-              <el-input v-model="editing.configType" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="配置分组">
-              <el-input v-model="editing.configGroup" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="说明">
-          <el-input v-model="editing.description" />
-        </el-form-item>
-      </el-form>
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑配置"
+      width="620px"
+      class="config-form-dialog"
+    >
+      <div class="dialog-body-scroll">
+        <el-form ref="editFormRef" :model="editing" :rules="editRules" label-position="top">
+          <div class="form-section">
+            <div class="form-section-title">配置信息</div>
+            <div class="form-section-content">
+              <el-form-item label="配置键">
+                <el-input v-model="editing.configKey" disabled />
+              </el-form-item>
+              <el-form-item label="配置值" prop="configValue">
+                <el-input v-model="editing.configValue" type="textarea" :rows="3" />
+              </el-form-item>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">元数据</div>
+            <div class="form-section-content">
+              <div class="form-row-grid">
+                <el-form-item label="配置类型">
+                  <el-input v-model="editing.configType" disabled />
+                </el-form-item>
+                <el-form-item label="配置分组">
+                  <el-input v-model="editing.configGroup" disabled />
+                </el-form-item>
+              </div>
+              <el-form-item label="说明">
+                <el-input v-model="editing.description" />
+              </el-form-item>
+            </div>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button :loading="saving" type="primary" @click="onSave">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button :loading="saving" type="primary" @click="onSave">保存</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -111,21 +130,11 @@ import {
   type SystemConfigQuery,
   type SystemConfigUpdatePayload,
 } from "@/api/system-config";
-import {
-  getConfigGroupDict,
-  getConfigTypeDict,
-  getYesNoFlagDict,
-} from "@/api/dict";
+import { getConfigGroupDict, getConfigTypeDict, getYesNoFlagDict } from "@/api/dict";
 import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
 
-const { options: configGroupOptions } = useDictOptions(
-  "config-group",
-  getConfigGroupDict,
-);
-const { options: configTypeOptions } = useDictOptions(
-  "config-type",
-  getConfigTypeDict,
-);
+const { options: configGroupOptions } = useDictOptions("config-group", getConfigGroupDict);
+const { options: configTypeOptions } = useDictOptions("config-type", getConfigTypeDict);
 const { options: yesNoOptions } = useDictOptions("yes-no-flag", getYesNoFlagDict);
 
 const loading = ref(false);
@@ -247,7 +256,20 @@ onMounted(() => {
 }
 
 .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
   margin-bottom: 12px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.filter-form :deep(.el-form-item__label) {
+  padding-right: 6px;
 }
 
 .pagination-row {
@@ -258,5 +280,95 @@ onMounted(() => {
 
 .page-container {
   padding: 0px;
+}
+
+.config-form-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-right: 0;
+}
+
+.config-form-dialog :deep(.el-dialog__title) {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.config-form-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.config-form-dialog .dialog-body-scroll {
+  max-height: calc(85vh - 120px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.config-form-dialog .form-section {
+  margin-bottom: 24px;
+}
+
+.config-form-dialog .form-section:last-child {
+  margin-bottom: 0;
+}
+
+.config-form-dialog .form-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.config-form-dialog :deep(.el-form-item__label) {
+  font-size: 13px;
+  color: #606266;
+  line-height: 20px;
+  padding-bottom: 4px;
+}
+
+.config-form-dialog :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.config-form-dialog :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.config-form-dialog .form-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.config-form-dialog .form-row-grid :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.config-form-dialog :deep(.el-input__wrapper),
+.config-form-dialog :deep(.el-textarea__inner),
+.config-form-dialog :deep(.el-input-number .el-input__wrapper) {
+  border-radius: 4px;
+}
+
+.config-form-dialog :deep(.el-input__wrapper) {
+  border-color: #dcdfe6;
+}
+
+.config-form-dialog :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.config-form-dialog .dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.config-form-dialog :deep(.el-dialog__footer) {
+  padding: 0;
+  border-top: none;
 }
 </style>

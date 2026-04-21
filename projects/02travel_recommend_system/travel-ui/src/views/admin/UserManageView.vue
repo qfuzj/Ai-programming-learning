@@ -10,12 +10,12 @@
           <el-input
             v-model="query.keyword"
             clearable
-            style="width: 220px"
+            style="width: 160px"
             placeholder="用户名/昵称/手机号"
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 120px">
+          <el-select v-model="query.status" clearable placeholder="全部" style="width: 100px">
             <el-option
               v-for="item in statusOptions"
               :key="item.code"
@@ -24,10 +24,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="primary" @click="onSearch">查询</el-button>
-        </el-form-item>
-        <el-form-item>
           <el-button @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
@@ -233,7 +231,20 @@ onMounted(() => {
 }
 
 .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
   margin-bottom: 12px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.filter-form :deep(.el-form-item__label) {
+  padding-right: 6px;
 }
 
 .pagination-row {

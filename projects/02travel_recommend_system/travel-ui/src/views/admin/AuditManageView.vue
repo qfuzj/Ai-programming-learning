@@ -11,12 +11,12 @@
             v-model="query.submitUserId"
             :min="1"
             :controls="false"
-            style="width: 200px"
+            style="width: 140px"
             placeholder="请输入用户ID"
           />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.auditStatus" clearable style="width: 120px" placeholder="全部">
+          <el-select v-model="query.auditStatus" clearable style="width: 100px" placeholder="全部">
             <el-option
               v-for="item in auditStatusOptions"
               :key="item.code"
@@ -25,10 +25,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="primary" @click="onSearch">查询</el-button>
-        </el-form-item>
-        <el-form-item>
           <el-button @click="onReset">重置</el-button>
         </el-form-item>
       </el-form>
@@ -62,7 +60,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button link type="primary" @click="openDetail(scope.row.id)">查看详情</el-button>
             <el-popconfirm
@@ -153,22 +151,32 @@
       <div v-else class="text-muted">暂无图片</div>
     </el-dialog>
 
-    <el-dialog v-model="rejectVisible" title="拒绝原因" width="520px" destroy-on-close>
-      <el-form label-position="top">
-        <el-form-item label="原因" required>
-          <el-input
-            v-model="rejectForm.reason"
-            type="textarea"
-            :rows="4"
-            maxlength="200"
-            show-word-limit
-            placeholder="请输入拒绝原因"
-          />
-        </el-form-item>
-      </el-form>
+    <el-dialog
+      v-model="rejectVisible"
+      title="拒绝原因"
+      width="520px"
+      class="audit-form-dialog"
+      destroy-on-close
+    >
+      <div class="dialog-body-scroll">
+        <el-form label-position="top">
+          <el-form-item label="原因" required>
+            <el-input
+              v-model="rejectForm.reason"
+              type="textarea"
+              :rows="3"
+              maxlength="200"
+              show-word-limit
+              placeholder="请输入拒绝原因"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
       <template #footer>
-        <el-button @click="rejectVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitReject">确认拒绝</el-button>
+        <div class="dialog-footer">
+          <el-button @click="rejectVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitReject">确认拒绝</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -192,7 +200,7 @@ import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
 
 const { options: auditStatusOptions } = useDictOptions(
   "content-audit-status",
-  getContentAuditStatusDict,
+  getContentAuditStatusDict
 );
 
 const loading = ref(false);
@@ -331,7 +339,20 @@ onMounted(() => {
 }
 
 .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
   margin-bottom: 12px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.filter-form :deep(.el-form-item__label) {
+  padding-right: 6px;
 }
 
 .pagination-row {
@@ -356,5 +377,57 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.audit-form-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-right: 0;
+}
+
+.audit-form-dialog :deep(.el-dialog__title) {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.audit-form-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.audit-form-dialog .dialog-body-scroll {
+  max-height: calc(85vh - 120px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.audit-form-dialog :deep(.el-form-item__label) {
+  font-size: 13px;
+  color: #606266;
+  line-height: 20px;
+  padding-bottom: 4px;
+}
+
+.audit-form-dialog :deep(.el-input__wrapper),
+.audit-form-dialog :deep(.el-textarea__inner) {
+  border-radius: 4px;
+  border-color: #dcdfe6;
+}
+
+.audit-form-dialog :deep(.el-input__wrapper.is-focus),
+.audit-form-dialog :deep(.el-textarea__inner:focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.audit-form-dialog .dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.audit-form-dialog :deep(.el-dialog__footer) {
+  padding: 0;
+  border-top: none;
 }
 </style>

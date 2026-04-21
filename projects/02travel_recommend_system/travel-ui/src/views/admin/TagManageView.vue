@@ -10,12 +10,12 @@
           <el-input
             v-model="query.name"
             clearable
-            style="width: 220px"
+            style="width: 140px"
             placeholder="请输入标签名"
           />
         </el-form-item>
         <el-form-item label="作用域">
-          <el-select v-model="query.scope" clearable style="width: 140px" placeholder="全部">
+          <el-select v-model="query.scope" clearable style="width: 100px" placeholder="全部">
             <el-option
               v-for="item in tagScopeOptions"
               :key="item.code"
@@ -25,7 +25,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="query.status" clearable style="width: 120px" placeholder="全部">
+          <el-select v-model="query.status" clearable style="width: 100px" placeholder="全部">
             <el-option
               v-for="item in statusOptions"
               :key="item.code"
@@ -34,13 +34,11 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="primary" @click="onSearch">查询</el-button>
-        </el-form-item>
-        <el-form-item>
           <el-button @click="onReset">重置</el-button>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="success" @click="openCreate">新增标签</el-button>
         </el-form-item>
       </el-form>
@@ -103,53 +101,91 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="formVisible" :title="dialogTitle" width="640px" destroy-on-close>
-      <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="88px">
-        <el-form-item label="标签名" prop="name">
-          <el-input v-model="formModel.name" placeholder="请输入标签名称" />
-        </el-form-item>
-        <el-form-item label="作用域" prop="scope">
-          <el-select v-model="formModel.scope" style="width: 100%" @change="onFormScopeChange">
-            <el-option
-              v-for="item in tagScopeOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <!-- 标签分类选择框：支持下拉选择（主题/风格/设施等）并允许直接输入创建新分类 -->
-          <el-select
-            v-model="formModel.category"
-            placeholder="请选择或输入标签分类"
-            style="width: 100%"
-            filterable
-            allow-create
-          >
-            <el-option v-for="cat in dynamicCategories" :key="cat" :label="cat" :value="cat" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="图标" prop="icon">
-          <el-input v-model="formModel.icon" placeholder="图标 URL" />
-        </el-form-item>
-        <el-form-item label="排序" prop="sortOrder">
-          <el-input-number v-model="formModel.sortOrder" :min="0" :max="9999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="formModel.status" style="width: 100%">
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
+    <el-dialog
+      v-model="formVisible"
+      :title="dialogTitle"
+      width="620px"
+      class="tag-form-dialog"
+      destroy-on-close
+    >
+      <div class="dialog-body-scroll">
+        <el-form ref="formRef" :model="formModel" :rules="formRules" label-position="top">
+          <div class="form-section">
+            <div class="form-section-title">基础信息</div>
+            <div class="form-section-content">
+              <el-form-item label="标签名" prop="name">
+                <el-input v-model="formModel.name" placeholder="请输入标签名称" />
+              </el-form-item>
+              <div class="form-row-grid">
+                <el-form-item label="作用域" prop="scope">
+                  <el-select
+                    v-model="formModel.scope"
+                    style="width: 100%"
+                    @change="onFormScopeChange"
+                  >
+                    <el-option
+                      v-for="item in tagScopeOptions"
+                      :key="item.code"
+                      :label="item.desc"
+                      :value="item.code"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="分类" prop="category">
+                  <el-select
+                    v-model="formModel.category"
+                    placeholder="请选择或输入标签分类"
+                    style="width: 100%"
+                    filterable
+                    allow-create
+                  >
+                    <el-option
+                      v-for="cat in dynamicCategories"
+                      :key="cat"
+                      :label="cat"
+                      :value="cat"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+              <el-form-item label="图标" prop="icon">
+                <el-input v-model="formModel.icon" placeholder="图标 URL" />
+              </el-form-item>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">运营属性</div>
+            <div class="form-section-content">
+              <div class="form-row-grid">
+                <el-form-item label="排序" prop="sortOrder">
+                  <el-input-number
+                    v-model="formModel.sortOrder"
+                    :min="0"
+                    :max="9999"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+                <el-form-item label="状态" prop="status">
+                  <el-select v-model="formModel.status" style="width: 100%">
+                    <el-option
+                      v-for="item in statusOptions"
+                      :key="item.code"
+                      :label="item.desc"
+                      :value="item.code"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+            </div>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
-        <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="formVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -225,6 +261,7 @@ async function fetchCategoriesByScope(scopeVal: string) {
   try {
     const tags = await getTagsByScope(scopeVal);
     remoteCategories.value = tags.map((t) => t.category).filter((c): c is string => Boolean(c));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     ElMessage.error("动态分类加载失败");
   }
@@ -353,7 +390,20 @@ onMounted(() => {
 }
 
 .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
   margin-bottom: 12px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.filter-form :deep(.el-form-item__label) {
+  padding-right: 6px;
 }
 
 .pagination-row {
@@ -375,5 +425,95 @@ onMounted(() => {
 
 .page-container {
   padding: 0px;
+}
+
+.tag-form-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-right: 0;
+}
+
+.tag-form-dialog :deep(.el-dialog__title) {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.tag-form-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.tag-form-dialog .dialog-body-scroll {
+  max-height: calc(85vh - 120px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.tag-form-dialog .form-section {
+  margin-bottom: 24px;
+}
+
+.tag-form-dialog .form-section:last-child {
+  margin-bottom: 0;
+}
+
+.tag-form-dialog .form-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tag-form-dialog :deep(.el-form-item__label) {
+  font-size: 13px;
+  color: #606266;
+  line-height: 20px;
+  padding-bottom: 4px;
+}
+
+.tag-form-dialog :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.tag-form-dialog :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.tag-form-dialog .form-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.tag-form-dialog .form-row-grid :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.tag-form-dialog :deep(.el-input__wrapper),
+.tag-form-dialog :deep(.el-textarea__inner),
+.tag-form-dialog :deep(.el-input-number .el-input__wrapper) {
+  border-radius: 4px;
+}
+
+.tag-form-dialog :deep(.el-input__wrapper) {
+  border-color: #dcdfe6;
+}
+
+.tag-form-dialog :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.tag-form-dialog .dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.tag-form-dialog :deep(.el-dialog__footer) {
+  padding: 0;
+  border-top: none;
 }
 </style>

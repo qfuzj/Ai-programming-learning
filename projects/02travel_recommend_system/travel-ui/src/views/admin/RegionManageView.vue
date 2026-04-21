@@ -7,10 +7,10 @@
 
       <el-form :inline="true" :model="query" class="filter-form">
         <el-form-item label="地区名称">
-          <el-input v-model="query.name" clearable style="width: 220px" placeholder="请输入名称" />
+          <el-input v-model="query.name" clearable style="width: 140px" placeholder="请输入名称" />
         </el-form-item>
         <el-form-item label="层级">
-          <el-select v-model="query.level" clearable style="width: 120px" placeholder="全部">
+          <el-select v-model="query.level" clearable style="width: 100px" placeholder="全部">
             <el-option
               v-for="item in levelOptions"
               :key="item.code"
@@ -19,8 +19,19 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="所属地区">
+          <el-cascader
+            v-model="query.parentId"
+            :options="regionTreeForQuery"
+            :props="queryCascaderProps"
+            placeholder="全部"
+            clearable
+            filterable
+            style="width: 140px"
+          />
+        </el-form-item>
         <el-form-item label="热门">
-          <el-select v-model="query.isHot" clearable style="width: 120px" placeholder="全部">
+          <el-select v-model="query.isHot" clearable style="width: 100px" placeholder="全部">
             <el-option
               v-for="item in yesNoOptions"
               :key="item.code"
@@ -29,13 +40,11 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="primary" @click="onSearch">查询</el-button>
-        </el-form-item>
-        <el-form-item>
           <el-button @click="onReset">重置</el-button>
         </el-form-item>
-        <el-form-item>
+        <el-form-item style="margin-left: auto">
           <el-button type="success" @click="openCreate">新增地区</el-button>
         </el-form-item>
       </el-form>
@@ -87,97 +96,130 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="formVisible" :title="dialogTitle" width="640px" destroy-on-close>
-      <el-form ref="formRef" :model="formModel" :rules="formRules" label-width="88px">
-        <el-form-item label="层级" prop="level">
-          <el-select v-model="formModel.level" style="width: 100%" @change="onLevelChange">
-            <el-option
-              v-for="item in levelOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="父级ID" prop="parentId">
-          <!-- 省：禁用，固定显示"无（顶级）" -->
-          <el-input v-if="formModel.level === 1" value="无（顶级）" disabled />
+    <el-dialog
+      v-model="formVisible"
+      :title="dialogTitle"
+      width="620px"
+      class="region-form-dialog"
+      destroy-on-close
+    >
+      <div class="dialog-body-scroll">
+        <el-form ref="formRef" :model="formModel" :rules="formRules" label-position="top">
+          <div class="form-section">
+            <div class="form-section-title">基础信息</div>
+            <div class="form-section-content">
+              <el-form-item label="层级" prop="level">
+                <el-select v-model="formModel.level" style="width: 100%" @change="onLevelChange">
+                  <el-option
+                    v-for="item in levelOptions"
+                    :key="item.code"
+                    :label="item.desc"
+                    :value="item.code"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="父级ID" prop="parentId">
+                <el-input v-if="formModel.level === 1" value="无（顶级）" disabled />
+                <el-select
+                  v-else-if="formModel.level === 2"
+                  v-model="formModel.parentId"
+                  placeholder="请选择所属省份"
+                  filterable
+                  style="width: 100%"
+                >
+                  <el-option
+                    v-for="item in provinceList"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
+                  />
+                </el-select>
+                <el-cascader
+                  v-else-if="formModel.level === 3"
+                  v-model="formModel.parentId"
+                  :options="provinceList"
+                  :props="cascaderProps"
+                  placeholder="请选择所属省份 → 城市"
+                  filterable
+                  clearable
+                  style="width: 100%"
+                />
+              </el-form-item>
+              <el-form-item label="地区名称" prop="name">
+                <el-input v-model="formModel.name" placeholder="请输入地区名称" />
+              </el-form-item>
+              <div class="form-row-grid">
+                <el-form-item label="简称" prop="shortName">
+                  <el-input v-model="formModel.shortName" placeholder="请输入简称" />
+                </el-form-item>
+                <el-form-item label="编码" prop="code">
+                  <el-input v-model="formModel.code" placeholder="请输入编码" />
+                </el-form-item>
+              </div>
+              <el-form-item label="拼音" prop="pinyin">
+                <el-input v-model="formModel.pinyin" placeholder="请输入拼音" />
+              </el-form-item>
+            </div>
+          </div>
 
-          <!-- 市：从省列表选 -->
-          <el-select
-            v-else-if="formModel.level === 2"
-            v-model="formModel.parentId"
-            placeholder="请选择所属省份"
-            filterable
-            style="width: 100%"
-          >
-            <el-option
-              v-for="item in provinceList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <div class="form-section">
+            <div class="form-section-title">地理位置</div>
+            <div class="form-section-content">
+              <div class="form-row-grid">
+                <el-form-item label="经度" prop="longitude">
+                  <el-input-number
+                    v-model="formModel.longitude"
+                    :min="-180"
+                    :max="180"
+                    :step="0.0001"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+                <el-form-item label="纬度" prop="latitude">
+                  <el-input-number
+                    v-model="formModel.latitude"
+                    :min="-90"
+                    :max="90"
+                    :step="0.0001"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </div>
+            </div>
+          </div>
 
-          <!-- 区县：级联先选省、再选市（parentId 只取最终叶子节点 id） -->
-          <el-cascader
-            v-else-if="formModel.level === 3"
-            v-model="formModel.parentId"
-            :options="provinceList"
-            :props="cascaderProps"
-            placeholder="请选择所属省份 → 城市"
-            filterable
-            clearable
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="地区名称" prop="name">
-          <el-input v-model="formModel.name" placeholder="请输入地区名称" />
-        </el-form-item>
-        <el-form-item label="简称" prop="shortName">
-          <el-input v-model="formModel.shortName" placeholder="请输入简称" />
-        </el-form-item>
-        <el-form-item label="编码" prop="code">
-          <el-input v-model="formModel.code" placeholder="请输入编码" />
-        </el-form-item>
-        <el-form-item label="拼音" prop="pinyin">
-          <el-input v-model="formModel.pinyin" placeholder="请输入拼音" />
-        </el-form-item>
-        <el-form-item label="经度" prop="longitude">
-          <el-input-number
-            v-model="formModel.longitude"
-            :min="-180"
-            :max="180"
-            :step="0.0001"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="纬度" prop="latitude">
-          <el-input-number
-            v-model="formModel.latitude"
-            :min="-90"
-            :max="90"
-            :step="0.0001"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="排序" prop="sortOrder">
-          <el-input-number v-model="formModel.sortOrder" :min="0" :max="9999" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="热门" prop="isHot">
-          <el-select v-model="formModel.isHot" style="width: 100%">
-            <el-option
-              v-for="item in yesNoOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
+          <div class="form-section">
+            <div class="form-section-title">运营属性</div>
+            <div class="form-section-content">
+              <div class="form-row-grid">
+                <el-form-item label="排序" prop="sortOrder">
+                  <el-input-number
+                    v-model="formModel.sortOrder"
+                    :min="0"
+                    :max="9999"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+                <el-form-item label="热门" prop="isHot">
+                  <el-select v-model="formModel.isHot" style="width: 100%">
+                    <el-option
+                      v-for="item in yesNoOptions"
+                      :key="item.code"
+                      :label="item.desc"
+                      :value="item.code"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+            </div>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
-        <el-button @click="formVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="formVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -186,7 +228,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
-import type { FormInstance, FormRules } from "element-plus";
+import type { CascaderOption, FormInstance, FormRules } from "element-plus";
 import {
   createAdminRegion,
   deleteAdminRegion,
@@ -214,16 +256,33 @@ const provinceList = computed(() => {
   return regionTree.value;
 });
 
-const cityList = computed(() => {
-  return regionTree.value.flatMap((p) => p.children || []);
+// 查询级联只展示到市一级（省 -> 市），不展示区县
+const regionTreeForQuery = computed<CascaderOption[]>(() => {
+  return regionTree.value.map((province) => ({
+    ...province,
+    children: (province.children || []).map((city) => ({
+      ...city,
+      children: undefined,
+    })),
+  })) as CascaderOption[];
 });
 
-// 级联选择器配置：仅允许选中市（level=2）作为 parentId
+// 查询级联选择器配置
+const queryCascaderProps = {
+  value: "id",
+  label: "name",
+  children: "children",
+  emitPath: false,
+  checkStrictly: true,
+};
+
+// 表单级联选择器配置：允许选中任意层级节点作为 parentId（包括市级别）
 const cascaderProps = {
   value: "id",
   label: "name",
   children: "children",
   emitPath: false,
+  checkStrictly: true,
 };
 
 const formVisible = ref(false);
@@ -303,8 +362,9 @@ function onReset(): void {
   query.name = "";
   query.level = undefined;
   query.isHot = undefined;
-  query.code = "";
   query.parentId = undefined;
+  query.code = "";
+  query.isHot = undefined;
   query.pageNum = 1;
   void loadRegionList();
 }
@@ -404,7 +464,20 @@ onMounted(() => {
 }
 
 .filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 6px;
   margin-bottom: 12px;
+}
+
+.filter-form :deep(.el-form-item) {
+  margin-bottom: 0;
+  margin-right: 0;
+}
+
+.filter-form :deep(.el-form-item__label) {
+  padding-right: 6px;
 }
 
 .pagination-row {
@@ -415,5 +488,95 @@ onMounted(() => {
 
 .page-container {
   padding: 0px;
+}
+
+.region-form-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-right: 0;
+}
+
+.region-form-dialog :deep(.el-dialog__title) {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.region-form-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.region-form-dialog .dialog-body-scroll {
+  max-height: calc(85vh - 120px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.region-form-dialog .form-section {
+  margin-bottom: 24px;
+}
+
+.region-form-dialog .form-section:last-child {
+  margin-bottom: 0;
+}
+
+.region-form-dialog .form-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.region-form-dialog :deep(.el-form-item__label) {
+  font-size: 13px;
+  color: #606266;
+  line-height: 20px;
+  padding-bottom: 4px;
+}
+
+.region-form-dialog :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.region-form-dialog :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
+}
+
+.region-form-dialog .form-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.region-form-dialog .form-row-grid :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.region-form-dialog :deep(.el-input__wrapper),
+.region-form-dialog :deep(.el-textarea__inner),
+.region-form-dialog :deep(.el-input-number .el-input__wrapper) {
+  border-radius: 4px;
+}
+
+.region-form-dialog :deep(.el-input__wrapper) {
+  border-color: #dcdfe6;
+}
+
+.region-form-dialog :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+.region-form-dialog .dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.region-form-dialog :deep(.el-dialog__footer) {
+  padding: 0;
+  border-top: none;
 }
 </style>
