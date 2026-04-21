@@ -48,6 +48,44 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="query.status" clearable placeholder="全部" style="width: 120px">
+            <el-option label="启用" :value="1" />
+            <el-option label="禁用" :value="0" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="等级">
+          <el-select v-model="query.level" clearable placeholder="全部" style="width: 140px">
+            <el-option
+              v-for="item in scenicLevelOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="分类">
+          <el-select v-model="query.category" clearable placeholder="全部" style="width: 160px">
+            <el-option
+              v-for="item in scenicCategoryOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="最小评分">
+          <el-input-number
+            v-model="query.minScore"
+            :min="0"
+            :max="5"
+            :precision="1"
+            :step="0.5"
+            placeholder="0-5"
+            style="width: 110px"
+            clearable
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="onSearch">查询</el-button>
         </el-form-item>
@@ -445,6 +483,7 @@ import {
   updateAdminScenic,
 } from "@/api/scenic";
 import { getRegionTree, getTags, type CommonTagItem, type CommonRegionNode } from "@/api/common";
+import { getScenicLevelDict, getScenicCategoryDict, type DictItem } from "@/api/dict";
 
 interface OptionItem {
   id: number;
@@ -454,6 +493,10 @@ interface OptionItem {
 interface SearchQuery extends ScenicQuery {
   provinceId?: number;
   cityId?: number;
+  status?: number;
+  level?: string;
+  category?: string;
+  minScore?: number;
 }
 
 interface ScenicFormModel {
@@ -504,6 +547,8 @@ const regionCascaderProps = {
 };
 const cityOptions = ref<CommonRegionNode[]>([]);
 const tagOptions = ref<CommonTagItem[]>([]);
+const scenicLevelOptions = ref<DictItem[]>([]);
+const scenicCategoryOptions = ref<DictItem[]>([]);
 
 const query = reactive<SearchQuery>({
   pageNum: 1,
@@ -511,6 +556,10 @@ const query = reactive<SearchQuery>({
   keyword: "",
   provinceId: undefined,
   cityId: undefined,
+  status: undefined,
+  level: undefined,
+  category: undefined,
+  minScore: undefined,
 });
 
 const formModel = reactive<ScenicFormModel>({
@@ -635,10 +684,17 @@ function resetFormModel(): void {
 }
 
 async function loadMetaData(): Promise<void> {
-  const [regions, tags] = await Promise.all([getRegionTree(), getTags()]);
+  const [regions, tags, levels, categories] = await Promise.all([
+    getRegionTree(),
+    getTags(),
+    getScenicLevelDict(),
+    getScenicCategoryDict(),
+  ]);
   provinceOptions.value = regions;
   regionOptions.value = flattenRegions(regions);
   tagOptions.value = tags;
+  scenicLevelOptions.value = levels;
+  scenicCategoryOptions.value = categories;
 }
 
 async function loadScenicList(): Promise<void> {
@@ -659,6 +715,10 @@ function buildSearchParams(): ScenicQuery {
     keyword: query.keyword || undefined,
     // 城市优先；仅选择省份时按省份过滤；都不选则不传。
     regionId: query.cityId ?? query.provinceId ?? undefined,
+    status: query.status ?? undefined,
+    level: query.level || undefined,
+    category: query.category || undefined,
+    minScore: query.minScore ?? undefined,
   };
 }
 
@@ -679,6 +739,10 @@ function handleReset(): void {
   query.keyword = "";
   query.provinceId = undefined;
   query.cityId = undefined;
+  query.status = undefined;
+  query.level = undefined;
+  query.category = undefined;
+  query.minScore = undefined;
   cityOptions.value = [];
   query.pageNum = 1;
   void loadScenicList();

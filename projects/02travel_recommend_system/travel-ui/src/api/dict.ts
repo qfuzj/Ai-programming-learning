@@ -111,3 +111,11 @@ export function getTravelPlanStatusDict(): Promise<DictItem[]> {
 export function getYesNoFlagDict(): Promise<DictItem[]> {
   return http.get("/api/dict/yes-no-flag");
 }
+
+export function getScenicLevelDict(): Promise<DictItem[]> {
+  return http.get("/api/dict/scenic-level");
+}
+
+export function getScenicCategoryDict(): Promise<DictItem[]> {
+  return http.get("/api/dict/scenic-category");
+}

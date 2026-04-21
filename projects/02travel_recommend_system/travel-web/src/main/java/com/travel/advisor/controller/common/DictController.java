@@ -1,6 +1,8 @@
 package com.travel.advisor.controller.common;
 
 import com.travel.advisor.common.enums.*;
+import com.travel.advisor.common.enums.ScenicCategory;
+import com.travel.advisor.common.enums.ScenicLevel;
 import com.travel.advisor.common.result.Result;
 import com.travel.advisor.dto.DictVO;
 
@@ -301,6 +303,29 @@ public class DictController {
     public Result<List<DictVO>> getYesNoFlags() {
         List<DictVO> list = Arrays.stream(YesNoFlag.values())
                 .map(f -> new DictVO(f.getCode(), f.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 景点等级字典
+     */
+    @GetMapping("/scenic-level")
+    public Result<List<DictVO>> getScenicLevels() {
+        List<DictVO> list = Arrays.stream(ScenicLevel.values())
+                .filter(level -> level != ScenicLevel.NONE)
+                .map(level -> new DictVO(level.getCode(), level.getDesc()))
+                .collect(Collectors.toList());
+        return Result.success(list);
+    }
+
+    /**
+     * 景点分类字典
+     */
+    @GetMapping("/scenic-category")
+    public Result<List<DictVO>> getScenicCategories() {
+        List<DictVO> list = Arrays.stream(ScenicCategory.values())
+                .map(category -> new DictVO(category.getCode(), category.getDesc()))
                 .collect(Collectors.toList());
         return Result.success(list);
     }
