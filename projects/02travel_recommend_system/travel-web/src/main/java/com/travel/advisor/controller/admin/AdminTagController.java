@@ -10,6 +10,8 @@ import com.travel.advisor.entity.Tag;
 import com.travel.advisor.service.TagService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/admin/tags")
@@ -31,6 +35,11 @@ public class AdminTagController {
             TagQueryDTO dto,
             PageQuery pageQuery) {
         return Result.success(tagService.page(dto, pageQuery));
+    }
+
+    @GetMapping("/categories")
+    public Result<List<String>> listCategories(@RequestParam(required = false) String scope) {
+        return Result.success(tagService.listCategoriesByScope(scope));
     }
 
     @PostMapping

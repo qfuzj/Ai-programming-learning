@@ -17,6 +17,11 @@ public interface TagService {
     List<Tag> listByScope(String scope);
 
     /**
+     * 按作用域查询分类列表（去重）
+     */
+    List<String> listCategoriesByScope(String scope);
+
+    /**
      * 管理端分页查询标签
      */
     PageResult<Tag> page(TagQueryDTO dto, PageQuery pageQuery);

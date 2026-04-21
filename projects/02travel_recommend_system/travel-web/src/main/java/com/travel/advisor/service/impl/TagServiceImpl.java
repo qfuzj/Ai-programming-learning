@@ -50,6 +50,21 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    public List<String> listCategoriesByScope(String scope) {
+        LambdaQueryWrapper<Tag> queryWrapper = new LambdaQueryWrapper<Tag>()
+                .eq(Tag::getStatus, 1)
+                .isNotNull(Tag::getCategory);
+        if (StringUtils.hasText(scope)) {
+            queryWrapper.and(w -> w.eq(Tag::getScope, scope).or().eq(Tag::getScope, "BOTH"));
+        }
+        return tagMapper.selectList(queryWrapper).stream()
+                .map(Tag::getCategory)
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    @Override
     public PageResult<Tag> page(TagQueryDTO dto, PageQuery pageQuery) {
         LambdaQueryWrapper<Tag> queryWrapper = new LambdaQueryWrapper<Tag>()
                 .orderByAsc(Tag::getSortOrder);

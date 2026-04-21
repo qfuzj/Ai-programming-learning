@@ -50,8 +50,12 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="query.status" clearable placeholder="全部" style="width: 120px">
-            <el-option label="启用" :value="1" />
-            <el-option label="禁用" :value="0" />
+            <el-option
+              v-for="item in commonStatusOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="等级">
@@ -64,7 +68,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="分类">
+        <el-form-item label="景点分类">
           <el-select v-model="query.category" clearable placeholder="全部" style="width: 160px">
             <el-option
               v-for="item in scenicCategoryOptions"
@@ -74,17 +78,49 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="最小评分">
-          <el-input-number
-            v-model="query.minScore"
-            :min="0"
-            :max="5"
-            :precision="1"
-            :step="0.5"
-            placeholder="0-5"
-            style="width: 110px"
+        <el-form-item label="标签作用域">
+          <el-select
+            v-model="query.tagScope"
             clearable
-          />
+            placeholder="全部"
+            style="width: 140px"
+            @change="onTagScopeChange"
+          >
+            <el-option
+              v-for="item in tagScopeOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签分类">
+          <el-select
+            v-model="query.tagCategory"
+            clearable
+            placeholder="全部"
+            style="width: 160px"
+            :disabled="!query.tagScope"
+            @change="onTagCategoryChange"
+          >
+            <el-option v-for="item in tagCategoryOptions" :key="item" :label="item" :value="item" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签">
+          <el-select
+            v-model="query.tagId"
+            clearable
+            placeholder="全部"
+            style="width: 160px"
+            :disabled="!query.tagCategory"
+          >
+            <el-option
+              v-for="item in searchTagOptions"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="onSearch">查询</el-button>
@@ -392,19 +428,40 @@
           />
         </el-form-item>
         <el-form-item label="等级">
-          <el-input v-model="formModel.level" placeholder="例如：5A" />
+          <el-select
+            v-model="formModel.level"
+            clearable
+            placeholder="请选择等级"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in scenicLevelOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="分类">
-          <el-input v-model="formModel.category" placeholder="例如：自然风光" />
+          <el-select
+            v-model="formModel.category"
+            clearable
+            placeholder="请选择分类"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in scenicCategoryOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="最佳季节">
           <el-input v-model="formModel.bestSeason" placeholder="例如：春秋" />
         </el-form-item>
         <el-form-item label="建议游玩时长">
-          <el-input
-            v-model="formModel.suggestedHours"
-            placeholder="例如：2-3 小时 / 半天 / 1 天"
-          />
+          <el-input v-model="formModel.suggestedHours" placeholder="例如：2-3 小时 / 半天 / 1 天" />
         </el-form-item>
         <el-form-item label="游玩提示">
           <el-input
@@ -414,10 +471,49 @@
             placeholder="请输入游玩提示"
           />
         </el-form-item>
-        <el-form-item label="标签" prop="tagIds">
-          <el-select v-model="formModel.tagIds" multiple placeholder="请选择标签" filterable>
+        <el-form-item label="标签作用域">
+          <el-select
+            v-model="formModel.tagScope"
+            clearable
+            placeholder="请选择标签作用域"
+            style="width: 100%"
+            @change="onFormTagScopeChange"
+          >
             <el-option
-              v-for="item in tagOptions"
+              v-for="item in tagScopeOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="item.code"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签分类">
+          <el-select
+            v-model="formModel.tagCategory"
+            clearable
+            placeholder="请选择标签分类"
+            style="width: 100%"
+            :disabled="!formModel.tagScope"
+            @change="onFormTagCategoryChange"
+          >
+            <el-option
+              v-for="item in formTagCategoryOptions"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="标签" prop="tagIds">
+          <el-select
+            v-model="formModel.tagIds"
+            multiple
+            placeholder="请选择标签"
+            filterable
+            :disabled="!formModel.tagCategory"
+          >
+            <el-option
+              v-for="item in formTagOptions"
               :key="item.id"
               :label="item.name"
               :value="item.id"
@@ -482,8 +578,21 @@ import {
   type ScenicUpdatePayload,
   updateAdminScenic,
 } from "@/api/scenic";
-import { getRegionTree, getTags, type CommonTagItem, type CommonRegionNode } from "@/api/common";
-import { getScenicLevelDict, getScenicCategoryDict, type DictItem } from "@/api/dict";
+import {
+  getRegionTree,
+  getTags,
+  getTagsByScope,
+  getTagCategories,
+  type CommonTagItem,
+  type CommonRegionNode,
+} from "@/api/common";
+import {
+  getScenicLevelDict,
+  getScenicCategoryDict,
+  getCommonStatusDict,
+  getTagScopeDict,
+  type DictItem,
+} from "@/api/dict";
 
 interface OptionItem {
   id: number;
@@ -496,7 +605,9 @@ interface SearchQuery extends ScenicQuery {
   status?: number;
   level?: string;
   category?: string;
-  minScore?: number;
+  tagId?: number;
+  tagScope?: string;
+  tagCategory?: string;
 }
 
 interface ScenicFormModel {
@@ -517,6 +628,8 @@ interface ScenicFormModel {
   tips: string;
   sortOrder?: number;
   isRecommended: number;
+  tagScope?: string;
+  tagCategory?: string;
   tagIds: number[];
   imageIds: number[];
   status: number;
@@ -547,8 +660,14 @@ const regionCascaderProps = {
 };
 const cityOptions = ref<CommonRegionNode[]>([]);
 const tagOptions = ref<CommonTagItem[]>([]);
+const tagScopeOptions = ref<DictItem[]>([]);
+const tagCategoryOptions = ref<string[]>([]);
+const searchTagOptions = ref<CommonTagItem[]>([]);
+const formTagCategoryOptions = ref<string[]>([]);
+const formTagOptions = ref<CommonTagItem[]>([]);
 const scenicLevelOptions = ref<DictItem[]>([]);
 const scenicCategoryOptions = ref<DictItem[]>([]);
+const commonStatusOptions = ref<DictItem[]>([]);
 
 const query = reactive<SearchQuery>({
   pageNum: 1,
@@ -559,7 +678,9 @@ const query = reactive<SearchQuery>({
   status: undefined,
   level: undefined,
   category: undefined,
-  minScore: undefined,
+  tagId: undefined,
+  tagScope: undefined,
+  tagCategory: undefined,
 });
 
 const formModel = reactive<ScenicFormModel>({
@@ -579,6 +700,8 @@ const formModel = reactive<ScenicFormModel>({
   tips: "",
   sortOrder: undefined,
   isRecommended: 0,
+  tagScope: undefined,
+  tagCategory: undefined,
   tagIds: [],
   imageIds: [],
   status: 1,
@@ -678,23 +801,89 @@ function resetFormModel(): void {
   formModel.tips = "";
   formModel.sortOrder = undefined;
   formModel.isRecommended = 0;
+  formModel.tagScope = undefined;
+  formModel.tagCategory = undefined;
   formModel.tagIds = [];
   formModel.imageIds = [];
   formModel.status = 1;
+  formTagCategoryOptions.value = [];
+  formTagOptions.value = [];
 }
 
 async function loadMetaData(): Promise<void> {
-  const [regions, tags, levels, categories] = await Promise.all([
+  const [regions, tags, levels, categories, statuses, scopes] = await Promise.all([
     getRegionTree(),
     getTags(),
     getScenicLevelDict(),
     getScenicCategoryDict(),
+    getCommonStatusDict(),
+    getTagScopeDict(),
   ]);
   provinceOptions.value = regions;
   regionOptions.value = flattenRegions(regions);
   tagOptions.value = tags;
   scenicLevelOptions.value = levels;
   scenicCategoryOptions.value = categories;
+  commonStatusOptions.value = statuses;
+  tagScopeOptions.value = scopes;
+}
+
+async function onFormTagScopeChange(scope?: string): Promise<void> {
+  formModel.tagCategory = undefined;
+  formModel.tagIds = [];
+  formTagOptions.value = [];
+  if (scope) {
+    try {
+      formTagCategoryOptions.value = await getTagCategories(scope);
+    } catch {
+      formTagCategoryOptions.value = [];
+    }
+  } else {
+    formTagCategoryOptions.value = [];
+  }
+}
+
+async function onFormTagCategoryChange(category?: string): Promise<void> {
+  formModel.tagIds = [];
+  if (category && formModel.tagScope) {
+    try {
+      const allTags = await getTagsByScope(formModel.tagScope);
+      formTagOptions.value = allTags.filter((t) => t.category === category);
+    } catch {
+      formTagOptions.value = [];
+    }
+  } else {
+    formTagOptions.value = [];
+  }
+}
+
+async function onTagScopeChange(scope?: string): Promise<void> {
+  query.tagCategory = undefined;
+  query.tagId = undefined;
+  searchTagOptions.value = [];
+  if (scope) {
+    try {
+      tagCategoryOptions.value = await getTagCategories(scope);
+    } catch {
+      tagCategoryOptions.value = [];
+    }
+  } else {
+    tagCategoryOptions.value = [];
+  }
+}
+
+async function onTagCategoryChange(category?: string): Promise<void> {
+  query.tagId = undefined;
+  if (category && query.tagScope) {
+    try {
+      const allTags = await getTagsByScope(query.tagScope);
+      searchTagOptions.value = allTags.filter((t) => t.category === category);
+    } catch {
+      searchTagOptions.value = [];
+    }
+  } else {
+    searchTagOptions.value = [];
+  }
 }
 
 async function loadScenicList(): Promise<void> {
@@ -718,7 +907,9 @@ function buildSearchParams(): ScenicQuery {
     status: query.status ?? undefined,
     level: query.level || undefined,
     category: query.category || undefined,
-    minScore: query.minScore ?? undefined,
+    tagId: query.tagId ?? undefined,
+    tagScope: query.tagScope || undefined,
+    tagCategory: query.tagCategory || undefined,
   };
 }
 
@@ -742,7 +933,11 @@ function handleReset(): void {
   query.status = undefined;
   query.level = undefined;
   query.category = undefined;
-  query.minScore = undefined;
+  query.tagId = undefined;
+  query.tagScope = undefined;
+  query.tagCategory = undefined;
+  tagCategoryOptions.value = [];
+  searchTagOptions.value = [];
   cityOptions.value = [];
   query.pageNum = 1;
   void loadScenicList();
@@ -795,9 +990,37 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.imageIds = (detail.images ?? [])
       .map((item) => Number(item.fileResourceId))
       .filter((id) => Number.isFinite(id));
+    // 回填标签选择器的scope和category
+    await restoreTagSelection(detail.tagIds ?? []);
     formVisible.value = true;
   } catch {
     ElMessage.error("加载编辑数据失败");
+  }
+}
+
+async function restoreTagSelection(tagIds: number[]): Promise<void> {
+  if (tagIds.length === 0) return;
+  // 从已加载的标签列表中查找第一个已选标签的信息
+  const firstTag = tagOptions.value.find((t) => t.id === tagIds[0]);
+  if (!firstTag) return;
+  formModel.tagScope = firstTag.scope;
+  formModel.tagCategory = firstTag.category;
+  // 加载分类列表
+  if (firstTag.scope) {
+    try {
+      formTagCategoryOptions.value = await getTagCategories(firstTag.scope);
+    } catch {
+      formTagCategoryOptions.value = [];
+    }
+  }
+  // 加载该分类下的标签列表
+  if (firstTag.scope && firstTag.category) {
+    try {
+      const allTags = await getTagsByScope(firstTag.scope);
+      formTagOptions.value = allTags.filter((t) => t.category === firstTag.category);
+    } catch {
+      formTagOptions.value = [];
+    }
   }
 }
 

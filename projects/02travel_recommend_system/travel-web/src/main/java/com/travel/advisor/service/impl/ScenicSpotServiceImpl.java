@@ -329,8 +329,47 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
 
         queryWrapper.eq(StringUtils.hasText(query.getCategory()), ScenicSpot::getCategory, query.getCategory())
                 .eq(StringUtils.hasText(query.getLevel()), ScenicSpot::getLevel, query.getLevel())
-                .ge(query.getMinScore() != null, ScenicSpot::getScore, query.getMinScore())
                 .eq(ScenicSpot::getIsDeleted, 0);
+
+        if (query.getTagId() != null) {
+            List<Long> spotIds = scenicSpotTagMapper.selectList(
+                            new LambdaQueryWrapper<ScenicSpotTag>()
+                                    .eq(ScenicSpotTag::getTagId, query.getTagId()))
+                    .stream().map(ScenicSpotTag::getScenicSpotId).toList();
+            if (spotIds.isEmpty()) {
+                queryWrapper.eq(ScenicSpot::getId, -1L);
+            } else {
+                queryWrapper.in(ScenicSpot::getId, spotIds);
+            }
+        }
+
+        // 标签作用域+分类筛选：先查符合条件的标签，再查关联的景点
+        if (StringUtils.hasText(query.getTagScope()) || StringUtils.hasText(query.getTagCategory())) {
+            LambdaQueryWrapper<Tag> tagQuery = new LambdaQueryWrapper<Tag>()
+                    .eq(Tag::getStatus, 1);
+            if (StringUtils.hasText(query.getTagScope())) {
+                tagQuery.and(w -> w.eq(Tag::getScope, query.getTagScope()).or().eq(Tag::getScope, "BOTH"));
+            }
+            if (StringUtils.hasText(query.getTagCategory())) {
+                tagQuery.eq(Tag::getCategory, query.getTagCategory());
+            }
+            List<Long> tagIds = tagMapper.selectList(tagQuery).stream()
+                    .map(Tag::getId)
+                    .toList();
+            if (tagIds.isEmpty()) {
+                queryWrapper.eq(ScenicSpot::getId, -1L);
+            } else {
+                List<Long> spotIds = scenicSpotTagMapper.selectList(
+                                new LambdaQueryWrapper<ScenicSpotTag>()
+                                        .in(ScenicSpotTag::getTagId, tagIds))
+                        .stream().map(ScenicSpotTag::getScenicSpotId).distinct().toList();
+                if (spotIds.isEmpty()) {
+                    queryWrapper.eq(ScenicSpot::getId, -1L);
+                } else {
+                    queryWrapper.in(ScenicSpot::getId, spotIds);
+                }
+            }
+        }
 
         if (StringUtils.hasText(query.getKeyword())) {
             queryWrapper.and(wrapper -> wrapper

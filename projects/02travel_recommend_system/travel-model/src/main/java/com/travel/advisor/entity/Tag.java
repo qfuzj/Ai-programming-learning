@@ -21,8 +21,6 @@ public class Tag {
 
     private String icon;
 
-    private String color;
-
     private String scope;
 
     private Integer sortOrder;

@@ -86,29 +86,6 @@
         </el-col>
       </el-row>
 
-      <!--  <el-row :gutter="12">
-        <el-col :span="12">
-          <el-form-item label="经度">
-            <el-input-number
-              v-model="form.longitude"
-              :precision="7"
-              :step="0.0000001"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="纬度">
-            <el-input-number
-              v-model="form.latitude"
-              :precision="7"
-              :step="0.0000001"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-      </el-row> -->
-
       <el-form-item label="关联景点ID">
         <el-input-number
           v-model="form.scenicSpotId"

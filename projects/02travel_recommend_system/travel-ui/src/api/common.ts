@@ -16,7 +16,6 @@ export interface CommonTagItem {
   scope?: string;
   category?: string;
   icon?: string;
-  color?: string;
   sortOrder?: number;
   status?: number;
 }
@@ -62,7 +61,6 @@ export interface AdminTagItem {
   scope?: string;
   category?: string;
   icon?: string;
-  color?: string;
   sortOrder?: number;
   status?: number;
 }
@@ -72,7 +70,6 @@ export interface TagPayload {
   scope?: string;
   category?: string;
   icon?: string;
-  color?: string;
   sortOrder?: number;
   status?: number;
 }
@@ -126,4 +123,8 @@ export function updateAdminTag(id: number, payload: TagPayload): Promise<void> {
 
 export function deleteAdminTag(id: number): Promise<void> {
   return http.delete(`/api/admin/tags/${id}`);
+}
+
+export function getTagCategories(scope?: string): Promise<string[]> {
+  return http.get("/api/admin/tags/categories", { params: { scope } });
 }

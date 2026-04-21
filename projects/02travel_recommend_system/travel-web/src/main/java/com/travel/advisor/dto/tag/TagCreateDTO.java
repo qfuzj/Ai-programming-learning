@@ -13,8 +13,6 @@ public class TagCreateDTO {
 
     private String icon;
 
-    private String color;
-
     private String scope;
 
     private Integer sortOrder;

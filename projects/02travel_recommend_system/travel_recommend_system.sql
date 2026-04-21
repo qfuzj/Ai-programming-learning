@@ -477,7 +477,6 @@ CREATE TABLE `tag` (
   `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '标签名称',
   `category` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标签分类（主题/风格/设施等）',
   `icon` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标签图标',
-  `color` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标签颜色（十六进制）',
   `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态：0 禁用 1 正常',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

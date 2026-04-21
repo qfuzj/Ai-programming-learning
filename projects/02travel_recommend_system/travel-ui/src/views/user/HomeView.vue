@@ -117,7 +117,7 @@
               <div
                 v-else
                 class="tag-placeholder"
-                :style="{ backgroundColor: item.color || '#00e676' }"
+                :style="{ backgroundColor: '#00e676' }"
               >
                 <span class="tag-name-large">{{ item.name.substring(0, 2) }}</span>
               </div>

@@ -65,11 +65,6 @@
           <template #default="scope">{{ tagScopeText(scope.row.scope) }}</template>
         </el-table-column>
         <el-table-column prop="category" label="分类" width="120" />
-        <el-table-column label="颜色" width="100">
-          <template #default="scope">
-            <span class="color-block" :style="{ backgroundColor: scope.row.color || '#dcdfe6' }" />
-          </template>
-        </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" />
         <el-table-column label="状态" width="90">
           <template #default="scope">
@@ -138,9 +133,6 @@
         <el-form-item label="图标" prop="icon">
           <el-input v-model="formModel.icon" placeholder="图标 URL" />
         </el-form-item>
-        <el-form-item label="颜色" prop="color">
-          <el-color-picker v-model="formModel.color" />
-        </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
           <el-input-number v-model="formModel.sortOrder" :min="0" :max="9999" style="width: 100%" />
         </el-form-item>
@@ -206,7 +198,6 @@ const formModel = reactive<TagPayload>({
   scope: "SCENIC",
   category: "",
   icon: "",
-  color: "",
   sortOrder: 0,
   status: 1,
 });
@@ -284,7 +275,6 @@ function resetFormModel(): void {
   formModel.scope = "SCENIC";
   formModel.category = "";
   formModel.icon = "";
-  formModel.color = "";
   formModel.sortOrder = 0;
   formModel.status = 1;
 }
@@ -302,7 +292,6 @@ function openEdit(row: AdminTagItem): void {
   formModel.scope = row.scope ?? "SCENIC";
   formModel.category = row.category ?? "";
   formModel.icon = row.icon ?? "";
-  formModel.color = row.color ?? "";
   formModel.sortOrder = row.sortOrder ?? 0;
   formModel.status = row.status ?? 1;
   formVisible.value = true;
@@ -321,7 +310,6 @@ async function handleSubmit(): Promise<void> {
       ...formModel,
       category: formModel.category || undefined,
       icon: formModel.icon || undefined,
-      color: formModel.color || undefined,
     };
     if (editingId.value) {
       await updateAdminTag(editingId.value, payload);
@@ -372,14 +360,6 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
-}
-
-.color-block {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
 }
 
 .tag-icon {

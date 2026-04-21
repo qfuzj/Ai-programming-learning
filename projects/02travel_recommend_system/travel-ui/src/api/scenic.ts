@@ -81,7 +81,9 @@ export interface ScenicQuery extends PageQuery {
   regionId?: number;
   category?: string;
   level?: string;
-  minScore?: number;
+  tagId?: number;
+  tagScope?: string;
+  tagCategory?: string;
   sortBy?: "hot" | "score" | "createdAt";
   sortOrder?: "ASC" | "DESC";
   status?: number;

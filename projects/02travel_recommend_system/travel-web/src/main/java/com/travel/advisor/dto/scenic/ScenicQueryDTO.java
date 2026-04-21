@@ -4,8 +4,6 @@ import com.travel.advisor.common.page.PageQuery;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.math.BigDecimal;
-
 /**
  * 景点查询 DTO
  */
@@ -19,7 +17,11 @@ public class ScenicQueryDTO extends PageQuery {
 
     private String level;
 
-    private BigDecimal minScore;
+    private Long tagId;
+
+    private String tagScope;
+
+    private String tagCategory;
 
     private Integer status;
 }
