@@ -14,6 +14,8 @@ import com.travel.advisor.security.TokenService;
 import com.travel.advisor.service.AuthService;
 import com.travel.advisor.service.CaptchaService;
 import com.travel.advisor.utils.RedisUtils;
+import com.travel.advisor.entity.FileResource;
+import com.travel.advisor.mapper.FileResourceMapper;
 import com.travel.advisor.vo.auth.LoginVO;
 import com.travel.advisor.vo.auth.RegisterVO;
 import com.travel.advisor.vo.auth.UserInfoVO;
@@ -32,6 +34,7 @@ import java.time.LocalDateTime;
 public class AuthServiceImpl implements AuthService {
 
     private final UserMapper userMapper;
+    private final FileResourceMapper fileResourceMapper;
     private final PasswordEncoder passwordEncoder;
     private final CaptchaService captchaService;
     private final TokenService tokenService;
@@ -214,6 +217,18 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    private String resolveAvatarUrl(String avatar) {
+        if (!org.springframework.util.StringUtils.hasText(avatar)) {
+            return "";
+        }
+        String trimmed = avatar.trim();
+        if (!trimmed.matches("\\d+")) {
+            return trimmed;
+        }
+        FileResource fileResource = fileResourceMapper.selectById(Long.valueOf(trimmed));
+        return fileResource != null ? fileResource.getUrl() : "";
+    }
+
     /**
      * 构建登录成功后的返回对象，包含 accessToken、refreshToken、用户信息等。
      */
@@ -221,7 +236,7 @@ public class AuthServiceImpl implements AuthService {
         UserInfoVO userInfoVO = new UserInfoVO();
         userInfoVO.setUserId(user.getId());
         userInfoVO.setUsername(user.getUsername());
-        userInfoVO.setAvatar(user.getAvatar());
+        userInfoVO.setAvatar(resolveAvatarUrl(user.getAvatar()));
         userInfoVO.setPhone(user.getPhone());
 
         LoginVO vo = new LoginVO();

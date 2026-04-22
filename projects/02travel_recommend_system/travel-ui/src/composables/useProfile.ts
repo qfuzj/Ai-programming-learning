@@ -10,6 +10,7 @@ import {
   getMyPreferenceTags,
 } from "@/api/profile";
 import { getTags, type CommonTagItem } from "@/api/common";
+import { getFileResource } from "@/api/file";
 import {
   clearBrowseHistory,
   deleteBrowseHistory,
@@ -68,6 +69,18 @@ export function useProfile() {
     };
   }
 
+  async function resolveAvatarUrl(avatar?: string): Promise<string> {
+    if (!avatar) return "";
+    const trimmed = avatar.trim();
+    if (!/^\d+$/.test(trimmed)) return trimmed;
+    try {
+      const resource = await getFileResource(Number(trimmed));
+      return resource.url || "";
+    } catch {
+      return "";
+    }
+  }
+
   async function loadProfile(): Promise<void> {
     loading.value = true;
     try {
@@ -77,8 +90,12 @@ export function useProfile() {
       ]);
 
       if (profileResult.status === "fulfilled") {
-        Object.assign(profile, profileResult.value);
-        syncUserStore(profileResult.value);
+        const info = profileResult.value;
+        if (info.avatar && /^\d+$/.test(info.avatar.trim())) {
+          info.avatar = await resolveAvatarUrl(info.avatar);
+        }
+        Object.assign(profile, info);
+        syncUserStore(info);
       }
       // 失败分支无需弹 toast：axios 拦截器已对每个失败请求统一提示
 

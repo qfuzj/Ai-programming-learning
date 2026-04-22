@@ -71,11 +71,21 @@ export const useUserStore = defineStore("user", () => {
     const { getProfileInfo } = await import("@/api/profile");
     try {
       const res = await getProfileInfo();
+      let avatar = res.avatar || "";
+      if (avatar && /^\d+$/.test(avatar.trim())) {
+        try {
+          const { getFileResource } = await import("@/api/file");
+          const resource = await getFileResource(Number(avatar));
+          avatar = resource.url || "";
+        } catch {
+          /* ignore: fallback to empty, component will show default */
+        }
+      }
       profile.value = {
         id: res.id,
         username: res.username,
         nickname: res.nickname,
-        avatar: res.avatar || "",
+        avatar,
         role: (res.role || role.value) as UserRole,
       };
     } catch (e) {

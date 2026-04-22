@@ -391,8 +391,35 @@
               <el-form-item label="地址" prop="address">
                 <el-input v-model="formModel.address" placeholder="请输入详细地址" />
               </el-form-item>
-              <el-form-item label="封面图URL" prop="coverImage">
-                <el-input v-model="formModel.coverImage" placeholder="请输入封面图 URL" />
+              <el-form-item label="封面图" prop="coverImage">
+                <div class="cover-uploader">
+                  <template v-if="coverImagePreviewUrl">
+                    <div class="cover-image-card">
+                      <img :src="coverImagePreviewUrl" class="cover-image" />
+                      <div class="cover-image-mask" @click="removeCoverImage">
+                        <el-icon class="delete-icon"><Close /></el-icon>
+                      </div>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="cover-upload-btn" @click="triggerCoverUpload">
+                      <el-icon v-if="!coverImageUploadLoading" class="upload-icon">
+                        <Plus />
+                      </el-icon>
+                      <el-icon v-else class="upload-icon is-loading"><Loading /></el-icon>
+                      <div class="upload-text">
+                        {{ coverImageUploadLoading ? "上传中..." : "点击上传" }}
+                      </div>
+                    </div>
+                  </template>
+                  <input
+                    ref="coverImageInputRef"
+                    type="file"
+                    accept="image/*"
+                    style="display: none"
+                    @change="onCoverImageSelected"
+                  />
+                </div>
               </el-form-item>
               <el-form-item label="开放时间">
                 <el-input v-model="formModel.openTime" placeholder="例如：08:00-17:30" />
@@ -535,23 +562,35 @@
                   :show-all-levels="false"
                 />
               </el-form-item>
-              <el-form-item label="图片ID列表">
-                <el-select
-                  v-model="imageIdTagValues"
-                  multiple
-                  filterable
-                  allow-create
-                  default-first-option
-                  placeholder="输入数字后回车，可多选"
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="item in imageIdTagValues"
-                    :key="item"
-                    :label="item"
-                    :value="item"
+              <el-form-item label="景点图片">
+                <div class="image-uploader-grid">
+                  <div v-for="(image, idx) in uploadedImages" :key="image.id" class="image-card">
+                    <img :src="image.url" alt="scenic" />
+                    <div class="image-mask">
+                      <el-icon class="image-delete" @click="removeImage(idx)">
+                        <Close />
+                      </el-icon>
+                    </div>
+                  </div>
+                  <div
+                    class="image-upload-btn"
+                    :class="{ 'is-uploading': uploadLoading }"
+                    @click="triggerImageUpload"
+                  >
+                    <el-icon v-if="!uploadLoading" class="upload-icon"><Plus /></el-icon>
+                    <el-icon v-else class="upload-icon is-loading"><Loading /></el-icon>
+                    <span class="upload-text">{{ uploadLoading ? "上传中" : "上传图片" }}</span>
+                  </div>
+                  <input
+                    ref="imageInputRef"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    @change="onImageFilesSelected"
                   />
-                </el-select>
+                </div>
+                <div class="image-hint">支持 JPG/PNG，单张不超过 5MB，可多选上传</div>
               </el-form-item>
             </div>
           </div>
@@ -571,6 +610,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, type CascaderOption, type FormInstance, type FormRules } from "element-plus";
+import { Plus, Close, Loading } from "@element-plus/icons-vue";
 import {
   createAdminScenic,
   getAdminScenicDetail,
@@ -583,6 +623,7 @@ import {
   type ScenicUpdatePayload,
   updateAdminScenic,
 } from "@/api/scenic";
+import { getUploadToken, uploadCallback, getFileResource } from "@/api/file";
 import {
   getRegionTree,
   getTags,
@@ -761,19 +802,156 @@ const formModel = reactive<ScenicFormModel>({
   status: 1,
 });
 
-const imageIdTagValues = computed<string[]>({
-  get: () => formModel.imageIds.map((id) => String(id)),
-  set: (values) => {
-    formModel.imageIds = Array.from(
-      new Set(
-        values
-          .map((item) => Number(item))
-          .filter((value) => Number.isFinite(value) && value > 0)
-          .map((value) => Math.trunc(value))
-      )
-    );
-  },
-});
+interface UploadedImage {
+  id: number;
+  url: string;
+}
+
+const uploadedImages = ref<UploadedImage[]>([]);
+const imageInputRef = ref<HTMLInputElement>();
+const uploadLoading = ref(false);
+const coverImageInputRef = ref<HTMLInputElement>();
+const coverImageUploadLoading = ref(false);
+const coverImagePreviewUrl = ref("");
+
+function syncImageIds(): void {
+  formModel.imageIds = uploadedImages.value.map((item) => item.id);
+}
+
+function triggerImageUpload(): void {
+  if (uploadLoading.value) return;
+  imageInputRef.value?.click();
+}
+
+function triggerCoverUpload(): void {
+  if (coverImageUploadLoading.value) return;
+  coverImageInputRef.value?.click();
+}
+
+async function onCoverImageSelected(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    ElMessage.warning("请选择图片文件");
+    input.value = "";
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning("图片大小不能超过 5MB");
+    input.value = "";
+    return;
+  }
+
+  coverImageUploadLoading.value = true;
+  try {
+    const tokenRes = await getUploadToken({
+      bizType: "cover",
+      fileName: file.name,
+      fileSize: file.size,
+    });
+    const uploadUrl = String(tokenRes.uploadUrl || "");
+    const bucketName = String(tokenRes.bucketName || "");
+    const objectKey = String(tokenRes.objectKey || "");
+    if (!uploadUrl || !bucketName || !objectKey) {
+      throw new Error("上传凭证不完整");
+    }
+
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!uploadResponse.ok) throw new Error("文件上传失败");
+
+    const fileId = await uploadCallback({
+      bucketName,
+      objectKey,
+      originalName: file.name,
+      bizType: "cover",
+    });
+    const fileResource = await getFileResource(fileId);
+    coverImagePreviewUrl.value = fileResource.url || "";
+    formModel.coverImage = String(fileId);
+    ElMessage.success("封面上传成功");
+  } catch {
+    ElMessage.error("封面上传失败，请重试");
+  } finally {
+    coverImageUploadLoading.value = false;
+    input.value = "";
+  }
+}
+
+function removeCoverImage(): void {
+  coverImagePreviewUrl.value = "";
+  formModel.coverImage = "";
+}
+
+async function uploadSingleImage(file: File): Promise<UploadedImage | null> {
+  if (!/^image\//.test(file.type)) {
+    ElMessage.warning(`${file.name} 不是图片文件`);
+    return null;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning(`${file.name} 超过 5MB`);
+    return null;
+  }
+  try {
+    const tokenRes = await getUploadToken({
+      bizType: "scenic",
+      fileName: file.name,
+      fileSize: file.size,
+    });
+    const uploadUrl = String(tokenRes.uploadUrl || "");
+    const bucketName = String(tokenRes.bucketName || "");
+    const objectKey = String(tokenRes.objectKey || "");
+    if (!uploadUrl || !bucketName || !objectKey) {
+      throw new Error("上传凭证不完整");
+    }
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!uploadResponse.ok) throw new Error("文件上传失败");
+    const fileId = await uploadCallback({
+      bucketName,
+      objectKey,
+      originalName: file.name,
+      bizType: "scenic",
+    });
+    const fileResource = await getFileResource(fileId);
+    return { id: fileId, url: fileResource.url || "" };
+  } catch {
+    ElMessage.error(`${file.name} 上传失败`);
+    return null;
+  }
+}
+
+async function onImageFilesSelected(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files ?? []);
+  if (!files.length) return;
+  uploadLoading.value = true;
+  try {
+    for (const file of files) {
+      const uploaded = await uploadSingleImage(file);
+      if (uploaded) {
+        uploadedImages.value.push(uploaded);
+      }
+    }
+    syncImageIds();
+  } finally {
+    uploadLoading.value = false;
+    input.value = "";
+  }
+}
+
+function removeImage(index: number): void {
+  uploadedImages.value.splice(index, 1);
+  syncImageIds();
+}
 
 const rules: FormRules<ScenicFormModel> = {
   name: [{ required: true, message: "请输入景点名称", trigger: "blur" }],
@@ -843,6 +1021,7 @@ function resetFormModel(): void {
   formModel.regionId = undefined;
   formModel.address = "";
   formModel.coverImage = "";
+  coverImagePreviewUrl.value = "";
   formModel.description = "";
   formModel.detailContent = "";
   formModel.openTime = "";
@@ -858,6 +1037,7 @@ function resetFormModel(): void {
   formModel.tagIds = [];
   formModel.imageIds = [];
   formModel.status = 1;
+  uploadedImages.value = [];
 }
 
 async function loadMetaData(): Promise<void> {
@@ -969,9 +1149,30 @@ function onSizeChange(): void {
   void loadScenicList();
 }
 
+async function resolveImageUrls<T extends { imageUrl?: string; fileResourceId?: number }>(
+  images: T[] | undefined
+): Promise<T[]> {
+  if (!images?.length) return [];
+  return Promise.all(
+    images.map(async (item) => {
+      if (item.imageUrl) return item;
+      const fileId = Number(item.fileResourceId);
+      if (!Number.isFinite(fileId) || fileId <= 0) return item;
+      try {
+        const resource = await getFileResource(fileId);
+        return { ...item, imageUrl: resource.url || "" };
+      } catch {
+        return item;
+      }
+    })
+  );
+}
+
 async function openDetailDialog(row: ScenicItem): Promise<void> {
   try {
-    detailData.value = await getAdminScenicDetail(row.id);
+    const detail = await getAdminScenicDetail(row.id);
+    detail.images = await resolveImageUrls(detail.images);
+    detailData.value = detail;
     detailVisible.value = true;
   } catch {
     ElMessage.error("获取景点详情失败");
@@ -994,6 +1195,16 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.regionId = detail.regionId;
     formModel.address = detail.address || "";
     formModel.coverImage = detail.coverImage || "";
+    if (detail.coverImage && /^\d+$/.test(detail.coverImage.trim())) {
+      try {
+        const resource = await getFileResource(Number(detail.coverImage));
+        coverImagePreviewUrl.value = resource.url || "";
+      } catch {
+        coverImagePreviewUrl.value = "";
+      }
+    } else {
+      coverImagePreviewUrl.value = detail.coverImage || "";
+    }
     formModel.description = detail.description || "";
     formModel.detailContent = detail.detailContent || "";
     formModel.openTime = detail.openTime || "";
@@ -1008,9 +1219,14 @@ async function openEditDialog(row: ScenicItem): Promise<void> {
     formModel.isRecommended = detail.isRecommended ?? 0;
     formModel.status = detail.status ?? 1;
     formModel.tagIds = detail.tagIds ?? [];
-    formModel.imageIds = (detail.images ?? [])
-      .map((item) => Number(item.fileResourceId))
-      .filter((id) => Number.isFinite(id));
+    const resolvedImages = await resolveImageUrls(detail.images);
+    uploadedImages.value = resolvedImages
+      .map((item) => ({
+        id: Number(item.fileResourceId),
+        url: item.imageUrl ?? "",
+      }))
+      .filter((item) => Number.isFinite(item.id) && item.id > 0);
+    syncImageIds();
     formVisible.value = true;
   } catch {
     ElMessage.error("加载编辑数据失败");
@@ -1278,5 +1494,92 @@ onMounted(async () => {
 .scenic-form-dialog :deep(.el-dialog__footer) {
   padding: 0;
   border-top: none;
+}
+
+.scenic-form-dialog .image-uploader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.scenic-form-dialog .image-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.scenic-form-dialog .image-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.scenic-form-dialog .image-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scenic-form-dialog .image-card:hover .image-mask {
+  opacity: 1;
+}
+
+.scenic-form-dialog .image-delete {
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.scenic-form-dialog .image-upload-btn {
+  aspect-ratio: 1 / 1;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #909399;
+  cursor: pointer;
+  background: #fafafa;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.scenic-form-dialog .image-upload-btn:hover {
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.scenic-form-dialog .image-upload-btn.is-uploading {
+  cursor: not-allowed;
+  color: #c0c4cc;
+  border-color: #e4e7ed;
+}
+
+.scenic-form-dialog .image-upload-btn .upload-icon {
+  font-size: 22px;
+}
+
+.scenic-form-dialog .image-upload-btn .upload-text {
+  font-size: 12px;
+}
+
+.scenic-form-dialog .image-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #909399;
+  line-height: 18px;
 }
 </style>

@@ -11,7 +11,10 @@ import com.travel.advisor.entity.UserPreferenceTag;
 import com.travel.advisor.entity.UserProfile;
 import com.travel.advisor.entity.UserReview;
 import com.travel.advisor.entity.ScenicSpotTag;
+import com.travel.advisor.entity.FileResource;
 import com.travel.advisor.mapper.ScenicSpotTagMapper;
+import com.travel.advisor.mapper.FileResourceMapper;
+import org.springframework.util.StringUtils;
 import com.travel.advisor.mapper.TagMapper;
 import com.travel.advisor.mapper.UserBrowseHistoryMapper;
 import com.travel.advisor.mapper.UserFavoriteMapper;
@@ -48,6 +51,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserFavoriteMapper userFavoriteMapper;
     private final UserReviewMapper userReviewMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
+    private final FileResourceMapper fileResourceMapper;
 
     private static final int RECENT_BROWSE_LIMIT = 30;
     private static final int RECENT_PREFERENCES_TOP_N = 5;
@@ -55,12 +59,25 @@ public class UserProfileServiceImpl implements UserProfileService {
     private static final double FAVORITE_WEIGHT = 3D;
     private static final double REVIEW_WEIGHT = 5D;
 
+    private String resolveAvatarUrl(String avatar) {
+        if (!StringUtils.hasText(avatar)) {
+            return "";
+        }
+        String trimmed = avatar.trim();
+        if (!trimmed.matches("\\d+")) {
+            return trimmed; // 旧数据直接返回原 URL
+        }
+        FileResource fileResource = fileResourceMapper.selectById(Long.valueOf(trimmed));
+        return fileResource != null ? fileResource.getUrl() : "";
+    }
+
     @Override
     public UserProfileVO getMyProfile() {
         LoginUser loginUser = SecurityUtils.getLoginUser();
         User user = userMapper.selectById(loginUser.getUserId());
         UserProfileVO vo = BeanCopyUtils.copy(user, UserProfileVO.class);
         vo.setRole("USER");
+        vo.setAvatar(resolveAvatarUrl(user.getAvatar()));
         return vo;
     }
 

@@ -419,7 +419,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             ScenicListVO vo = new ScenicListVO();
             vo.setScenicId(scenicSpot.getId());
             vo.setName(scenicSpot.getName());
-            vo.setCoverImage(scenicSpot.getCoverImage());
+            vo.setCoverImage(resolveCoverImageUrl(scenicSpot.getCoverImage()));
             vo.setRegionName(regionNameMap.get(scenicSpot.getRegionId()));
             vo.setScore(scenicSpot.getScore());
             vo.setCategory(scenicSpot.getCategory());
@@ -445,7 +445,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         vo.setAddress(scenicSpot.getAddress());
         vo.setLongitude(scenicSpot.getLongitude());
         vo.setLatitude(scenicSpot.getLatitude());
-        vo.setCoverImage(scenicSpot.getCoverImage());
+        vo.setCoverImage(resolveCoverImageUrl(scenicSpot.getCoverImage()));
         vo.setDescription(scenicSpot.getDescription());
         vo.setDetailContent(scenicSpot.getDetailContent());
         vo.setOpenTime(scenicSpot.getOpenTime());
@@ -629,11 +629,28 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         }
     }
 
+    private String resolveCoverImageUrl(String coverImage) {
+        if (!StringUtils.hasText(coverImage)) {
+            return "";
+        }
+        String trimmed = coverImage.trim();
+        if (!trimmed.matches("\\d+")) {
+            return trimmed;
+        }
+        FileResource fileResource = fileResourceMapper.selectById(Long.valueOf(trimmed));
+        return fileResource != null ? fileResource.getUrl() : "";
+    }
+
     private ScenicImageVO toImageVO(ScenicImage scenicImage) {
         ScenicImageVO vo = new ScenicImageVO();
         vo.setId(scenicImage.getId());
         vo.setFileResourceId(scenicImage.getFileResourceId());
-        vo.setImageUrl(scenicImage.getImageUrl());
+        String imageUrl = scenicImage.getImageUrl();
+        if (!StringUtils.hasText(imageUrl) && scenicImage.getFileResourceId() != null) {
+            FileResource fileResource = fileResourceMapper.selectById(scenicImage.getFileResourceId());
+            imageUrl = fileResource != null ? fileResource.getUrl() : "";
+        }
+        vo.setImageUrl(imageUrl);
         vo.setImageType(scenicImage.getImageType());
         vo.setTitle(scenicImage.getTitle());
         vo.setSortOrder(scenicImage.getSortOrder());

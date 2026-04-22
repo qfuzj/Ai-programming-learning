@@ -132,6 +132,7 @@ watch(
       form.signature = props.profile.signature || "";
       form.gender = props.profile.gender || 0;
       form.birthday = props.profile.birthday || "";
+      avatarFileId.value = "";
     }
   }
 );
@@ -139,6 +140,7 @@ watch(
 const fileInputRef = ref<HTMLInputElement>();
 const uploading = ref(false);
 const uploadProgress = ref(0);
+const avatarFileId = ref("");
 
 function triggerUpload(): void {
   fileInputRef.value?.click();
@@ -195,7 +197,9 @@ async function handleFileChange(event: Event): Promise<void> {
     uploadProgress.value = 90;
 
     const fileResource = await getFileResource(fileId);
+    // 预览用临时 URL，提交用 fileId（后端据此每次取最新预签名 URL）
     form.avatar = fileResource.url || "";
+    avatarFileId.value = String(fileId);
     uploadProgress.value = 100;
     ElMessage.success("头像上传成功");
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -208,7 +212,11 @@ async function handleFileChange(event: Event): Promise<void> {
 }
 
 function handleSubmit(): void {
-  emit("submit", { ...form });
+  const payload = { ...form };
+  if (avatarFileId.value) {
+    payload.avatar = avatarFileId.value;
+  }
+  emit("submit", payload);
 }
 </script>
 
