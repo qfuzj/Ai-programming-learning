@@ -10,6 +10,7 @@ export interface MyReviewForm {
   visitDate: string;
   travelType: string;
   isAnonymousBool: boolean;
+  imageIds: number[];
 }
 
 export interface MyReviewsPageState {

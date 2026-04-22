@@ -28,6 +28,9 @@ public class ReviewVO {
 
     private List<Long> imageIds;
 
+    /** 图片 URL 列表（前端展示用） */
+    private List<String> images;
+
     /** 游玩日期 */
     private LocalDate visitDate;
 

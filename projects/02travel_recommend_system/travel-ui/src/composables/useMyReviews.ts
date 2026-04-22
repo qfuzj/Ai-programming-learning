@@ -12,6 +12,7 @@ function createDefaultForm(): MyReviewForm {
     visitDate: "",
     travelType: "",
     isAnonymousBool: false,
+    imageIds: [],
   };
 }
 
@@ -39,6 +40,7 @@ export function useMyReviews() {
     reviewForm.visitDate = "";
     reviewForm.travelType = "";
     reviewForm.isAnonymousBool = false;
+    reviewForm.imageIds = [];
   }
 
   async function fetchMyReviews(): Promise<void> {
@@ -64,6 +66,7 @@ export function useMyReviews() {
         scenicId: reviewForm.scenicId,
         score: reviewForm.score,
         content: reviewForm.content,
+        imageIds: reviewForm.imageIds.length > 0 ? reviewForm.imageIds : undefined,
         visitDate: reviewForm.visitDate || undefined,
         travelType: reviewForm.travelType || undefined,
         isAnonymous: reviewForm.isAnonymousBool ? 1 : 0,

@@ -14,9 +14,11 @@ import com.travel.advisor.entity.User;
 import com.travel.advisor.vo.audit.AuditVO;
 import com.travel.advisor.utils.BeanCopyUtils;
 import com.travel.advisor.utils.JsonUtils;
+import com.travel.advisor.entity.FileResource;
 import com.travel.advisor.entity.UserReview;
 import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.mapper.ContentAuditMapper;
+import com.travel.advisor.mapper.FileResourceMapper;
 import com.travel.advisor.mapper.ScenicSpotMapper;
 import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
@@ -27,8 +29,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
 @Service
@@ -42,6 +48,7 @@ public class AuditServiceImpl implements AuditService {
     private final UserReviewMapper userReviewMapper;
     private final UserMapper userMapper;
     private final ScenicSpotMapper scenicSpotMapper;
+    private final FileResourceMapper fileResourceMapper;
 
     /**
      * 获取管理员审核分页列表
@@ -144,7 +151,35 @@ public class AuditServiceImpl implements AuditService {
         snapshotMap.put("scenicName", scenicSpot == null ? null : scenicSpot.getName());
         snapshotMap.put("rating", review.getRating());
         snapshotMap.put("content", review.getContent());
+
+        // 解析点评图片 URLs，供前端审核详情展示
+        List<Long> imageIds = parseImageIds(review.getImages());
+        if (!imageIds.isEmpty()) {
+            Map<Long, String> urlMap = fileResourceMapper.selectBatchIds(imageIds).stream()
+                    .filter(fr -> fr.getUrl() != null)
+                    .collect(Collectors.toMap(FileResource::getId, FileResource::getUrl));
+            List<String> imageUrls = imageIds.stream()
+                    .map(urlMap::get)
+                    .filter(Objects::nonNull)
+                    .toList();
+            if (!imageUrls.isEmpty()) {
+                snapshotMap.put("images", imageUrls);
+            }
+        }
+
         vo.setSnapshot(snapshotMap);
+    }
+
+    private List<Long> parseImageIds(String images) {
+        if (!StringUtils.hasText(images)) {
+            return Collections.emptyList();
+        }
+        try {
+            Long[] arr = JsonUtils.fromJson(images, Long[].class);
+            return arr == null ? Collections.emptyList() : List.of(arr);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 
     /**

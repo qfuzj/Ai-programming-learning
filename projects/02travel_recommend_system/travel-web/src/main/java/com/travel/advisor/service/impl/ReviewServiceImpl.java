@@ -23,6 +23,7 @@ import com.travel.advisor.mapper.ReviewLikeMapper;
 import com.travel.advisor.mapper.ReviewReplyMapper;
 import com.travel.advisor.mapper.ScenicSpotMapper;
 import com.travel.advisor.mapper.UserMapper;
+import com.travel.advisor.mapper.FileResourceMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.service.ReviewService;
 import com.travel.advisor.utils.JsonUtils;
@@ -49,6 +50,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ContentAuditMapper contentAuditMapper;
     private final ReviewLikeMapper reviewLikeMapper;
     private final ReviewReplyMapper reviewReplyMapper;
+    private final FileResourceMapper fileResourceMapper;
     private final com.travel.advisor.service.FileService fileService;
 
     /**
@@ -205,6 +207,20 @@ public class ReviewServiceImpl implements ReviewService {
         }
         final List<Long> finalLikedReviewIds = likedReviewIds;
 
+        // 批量查询所有点评涉及的图片资源
+        List<Long> allImageIds = reviews.stream()
+                .flatMap(r -> parseImageIds(r.getImages()).stream())
+                .distinct()
+                .toList();
+        final Map<Long, String> imageUrlMap;
+        if (allImageIds.isEmpty()) {
+            imageUrlMap = Collections.emptyMap();
+        } else {
+            imageUrlMap = fileResourceMapper.selectBatchIds(allImageIds).stream()
+                    .filter(fr -> fr.getUrl() != null)
+                    .collect(Collectors.toMap(com.travel.advisor.entity.FileResource::getId, fr -> fr.getUrl()));
+        }
+
         return reviews.stream().map(item -> {
             ReviewVO vo = new ReviewVO();
             vo.setId(item.getId());
@@ -216,7 +232,9 @@ public class ReviewServiceImpl implements ReviewService {
             vo.setScenicName(scenicSpot == null ? "" : scenicSpot.getName());
             vo.setScore(item.getRating());
             vo.setContent(item.getContent());
-            vo.setImageIds(parseImageIds(item.getImages()));
+            List<Long> itemImageIds = parseImageIds(item.getImages());
+            vo.setImageIds(itemImageIds);
+            vo.setImages(itemImageIds.stream().map(imageUrlMap::get).filter(Objects::nonNull).toList());
             vo.setVisitDate(item.getVisitDate());
             vo.setTravelType(item.getTravelType());
             vo.setLikeCount(item.getLikeCount());
