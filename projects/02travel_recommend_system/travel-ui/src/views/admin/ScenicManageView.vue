@@ -192,7 +192,7 @@
             {{ formatTicketPrice(row.ticketPrice) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="90" fixed="right">
+        <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetailDialog(row)">查看详情</el-button>
             <el-button link type="primary" @click="openEditDialog(row)">编辑</el-button>
@@ -1581,5 +1581,67 @@ onMounted(async () => {
   font-size: 12px;
   color: #909399;
   line-height: 18px;
+}
+
+.scenic-form-dialog .cover-uploader {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scenic-form-dialog .cover-image-card {
+  position: relative;
+  width: 200px;
+  height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #dcdfe6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.scenic-form-dialog .cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.scenic-form-dialog .cover-image-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.scenic-form-dialog .cover-image-card:hover .cover-image-mask {
+  opacity: 1;
+}
+
+.scenic-form-dialog .cover-upload-btn {
+  width: 200px;
+  height: 120px;
+  border-radius: 6px;
+  border: 1px dashed #dcdfe6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  background: #fafbfc;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.scenic-form-dialog .cover-upload-btn:hover {
+  border-color: #409eff;
 }
 </style>

@@ -60,7 +60,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="100" fixed="right">
           <template #default="scope">
             <el-button link type="primary" @click="openDetail(scope.row.id)">查看详情</el-button>
             <el-popconfirm

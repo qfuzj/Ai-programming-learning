@@ -46,11 +46,6 @@
             {{ formatGender(scope.row.gender) }}
           </template>
         </el-table-column>
-        <el-table-column prop="birthday" label="生日" width="120" />
-        <el-table-column prop="phone" label="手机号" width="140" />
-        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="lastLoginTime" label="最后登录" width="180" />
-        <el-table-column prop="createdAt" label="注册时间" width="180" />
         <el-table-column label="状态" width="90">
           <template #default="scope">
             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
@@ -58,7 +53,12 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column prop="phone" label="手机号" width="140" />
+        <el-table-column prop="lastLoginTime" label="最后登录" width="180" />
+        <el-table-column prop="createdAt" label="注册时间" width="180" />
+        <el-table-column prop="birthday" label="生日" width="120" />
+        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+        <el-table-column label="操作" width="120" fixed="right">
           <template #default="scope">
             <el-button link type="primary" @click="openDetail(scope.row.id)">详情</el-button>
             <el-popconfirm
