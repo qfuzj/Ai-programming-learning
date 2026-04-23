@@ -1,6 +1,7 @@
 package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.travel.advisor.common.enums.BizType;
 import com.travel.advisor.dto.user.UserPreferenceTagsUpdateDTO;
 import com.travel.advisor.dto.user.UserProfileUpdateDTO;
 import com.travel.advisor.entity.Tag;
@@ -23,6 +24,7 @@ import com.travel.advisor.mapper.UserPreferenceTagMapper;
 import com.travel.advisor.mapper.UserProfileMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.security.LoginUser;
+import com.travel.advisor.service.FileService;
 import com.travel.advisor.service.UserProfileService;
 import com.travel.advisor.utils.BeanCopyUtils;
 import com.travel.advisor.utils.SecurityUtils;
@@ -52,6 +54,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserReviewMapper userReviewMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
     private final FileResourceMapper fileResourceMapper;
+    private final FileService fileService;
 
     private static final int RECENT_BROWSE_LIMIT = 30;
     private static final int RECENT_PREFERENCES_TOP_N = 5;
@@ -92,6 +95,14 @@ public class UserProfileServiceImpl implements UserProfileService {
         user.setBirthday(dto.getBirthday());
         user.setSignature(dto.getSignature());
         userMapper.updateById(user);
+        if (StringUtils.hasText(dto.getAvatar())) {
+            try {
+                Long fileId = Long.parseLong(dto.getAvatar().trim());
+                fileService.bindFilesToBiz(List.of(fileId), userId, BizType.AVATAR);
+            } catch (NumberFormatException e) {
+                // 旧 URL 格式，不绑定
+            }
+        }
     }
 
     @Override

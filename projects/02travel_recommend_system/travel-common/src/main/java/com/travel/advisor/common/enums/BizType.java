@@ -14,7 +14,8 @@ public enum BizType {
     AVATAR(2, "头像"),
     PLAN(3, "行程计划"),
     CHAT(4, "AI对话"),
-    TAG(5, "标签");
+    TAG(5, "标签"),
+    SCENIC(6, "景点");
 
     private final Integer code;
     private final String desc;

@@ -10,6 +10,8 @@ import com.travel.advisor.dto.scenic.*;
 import com.travel.advisor.entity.*;
 import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.mapper.*;
+import com.travel.advisor.common.enums.BizType;
+import com.travel.advisor.service.FileService;
 import com.travel.advisor.service.RegionService;
 import com.travel.advisor.service.ScenicSpotService;
 import com.travel.advisor.utils.SecurityUtils;
@@ -47,6 +49,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     private final RegionService regionService;
     private final UserReviewMapper userReviewMapper;
     private final FileResourceMapper fileResourceMapper;
+    private final FileService fileService;
 
     @Override
     public List<ScenicSpot> listByIdsWithStatus(Collection<Long> ids, Integer status) {
@@ -142,6 +145,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
 
         syncTags(scenicSpot.getId(), dto.getTagIds());
         syncImages(scenicSpot.getId(), dto.getImageIds());
+        bindCoverImage(dto.getCoverImage(), scenicSpot.getId());
         return scenicSpot.getId();
     }
 
@@ -165,6 +169,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         if (dto.getImageIds() != null) {
             syncImages(id, dto.getImageIds());
         }
+        bindCoverImage(dto.getCoverImage(), id);
     }
 
     /**
@@ -626,6 +631,19 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
 
         if (!CollectionUtils.isEmpty(scenicImages)) {
             scenicImageMapper.insertBatch(scenicImages);
+        }
+        fileService.bindFilesToBiz(imageIds, scenicSpotId, BizType.SCENIC);
+    }
+
+    private void bindCoverImage(String coverImage, Long scenicSpotId) {
+        if (!StringUtils.hasText(coverImage)) {
+            return;
+        }
+        try {
+            Long fileId = Long.parseLong(coverImage.trim());
+            fileService.bindFilesToBiz(List.of(fileId), scenicSpotId, BizType.SCENIC);
+        } catch (NumberFormatException e) {
+            // 旧 URL 格式，不绑定
         }
     }
 
