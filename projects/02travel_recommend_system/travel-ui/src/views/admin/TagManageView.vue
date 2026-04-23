@@ -149,7 +149,26 @@
                 </el-form-item>
               </div>
               <el-form-item label="图标" prop="icon">
-                <el-input v-model="formModel.icon" placeholder="图标 URL" />
+                <div v-if="iconPreviewUrl" class="icon-image-card">
+                  <img :src="iconPreviewUrl" class="icon-image" />
+                  <div class="icon-image-mask" @click="removeIcon">
+                    <el-icon class="delete-icon"><Close /></el-icon>
+                  </div>
+                </div>
+                <div v-else class="icon-upload-btn" @click="triggerIconUpload">
+                  <el-icon v-if="!iconUploadLoading" class="upload-icon"><Plus /></el-icon>
+                  <el-icon v-else class="upload-icon is-loading"><Loading /></el-icon>
+                  <div class="upload-text">
+                    {{ iconUploadLoading ? "上传中..." : "点击上传" }}
+                  </div>
+                </div>
+                <input
+                  ref="iconInputRef"
+                  type="file"
+                  accept="image/*"
+                  style="display: none"
+                  @change="onIconSelected"
+                />
               </el-form-item>
             </div>
           </div>
@@ -207,6 +226,8 @@ import {
 } from "@/api/common";
 import { getCommonStatusDict, getTagScopeDict } from "@/api/dict";
 import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
+import { Plus, Loading, Close } from "@element-plus/icons-vue";
+import { getUploadToken, uploadCallback, getFileResource } from "@/api/file";
 
 const { options: tagScopeOptions } = useDictOptions("tag-scope", getTagScopeDict);
 const { options: statusOptions } = useDictOptions("common-status", getCommonStatusDict);
@@ -219,6 +240,10 @@ const tagList = ref<AdminTagItem[]>([]);
 const formVisible = ref(false);
 const editingId = ref<number | null>(null);
 const formRef = ref<FormInstance>();
+
+const iconInputRef = ref<HTMLInputElement>();
+const iconUploadLoading = ref(false);
+const iconPreviewUrl = ref("");
 
 const query = reactive<AdminTagQuery>({
   pageNum: 1,
@@ -314,6 +339,7 @@ function resetFormModel(): void {
   formModel.icon = "";
   formModel.sortOrder = 0;
   formModel.status = 1;
+  iconPreviewUrl.value = "";
 }
 
 function openCreate(): void {
@@ -323,7 +349,7 @@ function openCreate(): void {
   void fetchCategoriesByScope(formModel.scope || "SCENIC");
 }
 
-function openEdit(row: AdminTagItem): void {
+async function openEdit(row: AdminTagItem): void {
   editingId.value = row.id;
   formModel.name = row.name;
   formModel.scope = row.scope ?? "SCENIC";
@@ -331,8 +357,88 @@ function openEdit(row: AdminTagItem): void {
   formModel.icon = row.icon ?? "";
   formModel.sortOrder = row.sortOrder ?? 0;
   formModel.status = row.status ?? 1;
+
+  // 图标预览：后端已解析为 URL，直接预览；若仍存旧值，尝试按 fileId 解析
+  if (row.icon && row.icon.startsWith("http")) {
+    iconPreviewUrl.value = row.icon;
+  } else if (row.icon && /^\d+$/.test(row.icon.trim())) {
+    try {
+      const fileRes = await getFileResource(Number(row.icon));
+      iconPreviewUrl.value = fileRes.url || "";
+    } catch {
+      iconPreviewUrl.value = "";
+    }
+  } else {
+    iconPreviewUrl.value = row.icon || "";
+  }
+
   formVisible.value = true;
   void fetchCategoriesByScope(formModel.scope || "SCENIC");
+}
+
+function triggerIconUpload(): void {
+  if (iconUploadLoading.value) return;
+  iconInputRef.value?.click();
+}
+
+async function onIconSelected(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    ElMessage.warning("请选择图片文件");
+    input.value = "";
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.warning("图标大小不能超过 2MB");
+    input.value = "";
+    return;
+  }
+
+  iconUploadLoading.value = true;
+  try {
+    const tokenRes = await getUploadToken({
+      bizType: "tag",
+      fileName: file.name,
+      fileSize: file.size,
+    });
+    const uploadUrl = String(tokenRes.uploadUrl || "");
+    const bucketName = String(tokenRes.bucketName || "");
+    const objectKey = String(tokenRes.objectKey || "");
+    if (!uploadUrl || !bucketName || !objectKey) {
+      throw new Error("上传凭证不完整");
+    }
+
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!uploadResponse.ok) throw new Error("文件上传失败");
+
+    const fileId = await uploadCallback({
+      bucketName,
+      objectKey,
+      originalName: file.name,
+      bizType: "tag",
+    });
+    const fileResource = await getFileResource(fileId);
+    iconPreviewUrl.value = fileResource.url || "";
+    formModel.icon = String(fileId);
+    ElMessage.success("图标上传成功");
+  } catch {
+    ElMessage.error("图标上传失败，请重试");
+  } finally {
+    iconUploadLoading.value = false;
+    input.value = "";
+  }
+}
+
+function removeIcon(): void {
+  iconPreviewUrl.value = "";
+  formModel.icon = "";
 }
 
 async function handleSubmit(): Promise<void> {
@@ -515,5 +621,59 @@ onMounted(() => {
 .tag-form-dialog :deep(.el-dialog__footer) {
   padding: 0;
   border-top: none;
+}
+
+.icon-image-card {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #dcdfe6;
+  cursor: pointer;
+}
+
+.icon-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.icon-image-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.icon-image-card:hover .icon-image-mask {
+  opacity: 1;
+}
+
+.icon-upload-btn {
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  border: 1px dashed #dcdfe6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  background: #fafbfc;
+  gap: 4px;
+}
+
+.icon-upload-btn:hover {
+  border-color: #409eff;
 }
 </style>

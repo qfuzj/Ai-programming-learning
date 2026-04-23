@@ -98,9 +98,10 @@ public class UserProfileServiceImpl implements UserProfileService {
     public UserProfilePortraitVO getMyPortrait() {
         Long userId = SecurityUtils.getLoginUser().getUserId();
         UserProfilePortraitVO vo = new UserProfilePortraitVO();
-        
+
         // 1. 获取 user_profile 核心画像
-        UserProfile profile = userProfileMapper.selectOne(Wrappers.<UserProfile>lambdaQuery().eq(UserProfile::getUserId, userId));
+        UserProfile profile = userProfileMapper
+                .selectOne(Wrappers.<UserProfile>lambdaQuery().eq(UserProfile::getUserId, userId));
         if (profile != null) {
             vo.setTravelStyle(profile.getTravelStyle() != null ? profile.getTravelStyle() : "待发掘");
             Integer budget = profile.getBudgetLevel();
@@ -111,9 +112,10 @@ public class UserProfileServiceImpl implements UserProfileService {
             vo.setBudgetLevel("未知");
             vo.setSummary("暂无足够数据生成画像");
         }
-        
+
         // 2. 获取用户偏好标签名列表
-        List<UserPreferenceTag> prefTags = userPreferenceTagMapper.selectList(Wrappers.<UserPreferenceTag>lambdaQuery().eq(UserPreferenceTag::getUserId, userId));
+        List<UserPreferenceTag> prefTags = userPreferenceTagMapper
+                .selectList(Wrappers.<UserPreferenceTag>lambdaQuery().eq(UserPreferenceTag::getUserId, userId));
         if (!prefTags.isEmpty()) {
             List<Long> tagIds = prefTags.stream().map(UserPreferenceTag::getTagId).collect(Collectors.toList());
             List<Tag> tags = tagMapper.selectBatchIds(tagIds);
@@ -121,7 +123,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         } else {
             vo.setPreferredTags(new ArrayList<>());
         }
-        
+
         vo.setRecentPreferences(buildRecentPreferences(userId));
         vo.setLocation("未知地区");
         return vo;
@@ -135,8 +137,7 @@ public class UserProfileServiceImpl implements UserProfileService {
                         .isNotNull(UserBrowseHistory::getScenicSpotId)
                         .orderByDesc(UserBrowseHistory::getCreateTime)
                         .orderByDesc(UserBrowseHistory::getId)
-                        .last("LIMIT " + RECENT_BROWSE_LIMIT)
-        );
+                        .last("LIMIT " + RECENT_BROWSE_LIMIT));
 
         Map<Long, Long> scenicBrowseCountMap = recentBrowseList.stream()
                 .collect(Collectors.groupingBy(UserBrowseHistory::getScenicSpotId, Collectors.counting()));
@@ -145,8 +146,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         List<UserFavorite> favoriteList = userFavoriteMapper.selectList(
                 Wrappers.<UserFavorite>lambdaQuery()
                         .eq(UserFavorite::getUserId, userId)
-                        .isNotNull(UserFavorite::getScenicSpotId)
-        );
+                        .isNotNull(UserFavorite::getScenicSpotId));
         Map<Long, Long> scenicFavoriteCountMap = favoriteList.stream()
                 .collect(Collectors.groupingBy(UserFavorite::getScenicSpotId, Collectors.counting()));
 
@@ -154,16 +154,18 @@ public class UserProfileServiceImpl implements UserProfileService {
         List<UserReview> reviewList = userReviewMapper.selectList(
                 Wrappers.<UserReview>lambdaQuery()
                         .eq(UserReview::getUserId, userId)
-                        .isNotNull(UserReview::getScenicSpotId)
-        );
+                        .isNotNull(UserReview::getScenicSpotId));
         Map<Long, Long> scenicReviewCountMap = reviewList.stream()
                 .collect(Collectors.groupingBy(UserReview::getScenicSpotId, Collectors.counting()));
 
         // 4) 先聚合到景点分：scenicScore = browse*1 + favorite*3 + review*5
         Map<Long, Double> scenicScoreMap = new HashMap<>();
-        scenicBrowseCountMap.forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * BROWSE_WEIGHT, Double::sum));
-        scenicFavoriteCountMap.forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * FAVORITE_WEIGHT, Double::sum));
-        scenicReviewCountMap.forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * REVIEW_WEIGHT, Double::sum));
+        scenicBrowseCountMap
+                .forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * BROWSE_WEIGHT, Double::sum));
+        scenicFavoriteCountMap
+                .forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * FAVORITE_WEIGHT, Double::sum));
+        scenicReviewCountMap
+                .forEach((scenicId, count) -> scenicScoreMap.merge(scenicId, count * REVIEW_WEIGHT, Double::sum));
 
         if (scenicScoreMap.isEmpty()) {
             return new ArrayList<>();
@@ -221,15 +223,61 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 获取我的偏好标签列表
+     */
     @Override
     public List<Tag> getMyPreferenceTags() {
         Long userId = SecurityUtils.getLoginUser().getUserId();
-        List<UserPreferenceTag> prefTags = userPreferenceTagMapper.selectList(Wrappers.<UserPreferenceTag>lambdaQuery().eq(UserPreferenceTag::getUserId, userId));
+        List<UserPreferenceTag> prefTags = userPreferenceTagMapper.selectList(
+                Wrappers.<UserPreferenceTag>lambdaQuery().eq(UserPreferenceTag::getUserId, userId));
         if (prefTags.isEmpty()) {
             return new ArrayList<>();
         }
         List<Long> tagIds = prefTags.stream().map(UserPreferenceTag::getTagId).collect(Collectors.toList());
-        return tagMapper.selectBatchIds(tagIds);
+        List<Tag> tags = tagMapper.selectBatchIds(tagIds);
+        resolveTagIconUrls(tags);
+        return tags;
+    }
+
+    private void resolveTagIconUrls(List<Tag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return;
+        }
+        List<Long> iconIds = tags.stream()
+                .map(Tag::getIcon)
+                .filter(StringUtils::hasText)
+                .map(s -> {
+                    try {
+                        return Long.parseLong(s.trim());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (iconIds.isEmpty()) {
+            return;
+        }
+        // 批量查询 FileResource，构建 ID->URL 的映射
+        Map<Long, String> urlMap = fileResourceMapper.selectBatchIds(iconIds).stream()
+                .filter(fr -> fr.getUrl() != null)
+                .collect(Collectors.toMap(FileResource::getId, FileResource::getUrl));
+        for (Tag tag : tags) {
+            if (!StringUtils.hasText(tag.getIcon())) {
+                continue;
+            }
+            try {
+                Long id = Long.parseLong(tag.getIcon().trim());
+                String url = urlMap.get(id);
+                if (url != null) {
+                    tag.setIcon(url);
+                }
+            } catch (NumberFormatException e) {
+                // 保持原有 URL 不变
+            }
+        }
     }
 
     @Override
@@ -237,7 +285,8 @@ public class UserProfileServiceImpl implements UserProfileService {
     public void updatePreferenceTags(UserPreferenceTagsUpdateDTO dto) {
         Long userId = SecurityUtils.getLoginUser().getUserId();
         // 1. 删除旧的偏好标签
-        userPreferenceTagMapper.delete(Wrappers.<UserPreferenceTag>lambdaQuery().eq(UserPreferenceTag::getUserId, userId));
+        userPreferenceTagMapper
+                .delete(Wrappers.<UserPreferenceTag>lambdaQuery().eq(UserPreferenceTag::getUserId, userId));
         // 2. 插入新的偏好标签
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
             for (Long tagId : dto.getTagIds()) {

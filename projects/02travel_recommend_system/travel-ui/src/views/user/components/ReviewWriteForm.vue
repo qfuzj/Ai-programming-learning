@@ -31,11 +31,7 @@
 
       <el-form-item label="上传图片">
         <div class="review-image-uploader">
-          <div
-            v-for="img in uploadedImages"
-            :key="img.id"
-            class="review-image-card"
-          >
+          <div v-for="img in uploadedImages" :key="img.id" class="review-image-card">
             <img :src="img.url" class="review-img" />
             <div class="review-image-mask" @click="removeImage(img.id)">
               <el-icon class="delete-icon"><Close /></el-icon>
