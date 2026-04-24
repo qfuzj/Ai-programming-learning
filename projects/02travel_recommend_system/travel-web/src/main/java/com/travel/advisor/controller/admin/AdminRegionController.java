@@ -7,6 +7,7 @@ import com.travel.advisor.dto.region.RegionCreateDTO;
 import com.travel.advisor.dto.region.RegionQueryDTO;
 import com.travel.advisor.dto.region.RegionUpdateDTO;
 import com.travel.advisor.entity.Region;
+import com.travel.advisor.annotation.OperationLog;
 import com.travel.advisor.service.RegionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,11 +35,13 @@ public class AdminRegionController {
     }
 
     @PostMapping
+    @OperationLog(module = "region", action = "create", description = "新增地区")
     public Result<Long> create(@Valid @RequestBody RegionCreateDTO dto) {
         return Result.success(regionService.create(dto));
     }
 
     @PutMapping("/{id}")
+    @OperationLog(module = "region", action = "update", description = "更新地区")
     public Result<Void> update(@PathVariable Long id,
                                @Valid @RequestBody RegionUpdateDTO dto) {
         regionService.update(id, dto);
@@ -46,6 +49,7 @@ public class AdminRegionController {
     }
 
     @DeleteMapping("/{id}")
+    @OperationLog(module = "region", action = "delete", description = "删除地区")
     public Result<Void> delete(@PathVariable Long id) {
         regionService.delete(id);
         return Result.success();

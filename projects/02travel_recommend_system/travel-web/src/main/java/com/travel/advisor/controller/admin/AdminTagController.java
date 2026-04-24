@@ -7,6 +7,7 @@ import com.travel.advisor.dto.tag.TagCreateDTO;
 import com.travel.advisor.dto.tag.TagQueryDTO;
 import com.travel.advisor.dto.tag.TagUpdateDTO;
 import com.travel.advisor.entity.Tag;
+import com.travel.advisor.annotation.OperationLog;
 import com.travel.advisor.service.TagService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,11 +44,13 @@ public class AdminTagController {
     }
 
     @PostMapping
+    @OperationLog(module = "tag", action = "create", description = "新增标签")
     public Result<Long> create(@Valid @RequestBody TagCreateDTO dto) {
         return Result.success(tagService.create(dto));
     }
 
     @PutMapping("/{id}")
+    @OperationLog(module = "tag", action = "update", description = "更新标签")
     public Result<Void> update(@PathVariable Long id,
                                @Valid @RequestBody TagUpdateDTO dto) {
         tagService.update(id, dto);
@@ -55,6 +58,7 @@ public class AdminTagController {
     }
 
     @DeleteMapping("/{id}")
+    @OperationLog(module = "tag", action = "delete", description = "删除标签")
     public Result<Void> delete(@PathVariable Long id) {
         tagService.delete(id);
         return Result.success();

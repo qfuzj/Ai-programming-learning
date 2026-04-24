@@ -32,7 +32,7 @@
 
       <el-table :data="configList">
         <el-table-column prop="configKey" label="配置键" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="configValue" label="配置值" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="configValue" label="配置值" min-width="160" show-overflow-tooltip />
         <el-table-column label="类型" width="100">
           <template #default="scope">
             {{ findDictDesc(configTypeOptions, scope.row.configType, scope.row.configType) }}

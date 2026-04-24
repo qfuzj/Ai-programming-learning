@@ -7,6 +7,7 @@ import com.travel.advisor.dto.scenic.ScenicImageCreateDTO;
 import com.travel.advisor.dto.scenic.ScenicQueryDTO;
 import com.travel.advisor.dto.scenic.ScenicStatusDTO;
 import com.travel.advisor.dto.scenic.ScenicUpdateDTO;
+import com.travel.advisor.annotation.OperationLog;
 import com.travel.advisor.service.ScenicSpotService;
 import com.travel.advisor.vo.scenic.ScenicImageVO;
 import com.travel.advisor.vo.scenic.ScenicListVO;
@@ -42,35 +43,41 @@ public class AdminScenicSpotController {
     }
 
     @PostMapping
+    @OperationLog(module = "scenic", action = "create", description = "新增景点")
     public Result<Long> create(@Valid @RequestBody ScenicCreateDTO dto) {
         return Result.success(scenicSpotService.create(dto));
     }
 
     @PutMapping("/{id}")
+    @OperationLog(module = "scenic", action = "update", description = "更新景点")
     public Result<Void> update(@PathVariable Long id, @Valid @RequestBody ScenicUpdateDTO dto) {
         scenicSpotService.update(id, dto);
         return Result.success();
     }
 
     @DeleteMapping("/{id}")
+    @OperationLog(module = "scenic", action = "delete", description = "删除景点")
     public Result<Void> delete(@PathVariable Long id) {
         scenicSpotService.delete(id);
         return Result.success();
     }
 
     @PutMapping("/{id}/status")
+    @OperationLog(module = "scenic", action = "update", description = "更新景点状态")
     public Result<Void> updateStatus(@PathVariable Long id, @Valid @RequestBody ScenicStatusDTO dto) {
         scenicSpotService.updateStatus(id, dto.getStatus());
         return Result.success();
     }
 
     @PutMapping("/batch/status")
+    @OperationLog(module = "scenic", action = "update", description = "批量更新景点状态")
     public Result<Void> batchUpdateStatus(@Valid @RequestBody ScenicStatusDTO dto) {
         scenicSpotService.batchUpdateStatus(dto);
         return Result.success();
     }
 
     @PutMapping("/{id}/tags")
+    @OperationLog(module = "scenic", action = "update", description = "更新景点标签")
     public Result<Void> updateTags(@PathVariable Long id, @RequestBody List<Long> tagIds) {
         scenicSpotService.updateTags(id, tagIds);
         return Result.success();
@@ -82,11 +89,13 @@ public class AdminScenicSpotController {
     }
 
     @PostMapping("/{id}/images")
+    @OperationLog(module = "scenic", action = "create", description = "新增景点图片")
     public Result<Long> addImage(@PathVariable Long id, @Valid @RequestBody ScenicImageCreateDTO dto) {
         return Result.success(scenicSpotService.addImage(id, dto));
     }
 
     @DeleteMapping("/{id}/images/{imageId}")
+    @OperationLog(module = "scenic", action = "delete", description = "删除景点图片")
     public Result<Void> deleteImage(@PathVariable Long id, @PathVariable Long imageId) {
         scenicSpotService.deleteImage(id, imageId);
         return Result.success();
