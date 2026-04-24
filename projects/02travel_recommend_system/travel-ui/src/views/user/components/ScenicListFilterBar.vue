@@ -89,7 +89,7 @@
 
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="最低评分" class="form-item">
-              <el-select v-model="query.minScore" placeholder="不限评分" clearable>
+              <el-select v-model="minScoreModel" placeholder="不限评分" clearable>
                 <el-option
                   v-for="score in minScoreOptions"
                   :key="score"
@@ -166,6 +166,13 @@ const provinceModel = computed({
 const cityModel = computed({
   get: () => props.selectedCityId,
   set: (value: number | undefined) => emit("update:selectedCityId", value),
+});
+
+const minScoreModel = computed({
+  get: () => (props.query as ScenicQuery & { minScore?: number }).minScore,
+  set: (value: number | undefined) => {
+    (props.query as ScenicQuery & { minScore?: number }).minScore = value;
+  },
 });
 </script>
 

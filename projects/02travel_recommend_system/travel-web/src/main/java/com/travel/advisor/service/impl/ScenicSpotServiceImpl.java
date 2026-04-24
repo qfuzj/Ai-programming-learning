@@ -264,6 +264,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         scenicImage.setSortOrder(dto.getSortOrder());
         scenicImage.setIsCover(dto.getIsCover());
         scenicImageMapper.insert(scenicImage);
+        if (dto.getFileResourceId() != null) {
+            fileService.bindFilesToBiz(List.of(dto.getFileResourceId()), scenicSpotId, BizType.SCENIC);
+        }
         return scenicImage.getId();
     }
 

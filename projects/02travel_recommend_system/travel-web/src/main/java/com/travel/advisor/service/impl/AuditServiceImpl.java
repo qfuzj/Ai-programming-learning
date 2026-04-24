@@ -3,7 +3,6 @@ package com.travel.advisor.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.enums.ContentAuditStatus;
-import com.travel.advisor.common.enums.UserReviewStatus;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.audit.AuditActionDTO;
@@ -23,7 +22,7 @@ import com.travel.advisor.mapper.ScenicSpotMapper;
 import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.service.AuditService;
-import com.travel.advisor.utils.SecurityUtils;
+import com.travel.advisor.service.audit.AuditStrategy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,24 +34,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class AuditServiceImpl implements AuditService {
 
-    // 目前仅支持点评审核，后续可扩展其他内容类型（如图片、攻略等），建议使用枚举或常量管理内容类型
-    private static final String REVIEW_CONTENT_TYPE = "review";
-
+    private final Map<String, AuditStrategy> auditStrategyMap;
     private final ContentAuditMapper contentAuditMapper;
     private final UserReviewMapper userReviewMapper;
     private final UserMapper userMapper;
     private final ScenicSpotMapper scenicSpotMapper;
     private final FileResourceMapper fileResourceMapper;
 
-    /**
-     * 获取管理员审核分页列表
-     */
     @Override
     public PageResult<AuditVO> page(AuditQueryDTO dto) {
         LambdaQueryWrapper<ContentAudit> wrapper = new LambdaQueryWrapper<ContentAudit>()
@@ -67,7 +60,7 @@ public class AuditServiceImpl implements AuditService {
 
         return PageResult.<AuditVO>builder()
                 .records(result.getRecords().stream().map(this::convertToVO)
-                        .collect(java.util.stream.Collectors.toList()))
+                        .collect(Collectors.toList()))
                 .total(result.getTotal())
                 .pageNum(Math.toIntExact(result.getCurrent()))
                 .pageSize(Math.toIntExact(result.getSize()))
@@ -75,12 +68,6 @@ public class AuditServiceImpl implements AuditService {
                 .build();
     }
 
-    /**
-     * 获取管理员审核详情
-     * 
-     * @param id 审核记录ID
-     * @return 审核记录详情VO对象
-     */
     @Override
     public AuditVO getById(Long id) {
         ContentAudit audit = contentAuditMapper.selectById(id);
@@ -90,40 +77,35 @@ public class AuditServiceImpl implements AuditService {
         return convertToVO(audit);
     }
 
-    /**
-     * 将 ContentAudit 实体转换为 AuditVO，并解析 JSON 字段
-     */
     private AuditVO convertToVO(ContentAudit audit) {
         AuditVO vo = BeanCopyUtils.copy(audit, AuditVO.class);
         if (StringUtils.hasText(audit.getContentSnapshot())) {
             try {
                 vo.setSnapshot(JsonUtils.fromJson(audit.getContentSnapshot(), Object.class));
             } catch (Exception e) {
-                // ignore or log
+                // ignore
             }
         }
         if (StringUtils.hasText(audit.getAutoAuditResult())) {
             try {
                 vo.setAutoAuditResult(JsonUtils.fromJson(audit.getAutoAuditResult(), Object.class));
             } catch (Exception e) {
-                // ignore or log
+                // ignore
             }
         }
         if (StringUtils.hasText(audit.getViolationType())) {
             try {
                 vo.setViolationType(JsonUtils.fromJson(audit.getViolationType(), Object.class));
             } catch (Exception e) {
+                // ignore
             }
         }
         enrichReviewSnapshot(vo, audit);
         return vo;
     }
 
-    /**
-     * 如果审核内容是点评，则从 user_review 表中查询相关信息，并将用户和景点的关键信息添加到审核记录的 snapshot 中，方便前端展示
-     */
     private void enrichReviewSnapshot(AuditVO vo, ContentAudit audit) {
-        if (!REVIEW_CONTENT_TYPE.equalsIgnoreCase(audit.getContentType())) {
+        if (!"review".equalsIgnoreCase(audit.getContentType())) {
             return;
         }
 
@@ -135,7 +117,6 @@ public class AuditServiceImpl implements AuditService {
         User user = userMapper.selectById(review.getUserId());
         ScenicSpot scenicSpot = scenicSpotMapper.selectById(review.getScenicSpotId());
 
-        // 将原有 snapshot 中的键值对复制到新的 Map 中，并添加用户和景点相关信息
         Map<String, Object> snapshotMap = new LinkedHashMap<>();
         if (vo.getSnapshot() instanceof Map<?, ?> rawMap) {
             rawMap.forEach((key, value) -> {
@@ -152,7 +133,6 @@ public class AuditServiceImpl implements AuditService {
         snapshotMap.put("rating", review.getRating());
         snapshotMap.put("content", review.getContent());
 
-        // 解析点评图片 URLs，供前端审核详情展示
         List<Long> imageIds = parseImageIds(review.getImages());
         if (!imageIds.isEmpty()) {
             Map<Long, String> urlMap = fileResourceMapper.selectBatchIds(imageIds).stream()
@@ -182,92 +162,43 @@ public class AuditServiceImpl implements AuditService {
         }
     }
 
-    /**
-     * 批准审核
-     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void approve(Long id, AuditActionDTO dto) {
-        updateAuditAndReview(id, ContentAuditStatus.APPROVED.getCode(), UserReviewStatus.APPROVED.getCode(), dto);
+        executeAuditWithStrategy(id, ContentAuditStatus.APPROVED.getCode(), "approve", dto);
     }
 
-    /**
-     * 拒绝审核
-     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void reject(Long id, AuditActionDTO dto) {
         if (dto == null || !StringUtils.hasText(dto.getReason())) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "拒绝原因不能为空");
         }
-        updateAuditAndReview(id, ContentAuditStatus.REJECTED.getCode(), UserReviewStatus.REJECTED.getCode(), dto);
+        executeAuditWithStrategy(id, ContentAuditStatus.REJECTED.getCode(), "reject", dto);
     }
 
-    /**
-     * 隐藏审核
-     */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void hide(Long id, AuditActionDTO dto) {
-        // content_audit 无“隐藏”状态，按“已审核通过”记录审核动作，实际隐藏落在 user_review.status=3
-        updateAuditAndReview(id, ContentAuditStatus.APPROVED.getCode(), UserReviewStatus.HIDDEN.getCode(), dto);
+        executeAuditWithStrategy(id, ContentAuditStatus.APPROVED.getCode(), "hide", dto);
     }
 
-    /**
-     * 更新审核记录和用户点评状态
-     * 
-     * @param auditId      审核记录ID
-     * @param auditStatus  审核状态：见 ContentAuditStatusEnum
-     * @param reviewStatus 点评状态：见 UserReviewStatusEnum
-     * @param dto          审核操作DTO，包含审核备注等信息
-     */
-    private void updateAuditAndReview(Long auditId,
-            Integer auditStatus,
-            Integer reviewStatus,
-            AuditActionDTO dto) {
+    private void executeAuditWithStrategy(Long auditId, Integer auditStatus, String action, AuditActionDTO dto) {
         ContentAudit audit = contentAuditMapper.selectById(auditId);
         if (audit == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "审核记录不存在");
         }
-        if (!REVIEW_CONTENT_TYPE.equalsIgnoreCase(audit.getContentType())) {
-            throw new BusinessException(ResultCode.BAD_REQUEST, "当前记录不是点评审核");
+
+        AuditStrategy strategy = getStrategy(audit.getContentType());
+        strategy.executeAudit(audit.getContentId(), auditStatus, action, dto);
+        strategy.refreshRelatedData(audit.getContentId());
+    }
+
+    private AuditStrategy getStrategy(String contentType) {
+        AuditStrategy strategy = auditStrategyMap.get(contentType + "AuditStrategy");
+        if (strategy == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "不支持的审核类型: " + contentType);
         }
-
-        UserReview userReview = userReviewMapper.selectById(audit.getContentId());
-        if (userReview == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "点评不存在");
-        }
-
-        Long auditorId = SecurityUtils.getCurrentUserId();
-        LocalDateTime now = LocalDateTime.now();
-        String reason = dto == null ? null : dto.getReason();
-
-        ContentAudit updateAudit = new ContentAudit();
-        updateAudit.setId(auditId);
-        updateAudit.setAuditStatus(auditStatus);
-        updateAudit.setAuditRemark(reason);
-        updateAudit.setAuditorId(auditorId);
-        updateAudit.setAuditTime(now);
-        updateAudit.setUpdateTime(now);
-        contentAuditMapper.updateById(updateAudit);
-
-        UserReview updateReview = new UserReview();
-        updateReview.setId(userReview.getId());
-        updateReview.setStatus(reviewStatus);
-        updateReview.setAuditRemark(reason);
-        updateReview.setUpdateTime(now);
-        userReviewMapper.updateById(updateReview);
-        // 刷新景点评分和评价人数
-        Long scenicSpotId = userReview.getScenicSpotId();
-        Double averageRating = userReviewMapper.selectAverageRatingByScenicSpotId(scenicSpotId);
-        Integer ratingCount = userReviewMapper.countByScenicSpotId(scenicSpotId);
-        scenicSpotMapper.updateScoreAndRatingCount(
-                scenicSpotId,
-                Objects.requireNonNullElse(averageRating, 0D),
-                Objects.requireNonNullElse(ratingCount, 0));
-
-        // userReview.getScenicSpotId(); Double averageRating =
-        // Objects.requireNonNullElse(averageRating, 0D),
-        // Objects.requireNonNullElse(ratingCount, 0) );
+        return strategy;
     }
 }
