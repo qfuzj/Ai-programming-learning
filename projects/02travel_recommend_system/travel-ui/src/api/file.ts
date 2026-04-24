@@ -48,6 +48,15 @@ export interface FileResourceItem {
 }
 
 export interface UploadTokenResult {
+  uploadUrl: string;
+  bucketName: string;
+  objectKey: string;
+  method: string;
+  expireAt: number;
+  bizType?: string;
+  bizId?: number;
+  callbackUrl?: string;
+  url?: string;
   [key: string]: unknown;
 }
 

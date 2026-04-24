@@ -31,8 +31,7 @@ export function useScenicList() {
     regionId: undefined,
     category: undefined,
     level: undefined,
-    minScore: undefined,
-    sortBy: "hot",
+sortBy: "hot",
     sortOrder: undefined,
   });
 
@@ -54,7 +53,7 @@ export function useScenicList() {
       !!query.regionId ||
       !!query.category ||
       !!query.level ||
-      query.minScore !== undefined ||
+      
       query.sortBy !== "hot"
     );
   });
@@ -132,8 +131,7 @@ export function useScenicList() {
         regionId: query.regionId,
         category: query.category || undefined,
         level: query.level || undefined,
-        minScore: query.minScore,
-        sortBy: query.sortBy,
+sortBy: query.sortBy,
         sortOrder: query.sortOrder,
       });
       scenicList.value = result.records;
@@ -167,8 +165,7 @@ export function useScenicList() {
     selectedCityId.value = undefined;
     query.category = undefined;
     query.level = undefined;
-    query.minScore = undefined;
-    query.sortBy = "hot";
+query.sortBy = "hot";
     query.pageNum = 1;
   }
 

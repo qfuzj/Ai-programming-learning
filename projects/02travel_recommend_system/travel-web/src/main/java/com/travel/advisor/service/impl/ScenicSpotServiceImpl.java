@@ -603,8 +603,13 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     private void syncImages(Long scenicSpotId, List<Long> imageIds) {
+        // imageIds 为 null 表示前端未传递该字段，跳过同步保持原数据不变
+        if (imageIds == null) {
+            return;
+        }
+        // 先删除所有旧图片，再插入新图片
         scenicImageMapper.delete(new LambdaQueryWrapper<ScenicImage>().eq(ScenicImage::getScenicSpotId, scenicSpotId));
-        if (CollectionUtils.isEmpty(imageIds)) {
+        if (imageIds.isEmpty()) {
             return;
         }
         // 校验所有 fileResourceId 有效

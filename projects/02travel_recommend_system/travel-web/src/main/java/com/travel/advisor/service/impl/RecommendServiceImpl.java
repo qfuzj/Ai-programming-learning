@@ -28,7 +28,6 @@ import com.travel.advisor.vo.recommend.RecommendItemVO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.util.*;
@@ -57,7 +56,6 @@ public class RecommendServiceImpl implements RecommendService {
      * @param pageQuery 分页查询参数，包含页码和每页大小等信息，用于控制返回结果的分页展示
      * @return 分页结果，包含推荐结果列表、总记录数、当前页码、每页大小和总页数等信息，供前端展示使用
      */
-    @Transactional(rollbackFor = Exception.class)
     @Override
     public PageResult<RecommendItemVO> homeRecommend(PageQuery pageQuery) {
         // 获取当前用户ID，确保用户已登录，否则抛出未授权异常
@@ -135,7 +133,6 @@ public class RecommendServiceImpl implements RecommendService {
      * @param pageQuery 分页查询参数，包含页码和每页大小等信息，用于控制返回结果的分页展示
      * @return 分页结果，包含推荐结果列表、总记录数、当前页码、每页大小和总页数等信息，供前端展示使用
      */
-    @Transactional(rollbackFor = Exception.class)
     @Override
     public PageResult<RecommendItemVO> scenicSimilarRecommend(Long scenicId, PageQuery pageQuery) {
         Long userId = getCurrentUserIdRequired();

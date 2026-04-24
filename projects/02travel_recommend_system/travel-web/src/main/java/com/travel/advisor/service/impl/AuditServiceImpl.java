@@ -257,5 +257,17 @@ public class AuditServiceImpl implements AuditService {
         updateReview.setAuditRemark(reason);
         updateReview.setUpdateTime(now);
         userReviewMapper.updateById(updateReview);
+        // 刷新景点评分和评价人数
+        Long scenicSpotId = userReview.getScenicSpotId();
+        Double averageRating = userReviewMapper.selectAverageRatingByScenicSpotId(scenicSpotId);
+        Integer ratingCount = userReviewMapper.countByScenicSpotId(scenicSpotId);
+        scenicSpotMapper.updateScoreAndRatingCount(
+                scenicSpotId,
+                Objects.requireNonNullElse(averageRating, 0D),
+                Objects.requireNonNullElse(ratingCount, 0));
+
+        // userReview.getScenicSpotId(); Double averageRating =
+        // Objects.requireNonNullElse(averageRating, 0D),
+        // Objects.requireNonNullElse(ratingCount, 0) );
     }
 }

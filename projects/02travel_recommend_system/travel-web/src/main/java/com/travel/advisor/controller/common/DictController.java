@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * 类型字典接口
  */
 @RestController
-@RequestMapping({"/dict", "/api/dict"})
+@RequestMapping("/api/common/dict")
 public class DictController {
 
     /**

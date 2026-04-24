@@ -300,8 +300,10 @@ public class ReviewServiceImpl implements ReviewService {
         reply.setContent(dto.getContent());
         reviewReplyMapper.insert(reply);
 
-        review.setReplyCount((review.getReplyCount() == null ? 0 : review.getReplyCount()) + 1);
-        userReviewMapper.updateById(review);
+        LambdaUpdateWrapper<UserReview> replyCountWrapper = new LambdaUpdateWrapper<>();
+        replyCountWrapper.eq(UserReview::getId, reviewId)
+                .setSql("reply_count = reply_count + 1");
+        userReviewMapper.update(null, replyCountWrapper);
 
         return reply.getId();
     }

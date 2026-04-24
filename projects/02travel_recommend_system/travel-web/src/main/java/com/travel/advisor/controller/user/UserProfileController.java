@@ -6,6 +6,7 @@ import com.travel.advisor.dto.user.UserProfileUpdateDTO;
 import com.travel.advisor.service.UserProfileService;
 import com.travel.advisor.vo.user.UserProfilePortraitVO;
 import com.travel.advisor.vo.user.UserProfileVO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -24,7 +25,7 @@ public class UserProfileController {
     }
 
     @PutMapping("/me")
-    public Result<Void> updateMyProfile(@RequestBody UserProfileUpdateDTO dto) {
+    public Result<Void> updateMyProfile(@Valid @RequestBody UserProfileUpdateDTO dto) {
         userProfileService.updateMyProfile(dto);
         return Result.success();
     }
@@ -40,7 +41,7 @@ public class UserProfileController {
     }
 
     @PutMapping("/preference-tags")
-    public Result<Void> updatePreferenceTags(@RequestBody UserPreferenceTagsUpdateDTO dto) {
+    public Result<Void> updatePreferenceTags(@Valid @RequestBody UserPreferenceTagsUpdateDTO dto) {
         userProfileService.updatePreferenceTags(dto);
         return Result.success();
     }
