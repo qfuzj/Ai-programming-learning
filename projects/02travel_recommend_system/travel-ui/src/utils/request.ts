@@ -69,7 +69,7 @@ async function handleTokenExpired(config: InternalAxiosRequestConfig): Promise<u
 
   if (!refreshToken) {
     redirectToLogin();
-    return Promise.reject(new Error('登录已过期，请重新登录'));
+    return Promise.reject(new Error("登录已过期，请重新登录"));
   }
 
   if (isRefreshing) {
@@ -111,7 +111,7 @@ async function handleTokenExpired(config: InternalAxiosRequestConfig): Promise<u
     userStore.clearAuth();
     redirectToLogin();
     ElMessage.warning("登录已过期，请重新登录");
-    return Promise.reject(new Error('刷新Token失败，请重新登录'));
+    return Promise.reject(new Error("刷新Token失败，请重新登录"));
   } finally {
     isRefreshing = false;
   }
