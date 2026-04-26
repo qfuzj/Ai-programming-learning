@@ -82,6 +82,7 @@ export interface ScenicQuery extends PageQuery {
   category?: string;
   level?: string;
   tagId?: number;
+  tagIds?: number[];
   tagScope?: string;
   tagCategory?: string;
   sortBy?: "hot" | "score" | "createdAt";
@@ -251,7 +252,10 @@ function mapPageResult<T, R>(page: PageResult<T>, mapper: (item: T) => R): PageR
 
 export function getScenicPage(query: ScenicQuery): Promise<PageResult<ScenicItem>> {
   return http
-    .get<PageResult<ScenicItemRaw>>("/api/user/scenic-spots", { params: query })
+    .get<PageResult<ScenicItemRaw>>("/api/user/scenic-spots", {
+      params: query,
+      paramsSerializer: { indexes: null },
+    })
     .then((res) => mapPageResult(res, normalizeScenicItem));
 }
 

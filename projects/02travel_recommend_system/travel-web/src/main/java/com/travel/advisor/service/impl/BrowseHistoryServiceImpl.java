@@ -11,6 +11,8 @@ import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.mapper.ScenicSpotMapper;
 import com.travel.advisor.mapper.UserBrowseHistoryMapper;
 import com.travel.advisor.service.BrowseHistoryService;
+import com.travel.advisor.service.FileService;
+import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.history.BrowseHistoryVO;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
 
     private final UserBrowseHistoryMapper userBrowseHistoryMapper;
     private final ScenicSpotMapper scenicSpotMapper;
+    private final FileService fileService;
 
     /**
      * 用户浏览历史上报接口，记录用户浏览的景点信息，包括停留时长、来源、设备类型等数据
@@ -141,6 +144,15 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
         Map<Long, ScenicSpot> scenicMap = scenicSpotMapper.selectBatchIds(scenicIds).stream()
             .collect(Collectors.toMap(ScenicSpot::getId, scenic -> scenic));
 
+        // 批量解析封面图 fileResourceId → URL
+        List<Long> coverFileIds = scenicMap.values().stream()
+            .map(ScenicSpot::getCoverImage)
+            .map(FileResourceIds::tryParseId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+        Map<Long, String> coverUrlMap = fileService.resolveUrls(coverFileIds);
+
         // 将用户浏览历史转换为VO对象，并添加景点信息
         List<BrowseHistoryVO> vos = pagedRecords.stream().map(item -> {
             ScenicSpot scenicSpot = scenicMap.get(item.getScenicSpotId());
@@ -151,7 +163,7 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
             vo.setId(item.getId());
             vo.setScenicId(item.getScenicSpotId());
             vo.setScenicName(scenicSpot.getName());
-            vo.setCoverImage(scenicSpot.getCoverImage());
+            vo.setCoverImage(resolveCover(scenicSpot.getCoverImage(), coverUrlMap));
             vo.setStayDuration(item.getDurationSeconds());
             vo.setSource(item.getSource());
             vo.setDeviceType(item.getDeviceType());
@@ -212,5 +224,17 @@ public class BrowseHistoryServiceImpl implements BrowseHistoryService {
         if (scenicSpot == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "景点不存在");
         }
+    }
+
+    /** 封面图字段解析：纯数字走 fileResourceId 映射；空串返回空；其余认为旧 URL 原样返回。 */
+    private String resolveCover(String coverImage, Map<Long, String> coverUrlMap) {
+        if (coverImage == null || coverImage.isBlank()) {
+            return "";
+        }
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId == null) {
+            return coverImage.trim();
+        }
+        return coverUrlMap.getOrDefault(fileId, "");
     }
 }

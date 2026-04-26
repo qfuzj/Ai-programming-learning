@@ -70,7 +70,7 @@
 import { onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
-import { fetchAiRecommendations, type AiRecommendItem } from "@/api/recommend";
+import { fetchAiRecommendations, sendRecommendClick, type AiRecommendItem } from "@/api/recommend";
 import type { PageResult } from "@/types/api";
 
 const router = useRouter();
@@ -114,7 +114,21 @@ function onPageChange(pageNum: number): void {
 }
 
 function goToDetail(item: AiRecommendItem): void {
+  recordRecommendClick(item);
   void router.push(`/scenic/${item.scenicId}`);
+}
+
+function recordRecommendClick(item: AiRecommendItem): void {
+  if (!item.recommendRecordId || !item.resultItemId || !item.scenicId) {
+    return;
+  }
+  void sendRecommendClick({
+    recommendRecordId: item.recommendRecordId,
+    resultItemId: item.resultItemId,
+    scenicId: item.scenicId,
+  }).catch((error) => {
+    console.error("record recommend click failed", error);
+  });
 }
 
 onMounted(() => {

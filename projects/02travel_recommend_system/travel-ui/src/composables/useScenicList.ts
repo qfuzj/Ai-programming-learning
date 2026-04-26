@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { getRegionTree } from "@/api/common";
+import { getTags, type CommonTagItem } from "@/api/common";
 import {
   getScenicFilterOptions,
   getScenicPage,
@@ -20,6 +21,8 @@ export function useScenicList() {
   const regionTreeData = ref<ScenicRegionNode[]>([]);
   const categoryOptions = ref<string[]>([]);
   const levelOptions = ref<string[]>([]);
+  const tagOptions = ref<CommonTagItem[]>([]);
+  const selectedTagPaths = ref<Array<Array<string | number>>>([]);
   const selectedProvinceId = ref<number | undefined>(undefined);
   const selectedCityId = ref<number | undefined>(undefined);
   const minScoreOptions = [1, 2, 3, 4, 4.5];
@@ -31,6 +34,8 @@ export function useScenicList() {
     regionId: undefined,
     category: undefined,
     level: undefined,
+    tagId: undefined,
+    tagIds: undefined,
 sortBy: "hot",
     sortOrder: undefined,
   });
@@ -53,9 +58,44 @@ sortBy: "hot",
       !!query.regionId ||
       !!query.category ||
       !!query.level ||
+      !!query.tagId ||
+      !!query.tagIds?.length ||
       
       query.sortBy !== "hot"
     );
+  });
+
+  const tagCascaderOptions = computed(() => {
+    const scopeLabels: Record<string, string> = {
+      SCENIC: "景点标签",
+      PREFERENCE: "偏好标签",
+      BOTH: "通用标签",
+    };
+    const scopeMap = new Map<string, { label: string; categories: Map<string, CommonTagItem[]> }>();
+    tagOptions.value.forEach((tag) => {
+      const scope = tag.scope || "SCENIC";
+      const category = tag.category || "未分类";
+      if (!scopeMap.has(scope)) {
+        scopeMap.set(scope, { label: scopeLabels[scope] || scope, categories: new Map() });
+      }
+      const scopeItem = scopeMap.get(scope)!;
+      const list = scopeItem.categories.get(category) || [];
+      list.push(tag);
+      scopeItem.categories.set(category, list);
+    });
+
+    return Array.from(scopeMap.entries()).map(([scope, scopeItem]) => ({
+      value: scope,
+      label: scopeItem.label,
+      children: Array.from(scopeItem.categories.entries()).map(([category, tags]) => ({
+        value: category,
+        label: category,
+        children: tags.map((tag) => ({
+          value: tag.id,
+          label: tag.name,
+        })),
+      })),
+    }));
   });
 
   function onProvinceChange(): void {
@@ -109,13 +149,25 @@ sortBy: "hot",
    */
   async function loadFilterOptions(): Promise<void> {
     try {
-      const options = await getScenicFilterOptions();
+      const [options, tags] = await Promise.all([getScenicFilterOptions(), getTags()]);
       categoryOptions.value = options.categories ?? [];
       levelOptions.value = options.levels ?? [];
+      tagOptions.value = tags.filter((tag) => tag.status == null || tag.status === 1);
     } catch {
       categoryOptions.value = [];
       levelOptions.value = [];
+      tagOptions.value = [];
     }
+  }
+
+  function syncTagIdsFromPaths(paths = selectedTagPaths.value): void {
+    selectedTagPaths.value = paths;
+    const tagIds = paths
+      .map((path) => Number(path[path.length - 1]))
+      .filter((id) => Number.isFinite(id));
+    query.tagIds = tagIds.length > 0 ? tagIds : undefined;
+    query.tagId = undefined;
+    query.pageNum = 1;
   }
 
   /**
@@ -131,6 +183,8 @@ sortBy: "hot",
         regionId: query.regionId,
         category: query.category || undefined,
         level: query.level || undefined,
+        tagId: query.tagId,
+        tagIds: query.tagIds,
 sortBy: query.sortBy,
         sortOrder: query.sortOrder,
       });
@@ -165,6 +219,9 @@ sortBy: query.sortBy,
     selectedCityId.value = undefined;
     query.category = undefined;
     query.level = undefined;
+    query.tagId = undefined;
+    query.tagIds = undefined;
+    selectedTagPaths.value = [];
 query.sortBy = "hot";
     query.pageNum = 1;
   }
@@ -185,6 +242,14 @@ query.sortBy = "hot";
   async function init(): Promise<void> {
     await Promise.all([loadRegions(), loadFilterOptions()]);
     query.keyword = (route.query.keyword as string) || "";
+    const routeTagId = Number(route.query.tagId);
+    if (Number.isFinite(routeTagId) && routeTagId > 0) {
+      query.tagId = routeTagId;
+      const tag = tagOptions.value.find((item) => item.id === routeTagId);
+      if (tag) {
+        selectedTagPaths.value = [[tag.scope || "SCENIC", tag.category || "未分类", tag.id]];
+      }
+    }
     await loadScenicList();
   }
 
@@ -205,6 +270,8 @@ query.sortBy = "hot";
     regionTreeData,
     categoryOptions,
     levelOptions,
+    tagCascaderOptions,
+    selectedTagPaths,
     selectedProvinceId,
     selectedCityId,
     currentCities,
@@ -214,6 +281,7 @@ query.sortBy = "hot";
     isSearchActive,
     onProvinceChange,
     onCityChange,
+    syncTagIdsFromPaths,
     getCurrentRegionName,
     loadScenicList,
     debouncedLoadScenicList,

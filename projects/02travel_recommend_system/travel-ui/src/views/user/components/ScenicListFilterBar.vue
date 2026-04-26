@@ -25,6 +25,23 @@
           </el-col>
 
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="标签" class="form-item">
+              <el-cascader
+                v-model="tagPathsModel"
+                :options="tagCascaderOptions"
+                :props="tagCascaderProps"
+                placeholder="全部标签"
+                clearable
+                collapse-tags
+                collapse-tags-tooltip
+                filterable
+                style="width: 100%"
+                @change="handleTagChange"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="省份" class="form-item">
               <el-select
                 v-model="provinceModel"
@@ -56,19 +73,6 @@
                   :key="city.id"
                   :label="city.name"
                   :value="city.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="8" :lg="6">
-            <el-form-item label="分类" class="form-item">
-              <el-select v-model="query.category" placeholder="全部分类" clearable>
-                <el-option
-                  v-for="category in categoryOptions"
-                  :key="category"
-                  :label="category"
-                  :value="category"
                 />
               </el-select>
             </el-form-item>
@@ -136,12 +140,20 @@ import { Search } from "@element-plus/icons-vue";
 import type { ScenicQuery } from "@/api/scenic";
 import type { ScenicRegionNode } from "@/types/scenic-list";
 
+type TagCascaderPath = Array<string | number>;
+type TagCascaderOption = {
+  value: string | number;
+  label: string;
+  children?: TagCascaderOption[];
+};
+
 interface Props {
   query: ScenicQuery;
   loading: boolean;
   regionTreeData: ScenicRegionNode[];
-  categoryOptions: string[];
   levelOptions: string[];
+  tagCascaderOptions: TagCascaderOption[];
+  selectedTagPaths: TagCascaderPath[];
   selectedProvinceId?: number;
   selectedCityId?: number;
   currentCities: ScenicRegionNode[];
@@ -154,9 +166,16 @@ const emit = defineEmits<{
   reset: [];
   "update:selectedProvinceId": [value: number | undefined];
   "update:selectedCityId": [value: number | undefined];
+  "update:selectedTagPaths": [value: TagCascaderPath[]];
   "province-change": [];
   "city-change": [];
+  "tag-change": [value: TagCascaderPath[]];
 }>();
+
+const tagCascaderProps = {
+  multiple: true,
+  emitPath: true,
+} as const;
 
 const provinceModel = computed({
   get: () => props.selectedProvinceId,
@@ -167,6 +186,17 @@ const cityModel = computed({
   get: () => props.selectedCityId,
   set: (value: number | undefined) => emit("update:selectedCityId", value),
 });
+
+const tagPathsModel = computed({
+  get: () => props.selectedTagPaths,
+  set: (value: TagCascaderPath[]) => emit("update:selectedTagPaths", value || []),
+});
+
+function handleTagChange(value: unknown): void {
+  const paths = Array.isArray(value) ? (value as TagCascaderPath[]) : [];
+  emit("update:selectedTagPaths", paths);
+  emit("tag-change", paths);
+}
 
 const minScoreModel = computed({
   get: () => (props.query as ScenicQuery & { minScore?: number }).minScore,

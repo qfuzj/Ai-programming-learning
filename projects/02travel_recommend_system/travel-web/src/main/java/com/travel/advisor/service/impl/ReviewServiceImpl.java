@@ -31,6 +31,8 @@ import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.review.ReviewReplyVO;
 import com.travel.advisor.vo.review.ReviewVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
@@ -266,15 +269,24 @@ public class ReviewServiceImpl implements ReviewService {
                 .eq(ReviewLike::getUserId, userId));
 
         if (existLike != null) {
-            reviewLikeMapper.deleteById(existLike.getId());
-            userReviewMapper.update(null, new LambdaUpdateWrapper<UserReview>()
-                    .eq(UserReview::getId, reviewId)
-                    .setSql("like_count = CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END"));
+            // 取消点赞：以 deleteById 的影响行数判断本次是否真正减分，避免并发双取消重复扣减
+            int affected = reviewLikeMapper.deleteById(existLike.getId());
+            if (affected > 0) {
+                userReviewMapper.update(null, new LambdaUpdateWrapper<UserReview>()
+                        .eq(UserReview::getId, reviewId)
+                        .setSql("like_count = CASE WHEN like_count > 0 THEN like_count - 1 ELSE 0 END"));
+            }
         } else {
             ReviewLike reviewLike = new ReviewLike();
             reviewLike.setReviewId(reviewId);
             reviewLike.setUserId(userId);
-            reviewLikeMapper.insert(reviewLike);
+            try {
+                reviewLikeMapper.insert(reviewLike);
+            } catch (DuplicateKeyException e) {
+                // 同用户对同点评的并发点赞由 (review_id, user_id) 唯一索引兜底，
+                // 命中冲突说明已点赞，无需再次累加 like_count。
+                return;
+            }
             userReviewMapper.update(null, new LambdaUpdateWrapper<UserReview>()
                     .eq(UserReview::getId, reviewId)
                     .setSql("like_count = like_count + 1"));
@@ -372,6 +384,8 @@ public class ReviewServiceImpl implements ReviewService {
             Long[] arr = JsonUtils.fromJson(images, Long[].class);
             return arr == null ? Collections.emptyList() : List.of(arr);
         } catch (Exception e) {
+            // 静默降级会让脏数据问题难以排查，记录 warn 便于后续通过日志定位异常点评行
+            log.warn("parseImageIds failed, images='{}', err={}", images, e.getMessage());
             return Collections.emptyList();
         }
     }

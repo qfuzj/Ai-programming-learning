@@ -110,15 +110,11 @@
             v-for="item in tagList"
             :key="item.id"
             class="scenic-card tag-card"
-            @click="goScenicListByTag(item.name)"
+            @click="goScenicListByTag(item)"
           >
             <div class="tag-cover">
               <el-image v-if="item.icon" :src="item.icon" fit="cover" class="tag-image" />
-              <div
-                v-else
-                class="tag-placeholder"
-                :style="{ backgroundColor: '#00e676' }"
-              >
+              <div v-else class="tag-placeholder" :style="{ backgroundColor: '#00e676' }">
                 <span class="tag-name-large">{{ item.name.substring(0, 2) }}</span>
               </div>
             </div>
@@ -137,7 +133,7 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
-import { Search, House, OfficeBuilding, Camera, ForkSpoon, Star } from "@element-plus/icons-vue";
+import { Search, House, OfficeBuilding, Camera, ForkSpoon } from "@element-plus/icons-vue";
 import { getScenicHotList, type ScenicItem } from "@/api/scenic";
 import { type CommonTagItem } from "@/api/common";
 import { getMyPreferenceTags } from "@/api/profile";
@@ -161,10 +157,10 @@ function goScenicList(): void {
   });
 }
 
-function goScenicListByTag(tag: string): void {
+function goScenicListByTag(tag: CommonTagItem): void {
   void router.push({
     path: "/scenic",
-    query: { keyword: tag },
+    query: { tagId: String(tag.id) },
   });
 }
 

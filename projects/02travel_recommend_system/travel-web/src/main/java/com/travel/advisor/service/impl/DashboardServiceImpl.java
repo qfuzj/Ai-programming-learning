@@ -246,22 +246,44 @@ public class DashboardServiceImpl implements DashboardService {
         vo.setCostAmounts(costs);
     }
 
+    /**
+     * 将 Map 中可能为 String/Number/null 的字段安全转为 Long。
+     * 异常或非数字字符串降级为 null，避免一行坏数据让整个工作台接口报 500。
+     */
     private Long toLong(Object value) {
         if (value == null) return null;
         if (value instanceof Number) return ((Number) value).longValue();
-        return Long.valueOf(String.valueOf(value));
+        try {
+            return Long.valueOf(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
+    /**
+     * 同上，转 Integer，异常降级为 0。
+     */
     private Integer toInt(Object value) {
         if (value == null) return 0;
         if (value instanceof Number) return ((Number) value).intValue();
-        return Integer.parseInt(String.valueOf(value));
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
+    /**
+     * 同上，转 BigDecimal，异常降级为 ZERO。
+     */
     private BigDecimal toBigDecimal(Object value) {
         if (value == null) return BigDecimal.ZERO;
         if (value instanceof BigDecimal) return (BigDecimal) value;
         if (value instanceof Number) return BigDecimal.valueOf(((Number) value).doubleValue());
-        return new BigDecimal(String.valueOf(value));
+        try {
+            return new BigDecimal(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
     }
 }

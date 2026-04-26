@@ -12,6 +12,8 @@ import com.travel.advisor.mapper.RegionMapper;
 import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.security.TokenService;
 import com.travel.advisor.service.AdminUserManageService;
+import com.travel.advisor.service.FileService;
+import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.vo.user.AdminUserDetailVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -29,6 +32,7 @@ public class AdminUserManageServiceImpl implements AdminUserManageService {
 
     private final UserMapper userMapper;
     private final RegionMapper regionMapper;
+    private final FileService fileService;
     private final TokenService tokenService;
 
     @Override
@@ -105,22 +109,24 @@ public class AdminUserManageServiceImpl implements AdminUserManageService {
                 ? Collections.<Long, Region>emptyMap()
                 : regionMapper.selectBatchIds(regionIds).stream().collect(Collectors.toMap(Region::getId, Function.identity(), (r1, r2) -> r1));
 
-        return users.stream().map(user -> buildVO(user, regionMap.get(user.getRegionId()))).toList();
+        Map<Long, String> avatarUrlMap = loadAvatarUrlMap(users);
+
+        return users.stream().map(user -> buildVO(user, regionMap.get(user.getRegionId()), avatarUrlMap)).toList();
     }
 
     private AdminUserDetailVO buildVO(User user) {
         Region region = user.getRegionId() == null ? null : regionMapper.selectById(user.getRegionId());
-        return buildVO(user, region);
+        return buildVO(user, region, loadAvatarUrlMap(List.of(user)));
     }
 
-    private AdminUserDetailVO buildVO(User user, Region region) {
+    private AdminUserDetailVO buildVO(User user, Region region, Map<Long, String> avatarUrlMap) {
         AdminUserDetailVO vo = new AdminUserDetailVO();
         vo.setId(user.getId());
         vo.setUsername(user.getUsername());
         vo.setNickname(user.getNickname());
         vo.setPhone(user.getPhone());
         vo.setEmail(user.getEmail());
-        vo.setAvatar(user.getAvatar());
+        vo.setAvatar(resolveAvatarUrl(user.getAvatar(), avatarUrlMap));
         vo.setGender(user.getGender());
         vo.setBirthday(user.getBirthday());
         vo.setRegionId(user.getRegionId());
@@ -131,6 +137,37 @@ public class AdminUserManageServiceImpl implements AdminUserManageService {
         vo.setCreatedAt(user.getCreateTime());
         vo.setUpdatedAt(user.getUpdateTime());
         return vo;
+    }
+
+    /**
+     * 批量加载用户头像 fileResourceId → URL 的映射，避免逐条查询
+     */
+    private Map<Long, String> loadAvatarUrlMap(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Long> fileIds = users.stream()
+                .map(User::getAvatar)
+                .map(FileResourceIds::tryParseId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        return fileService.resolveUrls(fileIds);
+    }
+
+    /**
+     * 将存储的头像值（可能是 fileResourceId 或旧版 URL）解析为可访问 URL。
+     */
+    private String resolveAvatarUrl(String avatar, Map<Long, String> avatarUrlMap) {
+        if (!StringUtils.hasText(avatar)) {
+            return "";
+        }
+        Long fileId = FileResourceIds.tryParseId(avatar);
+        if (fileId == null) {
+            // 兼容旧数据：直接返回原 URL
+            return avatar.trim();
+        }
+        return avatarUrlMap.getOrDefault(fileId, "");
     }
 
     private User findUserById(Long id) {

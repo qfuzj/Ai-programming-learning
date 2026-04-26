@@ -73,6 +73,20 @@ public class SystemConfigServiceImpl implements SystemConfigService {
     }
 
     private void validateConfigValue(String configType, String configValue) {
+        // 非 STRING 类型禁止 null/空：Double.parseDouble(null) 会 NPE 而非 NumberFormatException，
+        // 提前拦截给出一致的 400 错误信息，避免暴露 NPE 堆栈。
+        if (configValue == null) {
+            ConfigType type;
+            try {
+                type = ConfigType.fromCode(configType);
+            } catch (IllegalArgumentException e) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "不支持的配置类型: " + configType);
+            }
+            if (type != ConfigType.STRING) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "配置值不能为空");
+            }
+            return;
+        }
         try {
             ConfigType type = ConfigType.fromCode(configType);
             switch (type) {

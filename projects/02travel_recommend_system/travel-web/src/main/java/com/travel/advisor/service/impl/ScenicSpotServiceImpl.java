@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.enums.FileResourceStatus;
+import com.travel.advisor.common.enums.ScenicLevel;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.dto.scenic.*;
 import com.travel.advisor.entity.*;
@@ -14,6 +15,7 @@ import com.travel.advisor.common.enums.BizType;
 import com.travel.advisor.service.FileService;
 import com.travel.advisor.service.RegionService;
 import com.travel.advisor.service.ScenicSpotService;
+import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.region.RegionTreeVO;
 import com.travel.advisor.vo.scenic.ScenicDetailVO;
@@ -48,6 +50,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     private final RegionMapper regionMapper;
     private final RegionService regionService;
     private final UserReviewMapper userReviewMapper;
+    private final UserFavoriteMapper userFavoriteMapper;
     private final FileResourceMapper fileResourceMapper;
     private final FileService fileService;
 
@@ -131,7 +134,10 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         ScenicFilterOptionsVO vo = new ScenicFilterOptionsVO();
         vo.setRegions(regionService.getTree());
         vo.setCategories(safeList(scenicSpotMapper.selectCategories()));
-        vo.setLevels(safeList(scenicSpotMapper.selectLevels()));
+        vo.setLevels(Arrays.stream(ScenicLevel.values())
+                .filter(level -> level != ScenicLevel.NONE)
+                .map(ScenicLevel::getCode)
+                .toList());
         return vo;
     }
 
@@ -234,9 +240,22 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     @Override
     public List<ScenicImageVO> listImages(Long scenicSpotId) {
         findById(scenicSpotId);
-        return scenicImageMapper.selectByScenicSpotId(scenicSpotId).stream()
-                .map(this::toImageVO)
+        List<ScenicImage> images = scenicImageMapper.selectByScenicSpotId(scenicSpotId);
+        if (CollectionUtils.isEmpty(images)) {
+            return Collections.emptyList();
+        }
+        // 批量解析 fileResourceId → URL，避免在 toImageVO 内逐条 selectById 形成 N+1
+        List<Long> fileIds = images.stream()
+                .map(ScenicImage::getFileResourceId)
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
+        Map<Long, String> urlMap = fileIds.isEmpty()
+                ? Collections.emptyMap()
+                : fileResourceMapper.selectBatchIds(fileIds).stream()
+                .filter(fr -> fr.getUrl() != null)
+                .collect(Collectors.toMap(FileResource::getId, FileResource::getUrl, (a, b) -> a));
+        return images.stream().map(img -> toImageVO(img, urlMap)).toList();
     }
 
     /**
@@ -251,7 +270,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         }
         if (dto.getFileResourceId() != null) {
             FileResource fileResource = fileResourceMapper.selectById(dto.getFileResourceId());
-            if (fileResource == null || fileResource.getStatus().equals(FileResourceStatus.DELETED.getCode())) {
+            // 反转 equals 顺序：status 字段可能为 null，避免 NPE
+            if (fileResource == null
+                    || FileResourceStatus.DELETED.getCode().equals(fileResource.getStatus())) {
                 throw new BusinessException(ResultCode.BAD_REQUEST, "文件资源不存在或已删除");
             }
         }
@@ -339,11 +360,20 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .eq(StringUtils.hasText(query.getLevel()), ScenicSpot::getLevel, query.getLevel())
                 .eq(ScenicSpot::getIsDeleted, 0);
 
+        List<Long> selectedTagIds = new ArrayList<>();
         if (query.getTagId() != null) {
+            selectedTagIds.add(query.getTagId());
+        }
+        if (!CollectionUtils.isEmpty(query.getTagIds())) {
+            selectedTagIds.addAll(query.getTagIds());
+        }
+        selectedTagIds = selectedTagIds.stream().filter(Objects::nonNull).distinct().toList();
+
+        if (!selectedTagIds.isEmpty()) {
             List<Long> spotIds = scenicSpotTagMapper.selectList(
                             new LambdaQueryWrapper<ScenicSpotTag>()
-                                    .eq(ScenicSpotTag::getTagId, query.getTagId()))
-                    .stream().map(ScenicSpotTag::getScenicSpotId).toList();
+                                    .in(ScenicSpotTag::getTagId, selectedTagIds))
+                    .stream().map(ScenicSpotTag::getScenicSpotId).distinct().toList();
             if (spotIds.isEmpty()) {
                 queryWrapper.eq(ScenicSpot::getId, -1L);
             } else {
@@ -422,12 +452,21 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         Map<Long, String> regionNameMap = loadRegionNameMap(scenicSpots);
         Map<Long, List<String>> tagNameMap = loadTagNameMap(scenicSpots);
         Long currentUserId = SecurityUtils.getCurrentUserId();
+        Set<Long> favoriteIds = loadFavoriteIds(currentUserId, scenicSpots);
+        // 批量解析封面图 fileResourceId → URL，避免逐条调用 resolveCoverImageUrl 触发 N+1
+        List<Long> coverFileIds = scenicSpots.stream()
+                .map(ScenicSpot::getCoverImage)
+                .map(FileResourceIds::tryParseId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, String> coverUrlMap = fileService.resolveUrls(coverFileIds);
 
         return scenicSpots.stream().map(scenicSpot -> {
             ScenicListVO vo = new ScenicListVO();
             vo.setScenicId(scenicSpot.getId());
             vo.setName(scenicSpot.getName());
-            vo.setCoverImage(resolveCoverImageUrl(scenicSpot.getCoverImage()));
+            vo.setCoverImage(resolveCoverFromMap(scenicSpot.getCoverImage(), coverUrlMap));
             vo.setRegionName(regionNameMap.get(scenicSpot.getRegionId()));
             vo.setScore(scenicSpot.getScore());
             vo.setCategory(scenicSpot.getCategory());
@@ -439,9 +478,33 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
             vo.setOpenTime(scenicSpot.getOpenTime());
             vo.setTicketPrice(scenicSpot.getTicketPrice());
             vo.setTagList(tagNameMap.getOrDefault(scenicSpot.getId(), Collections.emptyList()));
-            vo.setIsFavorite(currentUserId != null && isFavorite(currentUserId, scenicSpot.getId()));
+            vo.setIsFavorite(favoriteIds.contains(scenicSpot.getId()));
             return vo;
         }).toList();
+    }
+
+    /**
+     * 批量加载当前用户对一组景点的收藏关系，避免列表场景下逐条查询导致的 N+1 问题。
+     * 未登录或景点列表为空时返回空集合。
+     */
+    private Set<Long> loadFavoriteIds(Long userId, List<ScenicSpot> scenicSpots) {
+        if (userId == null || CollectionUtils.isEmpty(scenicSpots)) {
+            return Collections.emptySet();
+        }
+        List<Long> spotIds = scenicSpots.stream()
+                .map(ScenicSpot::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (spotIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return userFavoriteMapper.selectList(new LambdaQueryWrapper<UserFavorite>()
+                        .eq(UserFavorite::getUserId, userId)
+                        .in(UserFavorite::getScenicSpotId, spotIds))
+                .stream()
+                .map(UserFavorite::getScenicSpotId)
+                .collect(Collectors.toSet());
     }
 
     private ScenicDetailVO buildDetailVO(ScenicSpot scenicSpot) {
@@ -620,7 +683,8 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         if (files.size() != imageIds.size()) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "部分文件资源不存在");
         }
-        if (files.stream().anyMatch(f -> f.getStatus().equals(FileResourceStatus.DELETED.getCode()))) {
+        // status 字段可能为 null，反转 equals 避免 NPE
+        if (files.stream().anyMatch(f -> FileResourceStatus.DELETED.getCode().equals(f.getStatus()))) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "部分文件资源已删除");
         }
         final int[] index = {0};
@@ -644,37 +708,48 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     private void bindCoverImage(String coverImage, Long scenicSpotId) {
-        if (!StringUtils.hasText(coverImage)) {
-            return;
-        }
-        try {
-            Long fileId = Long.parseLong(coverImage.trim());
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId != null) {
             fileService.bindFilesToBiz(List.of(fileId), scenicSpotId, BizType.SCENIC);
-        } catch (NumberFormatException e) {
-            // 旧 URL 格式，不绑定
         }
+        // 旧 URL 格式或空值，不绑定
     }
 
+    /**
+     * 详情场景下单个解析。列表路径请走 {@link #enrichList} 里的批量解析。
+     */
     private String resolveCoverImageUrl(String coverImage) {
         if (!StringUtils.hasText(coverImage)) {
             return "";
         }
-        String trimmed = coverImage.trim();
-        if (!trimmed.matches("\\d+")) {
-            return trimmed;
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId == null) {
+            return coverImage.trim();
         }
-        FileResource fileResource = fileResourceMapper.selectById(Long.valueOf(trimmed));
-        return fileResource != null ? fileResource.getUrl() : "";
+        return fileService.resolveUrls(List.of(fileId)).getOrDefault(fileId, "");
     }
 
-    private ScenicImageVO toImageVO(ScenicImage scenicImage) {
+    /**
+     * 列表场景下从预加载好的 Map 取 URL，避免逐条 IO。空字段返回空串；非数字保持旧 URL 原样。
+     */
+    private String resolveCoverFromMap(String coverImage, Map<Long, String> coverUrlMap) {
+        if (!StringUtils.hasText(coverImage)) {
+            return "";
+        }
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId == null) {
+            return coverImage.trim();
+        }
+        return coverUrlMap.getOrDefault(fileId, "");
+    }
+
+    private ScenicImageVO toImageVO(ScenicImage scenicImage, Map<Long, String> urlMap) {
         ScenicImageVO vo = new ScenicImageVO();
         vo.setId(scenicImage.getId());
         vo.setFileResourceId(scenicImage.getFileResourceId());
         String imageUrl = scenicImage.getImageUrl();
         if (!StringUtils.hasText(imageUrl) && scenicImage.getFileResourceId() != null) {
-            FileResource fileResource = fileResourceMapper.selectById(scenicImage.getFileResourceId());
-            imageUrl = fileResource != null ? fileResource.getUrl() : "";
+            imageUrl = urlMap.getOrDefault(scenicImage.getFileResourceId(), "");
         }
         vo.setImageUrl(imageUrl);
         vo.setImageType(scenicImage.getImageType());

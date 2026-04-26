@@ -33,6 +33,9 @@ public class SecurityConfig {
                 .accessDeniedHandler(restAccessDeniedHandler)
             )
             .authorizeHttpRequests(auth -> auth
+                // 文件接口必须登录后访问，防止匿名上传/删除任意文件
+                // 注意：该规则必须放在 /api/common/** permitAll 之前才能生效
+                .requestMatchers("/api/common/files/**").authenticated()
                 .requestMatchers(
                     "/api/user/auth/**",
                     "/api/admin/auth/**",

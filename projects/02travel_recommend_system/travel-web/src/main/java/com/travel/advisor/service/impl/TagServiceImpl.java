@@ -9,25 +9,24 @@ import com.travel.advisor.dto.tag.TagCreateDTO;
 import com.travel.advisor.dto.tag.TagQueryDTO;
 import com.travel.advisor.dto.tag.TagUpdateDTO;
 import com.travel.advisor.common.enums.BizType;
-import com.travel.advisor.entity.FileResource;
 import com.travel.advisor.entity.ScenicSpotTag;
 import com.travel.advisor.entity.Tag;
 import com.travel.advisor.entity.UserPreferenceTag;
 import com.travel.advisor.exception.BusinessException;
-import com.travel.advisor.mapper.FileResourceMapper;
 import com.travel.advisor.mapper.ScenicSpotTagMapper;
 import com.travel.advisor.mapper.TagMapper;
 import com.travel.advisor.mapper.UserPreferenceTagMapper;
 import com.travel.advisor.service.FileService;
 import com.travel.advisor.service.TagService;
 import com.travel.advisor.utils.BeanCopyUtils;
+import com.travel.advisor.utils.FileResourceIds;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +35,6 @@ public class TagServiceImpl implements TagService {
     private final TagMapper tagMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
     private final UserPreferenceTagMapper userPreferenceTagMapper;
-    private final FileResourceMapper fileResourceMapper;
     private final FileService fileService;
 
     /**
@@ -124,52 +122,39 @@ public class TagServiceImpl implements TagService {
     }
 
     private void bindTagIcon(String icon, Long tagId) {
-        if (!StringUtils.hasText(icon)) {
-            return;
-        }
-        try {
-            Long fileId = Long.parseLong(icon.trim());
+        Long fileId = FileResourceIds.tryParseId(icon);
+        if (fileId != null) {
             fileService.bindFilesToBiz(List.of(fileId), tagId, BizType.TAG);
-        } catch (NumberFormatException e) {
-            // icon 不是数字 ID（兼容旧 URL），不绑定
         }
+        // icon 不是数字 ID（兼容旧 URL），不绑定
     }
 
+    /**
+     * 原地将 Tag.icon 字段从 fileResourceId 替换为可访问 URL。
+     * 旧数据中直接存 URL 的记录保持原样。
+     */
     private void resolveTagIconUrls(List<Tag> tags) {
         if (tags == null || tags.isEmpty()) {
             return;
         }
         List<Long> iconIds = tags.stream()
                 .map(Tag::getIcon)
-                .filter(StringUtils::hasText)
-                .map(s -> {
-                    try {
-                        return Long.parseLong(s.trim());
-                    } catch (NumberFormatException e) {
-                        return null;
-                    }
-                })
-                .filter(java.util.Objects::nonNull)
+                .map(FileResourceIds::tryParseId)
+                .filter(Objects::nonNull)
                 .distinct()
                 .toList();
         if (iconIds.isEmpty()) {
             return;
         }
-        Map<Long, String> urlMap = fileResourceMapper.selectBatchIds(iconIds).stream()
-                .filter(fr -> fr.getUrl() != null)
-                .collect(Collectors.toMap(FileResource::getId, FileResource::getUrl));
+        Map<Long, String> urlMap = fileService.resolveUrls(iconIds);
         for (Tag tag : tags) {
-            if (!StringUtils.hasText(tag.getIcon())) {
+            Long id = FileResourceIds.tryParseId(tag.getIcon());
+            if (id == null) {
                 continue;
             }
-            try {
-                Long id = Long.parseLong(tag.getIcon().trim());
-                String url = urlMap.get(id);
-                if (url != null) {
-                    tag.setIcon(url);
-                }
-            } catch (NumberFormatException e) {
-                // 保持原有 URL 不变
+            String url = urlMap.get(id);
+            if (url != null) {
+                tag.setIcon(url);
             }
         }
     }

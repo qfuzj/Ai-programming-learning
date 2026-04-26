@@ -4,16 +4,19 @@
       :query="query"
       :loading="loading"
       :region-tree-data="regionTreeData"
-      :category-options="categoryOptions"
       :level-options="levelOptions"
+      :tag-cascader-options="tagCascaderOptions"
+      :selected-tag-paths="selectedTagPaths"
       :selected-province-id="selectedProvinceId"
       :selected-city-id="selectedCityId"
       :current-cities="currentCities"
       :min-score-options="minScoreOptions"
       @update:selected-province-id="selectedProvinceId = $event"
       @update:selected-city-id="selectedCityId = $event"
+      @update:selected-tag-paths="selectedTagPaths = $event"
       @province-change="onProvinceChange"
       @city-change="onCityChange"
+      @tag-change="syncTagIdsFromPaths"
       @search="debouncedLoadScenicList"
       @reset="resetFilters"
     />
@@ -83,8 +86,9 @@ const {
   scenicList,
   total,
   regionTreeData,
-  categoryOptions,
   levelOptions,
+  tagCascaderOptions,
+  selectedTagPaths,
   selectedProvinceId,
   selectedCityId,
   currentCities,
@@ -94,6 +98,7 @@ const {
   isSearchActive,
   onProvinceChange,
   onCityChange,
+  syncTagIdsFromPaths,
   getCurrentRegionName,
   loadScenicList,
   debouncedLoadScenicList,

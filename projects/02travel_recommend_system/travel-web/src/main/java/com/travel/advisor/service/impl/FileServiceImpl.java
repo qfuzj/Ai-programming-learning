@@ -24,12 +24,15 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -200,6 +203,17 @@ public class FileServiceImpl implements FileService {
             throw new BusinessException(ResultCode.NOT_FOUND, "文件不存在");
         }
 
+        // 归属校验：仅上传者本人或管理员可删除，防止越权删除他人文件
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+        boolean isAdmin = "ADMIN".equalsIgnoreCase(SecurityUtils.getCurrentRoleType());
+        boolean isOwner = currentUserId.equals(fileResource.getUploaderId());
+        if (!isAdmin && !isOwner) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "无权删除该文件");
+        }
+
         // 删除MinIO中的实际文件
         try {
             minioClient.removeObject(
@@ -235,6 +249,24 @@ public class FileServiceImpl implements FileService {
                 .set(FileResource::getStatus, FileResourceStatus.USED.getCode())
                 .set(FileResource::getUsedTime, LocalDateTime.now());
         fileResourceMapper.update(null, wrapper);
+    }
+
+    /**
+     * 批量解析文件资源 ID → URL 映射。空入参直接返回空 Map，避免触发 IN()。
+     */
+    @Override
+    public Map<Long, String> resolveUrls(Collection<Long> fileIds) {
+        if (fileIds == null || fileIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        // 去重后批量查询，URL 缺失的资源不进结果集，调用方按 getOrDefault 处理
+        List<Long> distinctIds = fileIds.stream().filter(java.util.Objects::nonNull).distinct().collect(Collectors.toList());
+        if (distinctIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return fileResourceMapper.selectBatchIds(distinctIds).stream()
+                .filter(fr -> fr.getUrl() != null)
+                .collect(Collectors.toMap(FileResource::getId, FileResource::getUrl, (a, b) -> a));
     }
 
     /**

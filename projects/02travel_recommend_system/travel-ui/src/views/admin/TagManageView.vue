@@ -349,7 +349,7 @@ function openCreate(): void {
   void fetchCategoriesByScope(formModel.scope || "SCENIC");
 }
 
-async function openEdit(row: AdminTagItem): void {
+async function openEdit(row: AdminTagItem): Promise<void> {
   editingId.value = row.id;
   formModel.name = row.name;
   formModel.scope = row.scope ?? "SCENIC";

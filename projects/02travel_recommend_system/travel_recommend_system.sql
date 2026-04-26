@@ -11,7 +11,7 @@
  Target Server Version : 80042 (8.0.42)
  File Encoding         : 65001
 
- Date: 20/04/2026 19:18:40
+ Date: 26/04/2026 13:42:58
 */
 
 SET NAMES utf8mb4;
@@ -68,7 +68,7 @@ CREATE TABLE `content_audit` (
   KEY `idx_audit_status` (`audit_status`),
   KEY `idx_auditor_id` (`auditor_id`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容审核表';
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容审核表';
 
 -- ----------------------------
 -- Table structure for file_resource
@@ -101,7 +101,7 @@ CREATE TABLE `file_resource` (
   KEY `idx_biz_id` (`biz_id`),
   KEY `idx_uploader_id` (`uploader_id`),
   KEY `idx_file_hash` (`file_hash`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件资源表';
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件资源表';
 
 -- ----------------------------
 -- Table structure for llm_call_log
@@ -135,7 +135,7 @@ CREATE TABLE `llm_call_log` (
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`),
   KEY `idx_trace_id` (`trace_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 调用日志表';
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='LLM 调用日志表';
 
 -- ----------------------------
 -- Table structure for llm_conversation
@@ -209,7 +209,7 @@ CREATE TABLE `operation_log` (
   KEY `idx_ip_address` (`ip_address`),
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
 -- ----------------------------
 -- Table structure for recommend_record
@@ -236,7 +236,7 @@ CREATE TABLE `recommend_record` (
   KEY `idx_recommend_type` (`recommend_type`),
   KEY `idx_create_time` (`create_time`),
   KEY `idx_llm_call_log_id` (`llm_call_log_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐记录表';
+) ENGINE=InnoDB AUTO_INCREMENT=79 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐记录表';
 
 -- ----------------------------
 -- Table structure for recommend_result_item
@@ -256,7 +256,7 @@ CREATE TABLE `recommend_result_item` (
   PRIMARY KEY (`id`),
   KEY `idx_recommend_record_id` (`recommend_record_id`),
   KEY `idx_scenic_spot_id` (`scenic_spot_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=228 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐结果明细表';
+) ENGINE=InnoDB AUTO_INCREMENT=283 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='推荐结果明细表';
 
 -- ----------------------------
 -- Table structure for region
@@ -283,7 +283,7 @@ CREATE TABLE `region` (
   KEY `idx_level` (`level`),
   KEY `idx_pinyin` (`pinyin`),
   KEY `idx_is_hot` (`is_hot`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='地区表';
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='地区表';
 
 -- ----------------------------
 -- Table structure for review_like
@@ -297,7 +297,7 @@ CREATE TABLE `review_like` (
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_review_user` (`review_id`,`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评点赞表';
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点评点赞表';
 
 -- ----------------------------
 -- Table structure for review_reply
@@ -336,7 +336,7 @@ CREATE TABLE `scenic_image` (
   KEY `idx_file_resource_id` (`file_resource_id`),
   KEY `idx_image_type` (`image_type`),
   KEY `idx_is_cover` (`is_cover`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点图片表';
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点图片表';
 
 -- ----------------------------
 -- Table structure for scenic_spot
@@ -399,7 +399,7 @@ CREATE TABLE `scenic_spot_tag` (
   UNIQUE KEY `uk_scenic_tag` (`scenic_spot_id`,`tag_id`),
   KEY `idx_scenic_spot_id` (`scenic_spot_id`),
   KEY `idx_tag_id` (`tag_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点-标签关联表';
+) ENGINE=InnoDB AUTO_INCREMENT=92 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='景点-标签关联表';
 
 -- ----------------------------
 -- Table structure for stat_platform_daily
@@ -487,7 +487,7 @@ CREATE TABLE `tag` (
   UNIQUE KEY `uk_name` (`name`),
   KEY `idx_category` (`category`),
   KEY `idx_scope` (`scope`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
 
 -- ----------------------------
 -- Table structure for travel_plan
@@ -599,7 +599,7 @@ CREATE TABLE `user_browse_history` (
   KEY `idx_scenic_spot_id` (`scenic_spot_id`),
   KEY `idx_browse_time` (`browse_time`),
   KEY `idx_user_browse_time` (`user_id`,`browse_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=292 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='浏览历史表';
+) ENGINE=InnoDB AUTO_INCREMENT=296 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='浏览历史表';
 
 -- ----------------------------
 -- Table structure for user_favorite
@@ -690,6 +690,6 @@ CREATE TABLE `user_review` (
   KEY `idx_status` (`status`),
   KEY `idx_create_time` (`create_time`),
   FULLTEXT KEY `ft_content` (`content`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户点评表';
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户点评表';
 
 SET FOREIGN_KEY_CHECKS = 1;

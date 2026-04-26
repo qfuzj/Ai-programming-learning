@@ -16,10 +16,13 @@ import com.travel.advisor.mapper.RecommendResultItemMapper;
 import com.travel.advisor.mapper.ScenicSpotMapper;
 import com.travel.advisor.mapper.UserFavoriteMapper;
 import com.travel.advisor.service.FavoriteService;
+import com.travel.advisor.service.FileService;
+import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.favorite.FavoriteVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +45,7 @@ public class FavoriteServiceImpl implements FavoriteService {
     private final ScenicSpotMapper scenicSpotMapper;
     private final RecommendRecordMapper recommendRecordMapper;
     private final RecommendResultItemMapper recommendResultItemMapper;
+    private final FileService fileService;
 
     /**
      * 添加收藏
@@ -62,12 +66,17 @@ public class FavoriteServiceImpl implements FavoriteService {
             // 如果已经被逻辑删除了，我们走恢复逻辑
             userFavoriteMapper.restoreDeleted(existing.getId());
         } else {
-            // 否则走全新插入
+            // 否则走全新插入；并发场景下依赖 (user_id, scenic_spot_id) 唯一索引兜底
             UserFavorite userFavorite = new UserFavorite();
             userFavorite.setUserId(userId);
             userFavorite.setScenicSpotId(scenicId);
             userFavorite.setFolderName("默认收藏");
-            userFavoriteMapper.insert(userFavorite);
+            try {
+                userFavoriteMapper.insert(userFavorite);
+            } catch (DuplicateKeyException e) {
+                // 同用户并发收藏同景点，认为已收藏，直接抛冲突，避免重复 +1
+                throw new BusinessException(ResultCode.CONFLICT, "景点已收藏");
+            }
         }
         
         // 更新景点的收藏数量
@@ -130,11 +139,16 @@ public class FavoriteServiceImpl implements FavoriteService {
         userFavoriteMapper.delete(new LambdaQueryWrapper<UserFavorite>()
             .eq(UserFavorite::getUserId, userId));
             
-        // 批量更新相关景点的收藏数量
-        for (UserFavorite favorite : favorites) {
+        // 一次 UPDATE ... WHERE id IN (...) 完成所有景点收藏数递减，避免 N 次单条更新
+        List<Long> scenicIds = favorites.stream()
+                .map(UserFavorite::getScenicSpotId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (!scenicIds.isEmpty()) {
             scenicSpotMapper.update(null, new LambdaUpdateWrapper<ScenicSpot>()
-                .eq(ScenicSpot::getId, favorite.getScenicSpotId())
-                .setSql("favorite_count = CASE WHEN favorite_count > 0 THEN favorite_count - 1 ELSE 0 END"));
+                    .in(ScenicSpot::getId, scenicIds)
+                    .setSql("favorite_count = CASE WHEN favorite_count > 0 THEN favorite_count - 1 ELSE 0 END"));
         }
     }
 
@@ -167,6 +181,14 @@ public class FavoriteServiceImpl implements FavoriteService {
         List<Long> scenicIds = records.stream().map(UserFavorite::getScenicSpotId).distinct().toList();
         Map<Long, ScenicSpot> scenicMap = scenicSpotMapper.selectBatchIds(scenicIds).stream()
             .collect(Collectors.toMap(ScenicSpot::getId, scenic -> scenic));
+        // 批量解析封面图 fileResourceId → URL（景点表现存储为 fileResourceId，纯数字才需解析）
+        List<Long> coverFileIds = scenicMap.values().stream()
+            .map(ScenicSpot::getCoverImage)
+            .map(FileResourceIds::tryParseId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+        Map<Long, String> coverUrlMap = fileService.resolveUrls(coverFileIds);
         // 将用户收藏记录转换为VO对象，并填充景点信息
         List<FavoriteVO> vos = records.stream().map(item -> {
             ScenicSpot scenicSpot = scenicMap.get(item.getScenicSpotId());
@@ -176,7 +198,7 @@ public class FavoriteServiceImpl implements FavoriteService {
             FavoriteVO vo = new FavoriteVO();
             vo.setScenicId(scenicSpot.getId());
             vo.setScenicName(scenicSpot.getName());
-            vo.setCoverImage(scenicSpot.getCoverImage());
+            vo.setCoverImage(resolveCover(scenicSpot.getCoverImage(), coverUrlMap));
             vo.setScore(scenicSpot.getScore());
             vo.setFavoriteTime(item.getCreateTime());
             return vo;
@@ -230,6 +252,21 @@ public class FavoriteServiceImpl implements FavoriteService {
             log.warn("syncRecommendFavoriteFlag failed, userId={}, scenicId={}, flag={}, err={}",
                     userId, scenicId, flag, e.getMessage());
         }
+    }
+
+    /**
+     * 将景点封面图字段（fileResourceId 或旧 URL）解析为可访问 URL。
+     * 为空返回空串；非数字认为旧版 URL 原样返回。
+     */
+    private String resolveCover(String coverImage, Map<Long, String> coverUrlMap) {
+        if (coverImage == null || coverImage.isBlank()) {
+            return "";
+        }
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId == null) {
+            return coverImage.trim();
+        }
+        return coverUrlMap.getOrDefault(fileId, "");
     }
 
     /**

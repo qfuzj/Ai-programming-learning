@@ -12,9 +12,7 @@ import com.travel.advisor.entity.UserPreferenceTag;
 import com.travel.advisor.entity.UserProfile;
 import com.travel.advisor.entity.UserReview;
 import com.travel.advisor.entity.ScenicSpotTag;
-import com.travel.advisor.entity.FileResource;
 import com.travel.advisor.mapper.ScenicSpotTagMapper;
-import com.travel.advisor.mapper.FileResourceMapper;
 import org.springframework.util.StringUtils;
 import com.travel.advisor.mapper.TagMapper;
 import com.travel.advisor.mapper.UserBrowseHistoryMapper;
@@ -27,6 +25,7 @@ import com.travel.advisor.security.LoginUser;
 import com.travel.advisor.service.FileService;
 import com.travel.advisor.service.UserProfileService;
 import com.travel.advisor.utils.BeanCopyUtils;
+import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.user.UserProfilePortraitVO;
 import com.travel.advisor.vo.user.UserProfileVO;
@@ -53,7 +52,6 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserFavoriteMapper userFavoriteMapper;
     private final UserReviewMapper userReviewMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
-    private final FileResourceMapper fileResourceMapper;
     private final FileService fileService;
 
     private static final int RECENT_BROWSE_LIMIT = 30;
@@ -66,12 +64,11 @@ public class UserProfileServiceImpl implements UserProfileService {
         if (!StringUtils.hasText(avatar)) {
             return "";
         }
-        String trimmed = avatar.trim();
-        if (!trimmed.matches("\\d+")) {
-            return trimmed; // 旧数据直接返回原 URL
+        Long fileId = FileResourceIds.tryParseId(avatar);
+        if (fileId == null) {
+            return avatar.trim(); // 旧数据直接返回原 URL
         }
-        FileResource fileResource = fileResourceMapper.selectById(Long.valueOf(trimmed));
-        return fileResource != null ? fileResource.getUrl() : "";
+        return fileService.resolveUrls(List.of(fileId)).getOrDefault(fileId, "");
     }
 
     @Override
@@ -95,14 +92,11 @@ public class UserProfileServiceImpl implements UserProfileService {
         user.setBirthday(dto.getBirthday());
         user.setSignature(dto.getSignature());
         userMapper.updateById(user);
-        if (StringUtils.hasText(dto.getAvatar())) {
-            try {
-                Long fileId = Long.parseLong(dto.getAvatar().trim());
-                fileService.bindFilesToBiz(List.of(fileId), userId, BizType.AVATAR);
-            } catch (NumberFormatException e) {
-                // 旧 URL 格式，不绑定
-            }
+        Long avatarFileId = FileResourceIds.tryParseId(dto.getAvatar());
+        if (avatarFileId != null) {
+            fileService.bindFilesToBiz(List.of(avatarFileId), userId, BizType.AVATAR);
         }
+        // 旧 URL 格式，不绑定
     }
 
     @Override
@@ -115,8 +109,19 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .selectOne(Wrappers.<UserProfile>lambdaQuery().eq(UserProfile::getUserId, userId));
         if (profile != null) {
             vo.setTravelStyle(profile.getTravelStyle() != null ? profile.getTravelStyle() : "待发掘");
+            // 仅 1/2/3 是约定的预算等级，其余值（含历史脏数据 0/null/-1）一律降级为"未知"，
+            // 避免之前三元嵌套把任意非 1/2 值都当成"奢华型"。
             Integer budget = profile.getBudgetLevel();
-            vo.setBudgetLevel(budget != null ? (budget == 1 ? "经济型" : (budget == 2 ? "舒适型" : "奢华型")) : "未知");
+            String budgetLabel = "未知";
+            if (budget != null) {
+                switch (budget) {
+                    case 1 -> budgetLabel = "经济型";
+                    case 2 -> budgetLabel = "舒适型";
+                    case 3 -> budgetLabel = "奢华型";
+                    default -> { /* 保持"未知" */ }
+                }
+            }
+            vo.setBudgetLevel(budgetLabel);
             vo.setSummary("基于足迹与偏好综合生成的旅行摘要");
         } else {
             vo.setTravelStyle("待发掘");
@@ -251,42 +256,29 @@ public class UserProfileServiceImpl implements UserProfileService {
         return tags;
     }
 
+    /** 与 {@code TagServiceImpl.resolveTagIconUrls} 逻辑一致：将 icon 字段中的 fileResourceId 原地表调为 URL。 */
     private void resolveTagIconUrls(List<Tag> tags) {
         if (tags == null || tags.isEmpty()) {
             return;
         }
         List<Long> iconIds = tags.stream()
                 .map(Tag::getIcon)
-                .filter(StringUtils::hasText)
-                .map(s -> {
-                    try {
-                        return Long.parseLong(s.trim());
-                    } catch (NumberFormatException e) {
-                        return null;
-                    }
-                })
+                .map(FileResourceIds::tryParseId)
                 .filter(java.util.Objects::nonNull)
                 .distinct()
                 .toList();
         if (iconIds.isEmpty()) {
             return;
         }
-        // 批量查询 FileResource，构建 ID->URL 的映射
-        Map<Long, String> urlMap = fileResourceMapper.selectBatchIds(iconIds).stream()
-                .filter(fr -> fr.getUrl() != null)
-                .collect(Collectors.toMap(FileResource::getId, FileResource::getUrl));
+        Map<Long, String> urlMap = fileService.resolveUrls(iconIds);
         for (Tag tag : tags) {
-            if (!StringUtils.hasText(tag.getIcon())) {
+            Long id = FileResourceIds.tryParseId(tag.getIcon());
+            if (id == null) {
                 continue;
             }
-            try {
-                Long id = Long.parseLong(tag.getIcon().trim());
-                String url = urlMap.get(id);
-                if (url != null) {
-                    tag.setIcon(url);
-                }
-            } catch (NumberFormatException e) {
-                // 保持原有 URL 不变
+            String url = urlMap.get(id);
+            if (url != null) {
+                tag.setIcon(url);
             }
         }
     }
