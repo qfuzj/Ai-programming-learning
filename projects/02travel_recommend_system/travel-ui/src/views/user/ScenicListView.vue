@@ -105,13 +105,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, reactive, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { getScenicPage as getScenicList, type ScenicItem } from "@/api/scenic";
 import { getRegionTree } from "@/api/common";
 import type { CommonRegionNode } from "@/api/common";
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
 const scenicList = ref<ScenicItem[]>([]);
 const total = ref(0);
@@ -127,6 +128,13 @@ const query = reactive({
   pageNum: 1,
   pageSize: 12,
 });
+
+function applyRouteQuery(): void {
+  const q = route.query.keyword as string | undefined;
+  if (q && q.trim()) {
+    query.keyword = q.trim();
+  }
+}
 
 function goDetail(id: number): void {
   router.push(`/scenic/${id}`);
@@ -180,9 +188,20 @@ async function loadRegions(): Promise<void> {
 }
 
 onMounted(() => {
+  applyRouteQuery();
   loadData();
   loadRegions();
 });
+
+watch(
+  () => route.query.keyword,
+  (newKeyword) => {
+    const q = newKeyword as string | undefined;
+    query.keyword = q?.trim() || undefined;
+    query.pageNum = 1;
+    loadData();
+  }
+);
 </script>
 
 <style scoped>

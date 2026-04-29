@@ -203,7 +203,7 @@ onMounted(() => {
 /* Hero */
 .hero {
   position: relative;
-  padding: 100px 24px 80px;
+  padding: 100px 24px 10px;
   overflow: hidden;
   text-align: center;
   background: linear-gradient(180deg, #fafffe 0%, #ffffff 100%);

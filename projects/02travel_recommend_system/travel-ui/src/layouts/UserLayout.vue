@@ -25,7 +25,16 @@
         <div class="header-right">
           <template v-if="userStore.isAuthenticated">
             <div class="user-menu" @click="showDropdown = !showDropdown">
-              <div class="avatar">{{ displayUserName.charAt(0) }}</div>
+              <div class="avatar-wrapper">
+                <img
+                  v-if="userStore.profile?.avatar && !avatarError"
+                  :src="userStore.profile.avatar"
+                  class="avatar-img"
+                  alt="avatar"
+                  @error="onAvatarError"
+                />
+                <div v-else class="avatar">{{ displayUserName.charAt(0) }}</div>
+              </div>
               <span class="username">{{ displayUserName }}</span>
             </div>
             <div v-if="showDropdown" class="dropdown" @click.stop>
@@ -61,6 +70,11 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const showDropdown = ref(false);
+const avatarError = ref(false);
+
+function onAvatarError(): void {
+  avatarError.value = true;
+}
 
 const displayUserName = computed(() => {
   return userStore.profile?.nickname || userStore.profile?.username || "用户";
@@ -179,11 +193,25 @@ onUnmounted(() => {
   background: #f5f5f5;
 }
 
+.avatar-wrapper {
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  background: #00e676;
+  border-radius: 50%;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .avatar {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 100%;
+  height: 100%;
   font-size: 14px;
   font-weight: 700;
   color: #000000;

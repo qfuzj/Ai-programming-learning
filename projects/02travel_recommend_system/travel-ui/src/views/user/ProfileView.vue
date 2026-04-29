@@ -599,6 +599,7 @@ import {
   type ProfileInfo,
   type ProfilePortraitSummary,
 } from "@/api/profile";
+import { useUserStore } from "@/store";
 import { getFavoritesPage, removeFavorite } from "@/api/favorite";
 import { getMyReviews, deleteMyReview } from "@/api/audit";
 import { getBrowseHistoryPage as getBrowseHistory, deleteBrowseHistory } from "@/api/history";
@@ -606,6 +607,7 @@ import { getTags, type CommonTagItem } from "@/api/common";
 import { getUploadToken, uploadCallback } from "@/api/file";
 
 const router = useRouter();
+const userStore = useUserStore();
 const profile = ref<ProfileInfo | null>(null);
 const portrait = ref<ProfilePortraitSummary | null>(null);
 const activeTab = ref("favorites");
@@ -882,6 +884,8 @@ async function saveProfile(): Promise<void> {
     });
     showEdit.value = false;
     await loadProfile();
+    // 同步更新 userStore 中的头像，使右上角立即生效
+    await userStore.fetchProfile();
   } catch {
     alert("保存失败");
   } finally {
@@ -912,6 +916,8 @@ async function handleAvatarChange(e: Event): Promise<void> {
     });
     await updateProfile({ avatar: String(fileId) });
     await loadProfile();
+    // 同步更新 userStore 中的头像，使右上角立即生效
+    await userStore.fetchProfile();
   } catch {
     alert("头像上传失败");
   } finally {
