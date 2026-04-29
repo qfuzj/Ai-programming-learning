@@ -1,214 +1,855 @@
-<!-- 极简风格个人中心页 -->
+<!--
+  个人中心页 - 精致有机极简主义风格
+  设计方向：有机极简 + 精致排版 + 微妙动效
+  字体：Playfair Display (标题) + Noto Sans SC (正文)
+-->
 <template>
-  <div v-if="profile" class="page">
-    <div class="header">
-      <div class="avatar">{{ (profile.nickname || profile.username || "U").charAt(0) }}</div>
-      <div class="info">
-        <h1 class="name">{{ profile.nickname || profile.username }}</h1>
-        <p class="meta">
-          <span v-if="profile.gender === 1">男</span>
-          <span v-if="profile.gender === 2">女</span>
-          <span v-if="profile.birthday">{{ profile.birthday }}</span>
-        </p>
-      </div>
-      <button class="btn-edit" @click="showEdit = true">编辑资料</button>
-    </div>
-
-    <!-- 标签页 -->
-    <div class="tabs">
-      <span
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="tab"
-        :class="{ active: activeTab === tab.key }"
-        @click="switchTab(tab.key)"
-      >
-        {{ tab.label }}
-      </span>
-    </div>
-
-    <!-- 收藏 -->
-    <div v-if="activeTab === 'favorites'" class="tab-content">
-      <div v-if="favLoading" class="loading">加载中...</div>
-      <div v-else-if="favList.length === 0" class="empty">暂无收藏</div>
-      <div v-else class="card-list">
-        <div
-          v-for="item in favList"
-          :key="item.scenicId"
-          class="card"
-          @click="router.push(`/scenic/${item.scenicId}`)"
-        >
-          <img :src="item.coverImage || ''" class="card-img" />
-          <div class="card-body">
-            <h3 class="card-title">{{ item.scenicName }}</h3>
-            <p class="card-time">收藏于 {{ item.favoriteTime }}</p>
+  <div v-if="profile" class="profile-page">
+    <!-- Hero Header -->
+    <header class="hero-header">
+      <div class="hero-bg"></div>
+      <div class="hero-content">
+        <div class="avatar-wrapper" @click="triggerAvatarUpload">
+          <div class="avatar-ring">
+            <img v-if="profile.avatar" :src="profile.avatar" class="avatar-img" />
+            <span v-else class="avatar-letter">{{ avatarLetter }}</span>
           </div>
-          <button class="btn-remove" @click.stop="removeFav(item.scenicId)">取消收藏</button>
+          <div class="avatar-edit-hint">更换头像</div>
         </div>
+        <input
+          ref="avatarInputRef"
+          type="file"
+          accept="image/*"
+          style="display: none"
+          @change="handleAvatarChange"
+        />
+        <div class="hero-info">
+          <h1 class="hero-name">{{ profile.nickname || profile.username }}</h1>
+          <p v-if="profile.signature" class="hero-signature">{{ profile.signature }}</p>
+          <p class="hero-meta">
+            <span class="meta-item">
+              <span v-if="profile.gender === 1">男</span>
+              <span v-else-if="profile.gender === 2">女</span>
+              <span v-else>未知</span>
+            </span>
+            <span v-if="profile.birthday" class="meta-sep">|</span>
+            <span v-if="profile.birthday" class="meta-item">{{ profile.birthday }}</span>
+            <span v-if="profile.role" class="meta-sep">|</span>
+            <span v-if="profile.role" class="meta-item role-tag">
+              {{ profile.role === "ADMIN" ? "管理员" : "普通用户" }}
+            </span>
+          </p>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item" style="animation-delay: 0.1s">
+            <span class="stat-number">{{ stats.browseCount }}</span>
+            <span class="stat-label">浏览次数</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item" style="animation-delay: 0.2s">
+            <span class="stat-number">{{ stats.favoriteCount }}</span>
+            <span class="stat-label">收藏景点</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item" style="animation-delay: 0.3s">
+            <span class="stat-number">{{ stats.reviewCount }}</span>
+            <span class="stat-label">发布点评</span>
+          </div>
+        </div>
+        <button class="btn-edit-hero" @click="openEdit">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+          编辑资料
+        </button>
       </div>
-    </div>
+    </header>
 
-    <!-- 点评 -->
-    <div v-if="activeTab === 'reviews'" class="tab-content">
-      <div v-if="reviewLoading" class="loading">加载中...</div>
-      <div v-else-if="reviewList.length === 0" class="empty">暂无点评</div>
-      <div v-else class="card-list">
-        <div v-for="item in reviewList" :key="item.id" class="card">
-          <div class="card-body">
-            <h3 class="card-title" @click="router.push(`/scenic/${item.scenicId}`)">
-              {{ item.scenicName }}
+    <!-- Main Layout: Left Sidebar + Right Content -->
+    <div class="main-layout">
+      <!-- Left Sidebar -->
+      <aside class="sidebar">
+        <!-- Preference Tags -->
+        <section class="sidebar-card" style="animation-delay: 0.4s">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+                />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
+              </svg>
+              偏好标签
             </h3>
-            <p class="card-score">{{ item.score }}分</p>
-            <p class="card-content">{{ item.content }}</p>
-            <p class="card-time">{{ item.createTime }}</p>
+            <button class="btn-icon" title="编辑标签" @click="openTagDialog">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
           </div>
-          <button class="btn-remove" @click="removeReview(item.id)">删除</button>
+          <div v-if="tagLoading" class="sidebar-loading">
+            <div v-for="n in 3" :key="n" class="skeleton-line"></div>
+          </div>
+          <div v-else-if="myTagIds.length === 0" class="sidebar-empty">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ccc"
+              stroke-width="1.5"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>点击编辑设置偏好</span>
+          </div>
+          <div v-else class="tag-groups">
+            <div v-for="(names, cat) in myTagsByCategory" :key="cat" class="tag-group">
+              <div class="tag-category">{{ cat }}</div>
+              <div class="tag-list">
+                <span v-for="name in names" :key="name" class="tag-chip">{{ name }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Portrait Summary -->
+        <section v-if="portrait" class="sidebar-card" style="animation-delay: 0.5s">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              旅行画像
+            </h3>
+          </div>
+          <div class="portrait-body">
+            <div v-if="portrait.travelStyle" class="portrait-row">
+              <span class="portrait-icon">✦</span>
+              <div>
+                <span class="portrait-label">旅行风格</span>
+                <span class="portrait-value">{{ portrait.travelStyle }}</span>
+              </div>
+            </div>
+            <div v-if="portrait.budgetLevel" class="portrait-row">
+              <span class="portrait-icon">◈</span>
+              <div>
+                <span class="portrait-label">预算水平</span>
+                <span class="portrait-value">{{ portrait.budgetLevel }}</span>
+              </div>
+            </div>
+            <div v-if="portrait.location" class="portrait-row">
+              <span class="portrait-icon">◉</span>
+              <div>
+                <span class="portrait-label">常去地区</span>
+                <span class="portrait-value">{{ portrait.location }}</span>
+              </div>
+            </div>
+            <p v-if="portrait.summary" class="portrait-summary">{{ portrait.summary }}</p>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Right Content Area -->
+      <main class="content-area">
+        <!-- Tabs -->
+        <nav class="tab-nav">
+          <button
+            v-for="(tab, idx) in tabs"
+            :key="tab.key"
+            class="tab-btn"
+            :class="{ active: activeTab === tab.key }"
+            :style="{ animationDelay: `${0.3 + idx * 0.1}s` }"
+            @click="switchTab(tab.key)"
+          >
+            {{ tab.label }}
+            <span v-if="tab.count !== undefined" class="tab-count">{{ tab.count }}</span>
+          </button>
+        </nav>
+
+        <!-- Favorites Tab -->
+        <div v-if="activeTab === 'favorites'" class="tab-panel">
+          <div v-if="favLoading" class="loading-grid">
+            <div v-for="n in 3" :key="n" class="skeleton-card"></div>
+          </div>
+          <div v-else-if="favList.length === 0" class="empty-state">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ddd"
+              stroke-width="1.5"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+            <p>暂无收藏</p>
+          </div>
+          <template v-else>
+            <div class="content-list">
+              <article
+                v-for="(item, idx) in favList"
+                :key="item.scenicId"
+                class="content-card"
+                :style="{ animationDelay: `${idx * 0.08}s` }"
+                @click="router.push(`/scenic/${item.scenicId}`)"
+              >
+                <div class="card-img-wrapper">
+                  <img :src="item.coverImage || ''" class="card-img" />
+                  <div class="card-img-overlay"></div>
+                </div>
+                <div class="card-info">
+                  <h4 class="card-title">{{ item.scenicName }}</h4>
+                  <p class="card-meta">收藏于 {{ formatTime(item.favoriteTime) }}</p>
+                </div>
+                <button class="btn-remove-mini" @click.stop="removeFav(item.scenicId)">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </article>
+            </div>
+            <div v-if="favTotalPages > 1" class="pagination">
+              <button
+                class="page-btn"
+                :disabled="favPageNum <= 1"
+                @click="changeFavPage(favPageNum - 1)"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                上一页
+              </button>
+              <span class="page-info">{{ favPageNum }} / {{ favTotalPages }}</span>
+              <button
+                class="page-btn"
+                :disabled="favPageNum >= favTotalPages"
+                @click="changeFavPage(favPageNum + 1)"
+              >
+                下一页
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+          </template>
         </div>
-      </div>
+
+        <!-- Reviews Tab -->
+        <div v-if="activeTab === 'reviews'" class="tab-panel">
+          <div v-if="reviewLoading" class="loading-grid">
+            <div v-for="n in 3" :key="n" class="skeleton-card"></div>
+          </div>
+          <div v-else-if="reviewList.length === 0" class="empty-state">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ddd"
+              stroke-width="1.5"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <p>暂无点评</p>
+          </div>
+          <template v-else>
+            <div class="content-list">
+              <article
+                v-for="(item, idx) in reviewList"
+                :key="item.id"
+                class="content-card review-card"
+                :style="{ animationDelay: `${idx * 0.08}s` }"
+              >
+                <div class="card-info">
+                  <div class="review-header">
+                    <h4 class="card-title" @click="router.push(`/scenic/${item.scenicId}`)">
+                      {{ item.scenicName }}
+                    </h4>
+                    <span class="score-badge">{{ item.score }}分</span>
+                  </div>
+                  <p class="review-content">{{ item.content }}</p>
+                  <p class="card-meta">{{ formatTime(item.createdAt) }}</p>
+                </div>
+                <button class="btn-remove-mini" @click="removeReview(item.id)">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </article>
+            </div>
+            <div v-if="reviewTotalPages > 1" class="pagination">
+              <button
+                class="page-btn"
+                :disabled="reviewPageNum <= 1"
+                @click="changeReviewPage(reviewPageNum - 1)"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                上一页
+              </button>
+              <span class="page-info">{{ reviewPageNum }} / {{ reviewTotalPages }}</span>
+              <button
+                class="page-btn"
+                :disabled="reviewPageNum >= reviewTotalPages"
+                @click="changeReviewPage(reviewPageNum + 1)"
+              >
+                下一页
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+          </template>
+        </div>
+
+        <!-- History Tab -->
+        <div v-if="activeTab === 'history'" class="tab-panel">
+          <div v-if="histLoading" class="loading-grid">
+            <div v-for="n in 3" :key="n" class="skeleton-card"></div>
+          </div>
+          <div v-else-if="histList.length === 0" class="empty-state">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#ddd"
+              stroke-width="1.5"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <p>暂无浏览记录</p>
+          </div>
+          <template v-else>
+            <div class="content-list">
+              <article
+                v-for="(item, idx) in histList"
+                :key="item.id"
+                class="content-card"
+                :style="{ animationDelay: `${idx * 0.08}s` }"
+                @click="router.push(`/scenic/${item.scenicId}`)"
+              >
+                <div class="card-img-wrapper">
+                  <img :src="item.coverImage || ''" class="card-img" />
+                  <div class="card-img-overlay"></div>
+                </div>
+                <div class="card-info">
+                  <h4 class="card-title">{{ item.scenicName }}</h4>
+                  <p class="card-meta">浏览于 {{ formatTime(item.browseTime) }}</p>
+                </div>
+                <button class="btn-remove-mini" @click.stop="removeHist(item.id)">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </article>
+            </div>
+            <div v-if="histTotalPages > 1" class="pagination">
+              <button
+                class="page-btn"
+                :disabled="histPageNum <= 1"
+                @click="changeHistPage(histPageNum - 1)"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                上一页
+              </button>
+              <span class="page-info">{{ histPageNum }} / {{ histTotalPages }}</span>
+              <button
+                class="page-btn"
+                :disabled="histPageNum >= histTotalPages"
+                @click="changeHistPage(histPageNum + 1)"
+              >
+                下一页
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+          </template>
+        </div>
+      </main>
     </div>
 
-    <!-- 浏览历史 -->
-    <div v-if="activeTab === 'history'" class="tab-content">
-      <div v-if="histLoading" class="loading">加载中...</div>
-      <div v-else-if="histList.length === 0" class="empty">暂无浏览记录</div>
-      <div v-else class="card-list">
-        <div
-          v-for="item in histList"
-          :key="item.id"
-          class="card"
-          @click="router.push(`/scenic/${item.scenicId}`)"
-        >
-          <img :src="item.coverImage || ''" class="card-img" />
-          <div class="card-body">
-            <h3 class="card-title">{{ item.scenicName }}</h3>
-            <p class="card-time">浏览于 {{ item.visitTime }}</p>
+    <!-- Edit Profile Modal -->
+    <div v-if="showEdit" class="modal-mask" @click.self="showEdit = false">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h2 class="modal-title">编辑资料</h2>
+          <button class="btn-modal-close" @click="showEdit = false">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-field">
+            <label class="field-label">昵称</label>
+            <input v-model="editForm.nickname" class="field-input" placeholder="请输入昵称" />
           </div>
-          <button class="btn-remove" @click.stop="removeHist(item.id)">删除</button>
+          <div class="form-field">
+            <label class="field-label">个性签名</label>
+            <input v-model="editForm.signature" class="field-input" placeholder="写下你的签名" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">性别</label>
+            <div class="select-wrapper">
+              <select v-model="editForm.gender" class="field-input field-select">
+                <option :value="0">未知</option>
+                <option :value="1">男</option>
+                <option :value="2">女</option>
+              </select>
+              <svg
+                class="select-arrow"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#999"
+                stroke-width="2"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="field-label">生日</label>
+            <input v-model="editForm.birthday" class="field-input" type="date" />
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 编辑资料弹窗 -->
-    <div v-if="showEdit" class="modal-overlay" @click.self="showEdit = false">
-      <div class="modal">
-        <h2 class="modal-title">编辑资料</h2>
-        <div class="form-group">
-          <label class="label">昵称</label>
-          <input v-model="editForm.nickname" class="input" placeholder="昵称" />
-        </div>
-        <div class="form-group">
-          <label class="label">签名</label>
-          <input v-model="editForm.signature" class="input" placeholder="个性签名" />
-        </div>
-        <div class="form-group">
-          <label class="label">性别</label>
-          <select v-model="editForm.gender" class="input">
-            <option :value="0">未知</option>
-            <option :value="1">男</option>
-            <option :value="2">女</option>
-          </select>
-        </div>
-        <div class="modal-actions">
+        <div class="modal-footer">
           <button class="btn-cancel" @click="showEdit = false">取消</button>
-          <button class="btn-save" :disabled="saveLoading" @click="saveProfile">保存</button>
+          <button class="btn-primary" :disabled="saveLoading" @click="saveProfile">
+            <span v-if="saveLoading" class="btn-spinner"></span>
+            {{ saveLoading ? "保存中..." : "保存修改" }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tag Edit Modal -->
+    <div v-if="showTagDialog" class="modal-mask" @click.self="showTagDialog = false">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h2 class="modal-title">编辑偏好标签</h2>
+          <button class="btn-modal-close" @click="showTagDialog = false">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body tag-categories">
+          <div v-for="(tags, cat) in tagsByCategory" :key="cat" class="tag-category-section">
+            <div class="tag-category-title">{{ cat }}</div>
+            <div class="tag-category-items">
+              <label v-for="tag in tags" :key="tag.id" class="tag-checkbox">
+                <input v-model="selectedTagIds" type="checkbox" :value="tag.id" />
+                <span class="checkbox-custom"></span>
+                <span class="tag-name">{{ tag.name }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel" @click="showTagDialog = false">取消</button>
+          <button class="btn-primary" :disabled="tagSaving" @click="saveTags">
+            <span v-if="tagSaving" class="btn-spinner"></span>
+            {{ tagSaving ? "保存中..." : "保存标签" }}
+          </button>
         </div>
       </div>
     </div>
   </div>
-  <div v-else class="loading-page">加载中...</div>
+  <div v-else class="page-loading">
+    <div class="loading-pulse"></div>
+    <p>加载中...</p>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import {
   getProfileInfo as getProfile,
   updateProfileInfo as updateProfile,
-  type ProfileInfo as ProfileItem,
+  getProfilePortrait,
+  updatePreferenceTags,
+  getMyPreferenceTags,
+  type ProfileInfo,
+  type ProfilePortraitSummary,
 } from "@/api/profile";
-import { getFavorites, removeFavorite } from "@/api/favorite";
+import { getFavoritesPage, removeFavorite } from "@/api/favorite";
 import { getMyReviews, deleteMyReview } from "@/api/audit";
 import { getBrowseHistoryPage as getBrowseHistory, deleteBrowseHistory } from "@/api/history";
+import { getTags, type CommonTagItem } from "@/api/common";
+import { getUploadToken, uploadCallback } from "@/api/file";
 
 const router = useRouter();
-const profile = ref<ProfileItem | null>(null);
+const profile = ref<ProfileInfo | null>(null);
+const portrait = ref<ProfilePortraitSummary | null>(null);
 const activeTab = ref("favorites");
 const showEdit = ref(false);
+const showTagDialog = ref(false);
 const saveLoading = ref(false);
+const tagLoading = ref(false);
+const tagSaving = ref(false);
+const avatarInputRef = ref<HTMLInputElement | null>(null);
 
 const editForm = reactive({
   nickname: "",
   signature: "",
   gender: 0,
+  birthday: "",
 });
 
-const tabs = [
-  { key: "favorites", label: "收藏" },
-  { key: "reviews", label: "点评" },
-  { key: "history", label: "浏览历史" },
-];
+const allTags = ref<CommonTagItem[]>([]);
+const selectedTagIds = ref<number[]>([]);
+const myTagIds = ref<number[]>([]);
 
-// 收藏
+// 标签按分类分组
+const tagsByCategory = computed(() => {
+  const map: Record<string, CommonTagItem[]> = {};
+  for (const tag of allTags.value) {
+    const cat = tag.category || "其他";
+    if (!map[cat]) map[cat] = [];
+    map[cat].push(tag);
+  }
+  return map;
+});
+
+// 我的标签按分类分组
+const myTagsByCategory = computed(() => {
+  const map: Record<string, string[]> = {};
+  for (const id of myTagIds.value) {
+    const tag = allTags.value.find((t) => t.id === id);
+    if (!tag) continue;
+    const cat = tag.category || "其他";
+    if (!map[cat]) map[cat] = [];
+    map[cat].push(tag.name || `标签${id}`);
+  }
+  return map;
+});
+
+// Stats
+const stats = reactive({
+  browseCount: 0,
+  favoriteCount: 0,
+  reviewCount: 0,
+});
+
+// Tabs with counts
+const tabs = reactive([
+  { key: "favorites", label: "收藏", count: undefined as number | undefined },
+  { key: "reviews", label: "点评", count: undefined as number | undefined },
+  { key: "history", label: "浏览历史", count: undefined as number | undefined },
+]);
+
+// Favorites
 const favList = ref<any[]>([]);
 const favLoading = ref(false);
-async function loadFav(): Promise<void> {
+const favPageNum = ref(1);
+const favPageSize = ref(6);
+const favTotal = ref(0);
+const favTotalPages = computed(() => Math.max(1, Math.ceil(favTotal.value / favPageSize.value)));
+
+// Reviews
+const reviewList = ref<any[]>([]);
+const reviewLoading = ref(false);
+const reviewPageNum = ref(1);
+const reviewPageSize = ref(6);
+const reviewTotal = ref(0);
+const reviewTotalPages = computed(() =>
+  Math.max(1, Math.ceil(reviewTotal.value / reviewPageSize.value))
+);
+
+// History
+const histList = ref<any[]>([]);
+const histLoading = ref(false);
+const histPageNum = ref(1);
+const histPageSize = ref(6);
+const histTotal = ref(0);
+const histTotalPages = computed(() => Math.max(1, Math.ceil(histTotal.value / histPageSize.value)));
+
+const avatarLetter = computed(() => {
+  const name = profile.value?.nickname || profile.value?.username || "U";
+  return name.charAt(0);
+});
+
+// Load counts on page load
+async function loadCounts(): Promise<void> {
+  try {
+    const [favRes, reviewRes, histRes] = await Promise.allSettled([
+      getFavoritesPage({ pageNum: 1, pageSize: 1 }),
+      getMyReviews({ pageNum: 1, pageSize: 1 }),
+      getBrowseHistory({ pageNum: 1, pageSize: 1 }),
+    ]);
+    if (favRes.status === "fulfilled") {
+      stats.favoriteCount = favRes.value.total || 0;
+      tabs[0].count = favRes.value.total || 0;
+    }
+    if (reviewRes.status === "fulfilled") {
+      stats.reviewCount = reviewRes.value.total || 0;
+      tabs[1].count = reviewRes.value.total || 0;
+    }
+    if (histRes.status === "fulfilled") {
+      stats.browseCount = histRes.value.total || 0;
+      tabs[2].count = histRes.value.total || 0;
+    }
+  } catch {
+    // Ignore
+  }
+}
+
+async function loadProfile(): Promise<void> {
+  try {
+    const p = await getProfile();
+    profile.value = p;
+    editForm.nickname = p.nickname || "";
+    editForm.signature = p.signature || "";
+    editForm.gender = p.gender || 0;
+  } catch {
+    alert("加载个人资料失败");
+  }
+}
+
+async function loadPortrait(): Promise<void> {
+  try {
+    portrait.value = await getProfilePortrait();
+  } catch {
+    // Ignore
+  }
+}
+
+async function loadMyTags(): Promise<void> {
+  tagLoading.value = true;
+  try {
+    const tags = await getMyPreferenceTags();
+    myTagIds.value = tags.map((t: any) => Number(t.id ?? t));
+  } catch {
+    // Ignore
+  } finally {
+    tagLoading.value = false;
+  }
+}
+
+// Favorites
+async function loadFav(page = favPageNum.value): Promise<void> {
   favLoading.value = true;
   try {
-    const res = await getFavorites({ pageNum: 1, pageSize: 50 });
-    favList.value = res || [];
+    favPageNum.value = page;
+    const res = await getFavoritesPage({ pageNum: page, pageSize: favPageSize.value });
+    favList.value = res.records || [];
+    favTotal.value = res.total || 0;
+    if (activeTab.value === "favorites") {
+      tabs[0].count = res.total || 0;
+      stats.favoriteCount = res.total || 0;
+    }
   } finally {
     favLoading.value = false;
   }
+}
+function changeFavPage(page: number) {
+  if (page < 1 || page > favTotalPages.value) return;
+  loadFav(page);
 }
 async function removeFav(scenicId: number): Promise<void> {
   if (!confirm("确定取消收藏？")) return;
   try {
     await removeFavorite(scenicId);
-    loadFav();
+    if (favList.value.length === 1 && favPageNum.value > 1) {
+      loadFav(favPageNum.value - 1);
+    } else {
+      loadFav(favPageNum.value);
+    }
   } catch {
     alert("操作失败");
   }
 }
 
-// 点评
-const reviewList = ref<any[]>([]);
-const reviewLoading = ref(false);
-async function loadReviews(): Promise<void> {
+// Reviews
+async function loadReviews(page = reviewPageNum.value): Promise<void> {
   reviewLoading.value = true;
   try {
-    const res = await getMyReviews({ pageNum: 1, pageSize: 50 });
+    reviewPageNum.value = page;
+    const res = await getMyReviews({ pageNum: page, pageSize: reviewPageSize.value });
     reviewList.value = res.records || [];
+    reviewTotal.value = res.total || 0;
+    if (activeTab.value === "reviews") {
+      tabs[1].count = res.total || 0;
+      stats.reviewCount = res.total || 0;
+    }
   } finally {
     reviewLoading.value = false;
   }
+}
+function changeReviewPage(page: number) {
+  if (page < 1 || page > reviewTotalPages.value) return;
+  loadReviews(page);
 }
 async function removeReview(id: number): Promise<void> {
   if (!confirm("确定删除点评？")) return;
   try {
     await deleteMyReview(id);
-    loadReviews();
+    if (reviewList.value.length === 1 && reviewPageNum.value > 1) {
+      loadReviews(reviewPageNum.value - 1);
+    } else {
+      loadReviews(reviewPageNum.value);
+    }
   } catch {
     alert("删除失败");
   }
 }
 
-// 历史
-const histList = ref<any[]>([]);
-const histLoading = ref(false);
-async function loadHist(): Promise<void> {
+// History
+async function loadHist(page = histPageNum.value): Promise<void> {
   histLoading.value = true;
   try {
-    const res = await getBrowseHistory({ pageNum: 1, pageSize: 50 });
+    histPageNum.value = page;
+    const res = await getBrowseHistory({ pageNum: page, pageSize: histPageSize.value });
     histList.value = res.records || [];
+    histTotal.value = res.total || 0;
+    if (activeTab.value === "history") {
+      tabs[2].count = res.total || 0;
+      stats.browseCount = res.total || 0;
+    }
   } finally {
     histLoading.value = false;
   }
+}
+function changeHistPage(page: number) {
+  if (page < 1 || page > histTotalPages.value) return;
+  loadHist(page);
 }
 async function removeHist(id: number): Promise<void> {
   if (!confirm("确定删除该记录？")) return;
   try {
     await deleteBrowseHistory(id);
-    loadHist();
+    if (histList.value.length === 1 && histPageNum.value > 1) {
+      loadHist(histPageNum.value - 1);
+    } else {
+      loadHist(histPageNum.value);
+    }
   } catch {
     alert("删除失败");
   }
@@ -221,6 +862,14 @@ function switchTab(key: string): void {
   if (key === "history" && histList.value.length === 0) loadHist();
 }
 
+function openEdit(): void {
+  editForm.nickname = profile.value?.nickname || "";
+  editForm.signature = profile.value?.signature || "";
+  editForm.gender = profile.value?.gender || 0;
+  editForm.birthday = profile.value?.birthday || "";
+  showEdit.value = true;
+}
+
 async function saveProfile(): Promise<void> {
   saveLoading.value = true;
   try {
@@ -228,10 +877,10 @@ async function saveProfile(): Promise<void> {
       nickname: editForm.nickname || undefined,
       signature: editForm.signature || undefined,
       gender: editForm.gender || undefined,
+      birthday: editForm.birthday || undefined,
     });
     showEdit.value = false;
-    const p = await getProfile();
-    profile.value = p;
+    await loadProfile();
   } catch {
     alert("保存失败");
   } finally {
@@ -239,155 +888,672 @@ async function saveProfile(): Promise<void> {
   }
 }
 
-onMounted(async () => {
+// Avatar upload
+function triggerAvatarUpload(): void {
+  avatarInputRef.value?.click();
+}
+async function handleAvatarChange(e: Event): Promise<void> {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
   try {
-    profile.value = await getProfile();
-    editForm.nickname = profile.value?.nickname || "";
-    editForm.signature = profile.value?.signature || "";
-    editForm.gender = profile.value?.gender || 0;
-    loadFav();
+    const tokenRes = await getUploadToken({ fileName: file.name, bizType: "avatar" });
+    await fetch(tokenRes.uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type },
+    });
+    const fileId = await uploadCallback({
+      bucketName: tokenRes.bucketName,
+      objectKey: tokenRes.objectKey,
+      originalName: file.name,
+      bizType: tokenRes.bizType || "avatar",
+      bizId: tokenRes.bizId,
+    });
+    await updateProfile({ avatar: String(fileId) });
+    await loadProfile();
   } catch {
-    alert("加载失败");
+    alert("头像上传失败");
+  } finally {
+    if (avatarInputRef.value) avatarInputRef.value.value = "";
   }
+}
+
+// Tag dialog
+async function openTagDialog(): Promise<void> {
+  try {
+    const [tags, myTags] = await Promise.all([getTags(), getMyPreferenceTags()]);
+    allTags.value = tags;
+    selectedTagIds.value = myTags.map((t: any) => Number(t.id ?? t));
+    showTagDialog.value = true;
+  } catch {
+    alert("加载标签失败");
+  }
+}
+async function saveTags(): Promise<void> {
+  tagSaving.value = true;
+  try {
+    await updatePreferenceTags(selectedTagIds.value);
+    myTagIds.value = [...selectedTagIds.value];
+    showTagDialog.value = false;
+    portrait.value = await getProfilePortrait();
+  } catch {
+    alert("保存失败");
+  } finally {
+    tagSaving.value = false;
+  }
+}
+
+// Time formatting
+function formatTime(time?: string): string {
+  if (!time) return "";
+  return time.replace("T", " ").slice(0, 19);
+}
+
+onMounted(async () => {
+  await Promise.all([loadProfile(), loadPortrait(), loadMyTags(), loadCounts(), loadFav()]);
 });
 </script>
 
 <style scoped>
-.page {
-  max-width: 900px;
+/* ========== Fonts & Base ========== */
+.profile-page {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 0 24px 60px;
+  font-family:
+    "Noto Sans SC",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
-.header {
+/* ========== Hero Header ========== */
+.hero-header {
+  position: relative;
+  padding: 48px 40px 40px;
+  margin: 24px 0 40px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+}
+
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 230, 118, 0.08) 0%,
+    rgba(0, 230, 118, 0.03) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 40px;
+  gap: 28px;
+  flex-wrap: wrap;
 }
 
-.avatar {
-  width: 64px;
-  height: 64px;
-  display: grid;
-  place-items: center;
-  font-size: 24px;
-  font-weight: 700;
-  color: #000000;
-  background: #00e676;
-  border-radius: 50%;
+.avatar-wrapper {
+  position: relative;
+  cursor: pointer;
   flex-shrink: 0;
 }
 
-.info {
-  flex: 1;
-  min-width: 0;
+.avatar-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00e676 0%, #00c665 100%);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+  overflow: hidden;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
-.name {
+.avatar-wrapper:hover .avatar-ring {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-letter {
+  font-size: 30px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.avatar-edit-hint {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: #999;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 8px;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.avatar-wrapper:hover .avatar-edit-hint {
+  opacity: 1;
+}
+
+.hero-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.hero-name {
+  font-size: 26px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 6px 0;
+  line-height: 1.3;
+}
+
+.hero-signature {
+  font-size: 14px;
+  color: #666666;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  color: #999999;
+}
+
+.meta-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  background: #f5f5f5;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.meta-dot {
+  color: #ddd;
+}
+
+.meta-text {
+  color: #999;
+}
+
+.hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: auto;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.stat-number {
   font-size: 24px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 4px 0;
+  line-height: 1;
 }
 
-.meta {
-  font-size: 14px;
+.stat-label {
+  font-size: 12px;
   color: #999999;
-  margin: 0;
-  display: flex;
-  gap: 12px;
+  white-space: nowrap;
 }
 
-.btn-edit {
-  padding: 8px 20px;
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: #f0f0f0;
+}
+
+.btn-edit-hero {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
   font-size: 14px;
   font-weight: 500;
   color: #000000;
   background: #ffffff;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.25s ease;
+  font-family: inherit;
 }
 
-.btn-edit:hover {
-  border-color: #000000;
+.btn-edit-hero:hover {
+  border-color: #00e676;
+  background: #f0faf4;
 }
 
-/* Tabs */
-.tabs {
+/* ========== Main Layout ========== */
+.main-layout {
   display: flex;
   gap: 32px;
-  border-bottom: 1px solid #f0f0f0;
-  margin-bottom: 32px;
+  align-items: flex-start;
 }
 
-.tab {
-  padding: 12px 0;
-  font-size: 15px;
-  font-weight: 500;
-  color: #999999;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.tab:hover {
-  color: #000000;
-}
-
-.tab.active {
-  color: #000000;
-  font-weight: 600;
-  border-bottom-color: #00e676;
-}
-
-/* Content */
-.tab-content {
-  min-height: 300px;
-}
-
-.card-list {
+/* ========== Sidebar ========== */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-.card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
+.sidebar-card {
   background: #ffffff;
   border: 1px solid #f0f0f0;
-  border-radius: 12px;
-  transition: all 0.2s;
+  border-radius: 16px;
+  padding: 24px;
+  animation: fadeInUp 0.5s ease both;
+  transition: border-color 0.25s ease;
 }
 
-.card:hover {
-  border-color: #00e676;
+.sidebar-card:hover {
+  border-color: #e0e0e0;
 }
 
-.card-img {
-  width: 80px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 8px;
-  flex-shrink: 0;
-  background: #f5f5f5;
-}
-
-.card-body {
-  flex: 1;
-  min-width: 0;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .card-title {
   font-size: 15px;
   font-weight: 600;
   color: #000000;
-  margin: 0 0 4px 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title svg {
+  color: #00e676;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: #f0faf4;
+  color: #00c665;
+  border-color: #00e676;
+}
+
+.sidebar-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-line {
+  height: 28px;
+  background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.sidebar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  color: #ccc;
+  font-size: 13px;
+  text-align: center;
+}
+
+.tag-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tag-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tag-category {
+  font-size: 11px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-chip {
+  font-size: 13px;
+  color: #000000;
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+  padding: 5px 14px;
+  border-radius: 20px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.tag-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 230, 118, 0.15);
+}
+
+/* Tag dialog categories */
+.tag-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.tag-category-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-category-title {
+  font-size: 12px;
+  color: #999;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tag-category-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Portrait */
+.portrait-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.portrait-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.portrait-icon {
+  color: #00e676;
+  font-size: 12px;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.portrait-label {
+  display: block;
+  font-size: 11px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.portrait-value {
+  display: block;
+  font-size: 14px;
+  color: #000;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.portrait-summary {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin: 8px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #f5f5f5;
+}
+
+/* ========== Content Area ========== */
+.content-area {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tabs */
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid #f5f5f5;
+  margin-bottom: 28px;
+}
+
+.tab-btn {
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #999;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  bottom: -2px;
+  animation: fadeInUp 0.5s ease both;
+  font-family: inherit;
+}
+
+.tab-btn:hover {
+  color: #000;
+}
+
+.tab-btn.active {
+  color: #000;
+  font-weight: 600;
+  border-bottom-color: #00e676;
+}
+
+.tab-count {
+  font-size: 12px;
+  color: #999;
+  background: #f5f5f5;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 400;
+}
+
+.tab-btn.active .tab-count {
+  background: #e8f5e9;
+  color: #00c665;
+}
+
+/* Tab Panel */
+.tab-panel {
+  min-height: 300px;
+}
+
+/* Loading State */
+.loading-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-card {
+  height: 88px;
+  background: linear-gradient(90deg, #f8f8f8 25%, #f0f0f0 50%, #f8f8f8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 12px;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #ccc;
+}
+
+.empty-state p {
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: #999;
+}
+
+/* Content List */
+.content-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.content-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.content-card:hover {
+  border-color: #00e676;
+  box-shadow: 0 4px 12px rgba(0, 230, 118, 0.08);
+  transform: translateY(-2px);
+}
+
+.card-img-wrapper {
+  position: relative;
+  width: 88px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.content-card:hover .card-img {
+  transform: scale(1.08);
+}
+
+.card-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.03) 100%);
+  pointer-events: none;
+}
+
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.review-card .card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -398,99 +1564,250 @@ onMounted(async () => {
   color: #00c665;
 }
 
-.card-score {
-  font-size: 13px;
-  color: #000000;
-  margin: 0 0 4px 0;
+.score-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #00e676 0%, #00c665 100%);
+  padding: 2px 10px;
+  border-radius: 12px;
+  flex-shrink: 0;
 }
 
-.card-content {
+.review-content {
   font-size: 14px;
   color: #666666;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.5;
 }
 
-.card-time {
+.card-meta {
   font-size: 12px;
   color: #999999;
   margin: 0;
 }
 
-.btn-remove {
-  padding: 6px 12px;
-  font-size: 13px;
-  color: #999999;
+.btn-remove-mini {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
   background: transparent;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  color: #ccc;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
-.btn-remove:hover {
+.btn-remove-mini:hover {
   color: #ff5252;
   border-color: #ff5252;
+  background: #fff5f5;
 }
 
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: grid;
-  place-items: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 32px;
-  width: 100%;
-  max-width: 460px;
-}
-
-.modal-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #000000;
-  margin: 0 0 24px 0;
-}
-
-.form-group {
-  margin-bottom: 20px;
+/* Pagination */
+.pagination {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 16px 0;
 }
 
-.label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #000000;
-}
-
-.input {
-  padding: 10px 14px;
-  font-size: 14px;
-  color: #000000;
-  background: #ffffff;
+.page-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: 13px;
+  color: #000;
+  background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
-  transition: border-color 0.2s;
+  cursor: pointer;
+  transition: all 0.2s ease;
   font-family: inherit;
 }
 
-.input:focus {
+.page-btn:hover:not(:disabled) {
   border-color: #00e676;
+  background: #f0faf4;
 }
 
-.modal-actions {
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 13px;
+  color: #999;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ========== Modal ========== */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-dialog {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000;
+  margin: 0;
+}
+
+.hero-signature {
+  font-size: 14px;
+  color: #666666;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.meta-item {
+  display: inline-block;
+  padding: 2px 10px;
+  background: #f5f5f5;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #666;
+}
+
+.meta-sep {
+  color: #ddd;
+  margin: 0 4px;
+}
+
+.role-tag {
+  background: #e8f5e9;
+  color: #00c665;
+}
+
+.btn-modal-close {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: #fafafa;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.2s ease;
+}
+
+.btn-modal-close:hover {
+  background: #f0f0f0;
+  color: #000;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #000;
+}
+
+.field-input {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #000;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+  font-family: inherit;
+}
+
+.field-input:focus {
+  border-color: #00e676;
+  background: #fff;
+}
+
+.select-wrapper {
+  position: relative;
+}
+
+.field-select {
+  appearance: none;
+  width: 100%;
+  cursor: pointer;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.modal-footer {
   display: flex;
   gap: 12px;
   margin-top: 24px;
@@ -498,43 +1815,203 @@ onMounted(async () => {
 }
 
 .btn-cancel {
-  padding: 10px 20px;
+  padding: 10px 24px;
   font-size: 14px;
   font-weight: 500;
-  color: #666666;
-  background: transparent;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  color: #666;
+  background: #fafafa;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
 
-.btn-save {
-  padding: 10px 20px;
+.btn-cancel:hover {
+  background: #f0f0f0;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 24px;
   font-size: 14px;
   font-weight: 600;
-  color: #000000;
-  background: #00e676;
+  color: #000;
+  background: linear-gradient(135deg, #00e676 0%, #00d66b 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.25s ease;
+  font-family: inherit;
 }
 
-.btn-save:hover:not(:disabled) {
-  background: #00c665;
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #00d66b 0%, #00c665 100%);
+  box-shadow: 0 4px 12px rgba(0, 230, 118, 0.3);
 }
-.btn-save:disabled {
+
+.btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Loading / Empty */
-.loading,
-.empty,
-.loading-page {
-  text-align: center;
-  padding: 60px 20px;
-  color: #999999;
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tag Grid in Modal */
+.tag-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
+  color: #000;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.tag-checkbox:hover {
+  background: #f5f5f5;
+}
+
+.tag-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tag-checkbox input:checked + .checkbox-custom {
+  background: #00e676;
+  border-color: #00e676;
+}
+
+.tag-checkbox input:checked + .checkbox-custom::after {
+  content: "";
+  width: 6px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.tag-name {
+  user-select: none;
+}
+
+/* ========== Page Loading ========== */
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  gap: 16px;
+}
+
+.loading-pulse {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #00e676;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+.page-loading p {
+  font-size: 14px;
+  color: #999;
+}
+
+/* ========== Fade In Up Animation ========== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 900px) {
+  .main-layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    position: static;
+  }
+  .hero-header {
+    padding: 32px 24px 28px;
+  }
+  .hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hero-stats {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-around;
+  }
+  .hero-name {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-page {
+    padding: 0 16px 40px;
+  }
+  .hero-header {
+    margin: 16px 0 28px;
+    border-radius: 16px;
+  }
+  .hero-stats {
+    gap: 16px;
+  }
+  .stat-number {
+    font-size: 22px;
+  }
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
 }
 </style>
