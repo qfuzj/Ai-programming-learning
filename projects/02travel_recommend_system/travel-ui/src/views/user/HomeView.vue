@@ -127,17 +127,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { getScenicHotList, type ScenicItem } from "@/api/scenic";
-import { getTagsByScope } from "@/api/common";
-import type { CommonTagItem } from "@/api/common";
+import { getTags, type CommonTagItem } from "@/api/common";
+import { getMyPreferenceTags } from "@/api/profile";
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
 const keyword = ref("");
 const hotList = ref<ScenicItem[]>([]);
 const tagList = ref<CommonTagItem[]>([]);
+
+// 监听路由变化，从个人中心返回首页时刷新标签数据
+watch(
+  () => route.path,
+  (newPath) => {
+    if (newPath === "/") {
+      loadTags();
+    }
+  }
+);
 
 function goDetail(id: number): void {
   router.push(`/scenic/${id}`);
@@ -157,15 +168,21 @@ function onTagImageError(event: Event): void {
   img.style.display = "none";
 }
 
+async function loadTags(): Promise<void> {
+  try {
+    const [allTags, myTagIds] = await Promise.all([getTags(), getMyPreferenceTags()]);
+    const idSet = new Set(myTagIds.map((t: any) => Number(t.id ?? t)));
+    tagList.value = allTags.filter((tag: CommonTagItem) => idSet.has(tag.id));
+  } catch {
+    // ignore
+  }
+}
+
 async function loadData(): Promise<void> {
   loading.value = true;
   try {
     hotList.value = await getScenicHotList();
-    try {
-      tagList.value = await getTagsByScope("SCENIC");
-    } catch {
-      // ignore
-    }
+    await loadTags();
   } catch {
     alert("景点加载失败，请稍后重试");
   } finally {
