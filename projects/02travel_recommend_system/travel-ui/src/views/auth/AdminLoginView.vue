@@ -1,56 +1,74 @@
-<!-- 管理端登录页：用于管理员登录入口。 -->
+<!-- 极简风格管理员登录页 -->
 <template>
-  <div class="login-page">
-    <el-card class="login-card">
-      <template #header>
-        <strong>管理员登录</strong>
-      </template>
-      <el-form :model="form" label-position="top" @submit.prevent>
-        <el-form-item label="管理员账号">
-          <el-input v-model="form.username" placeholder="请输入管理员账号" />
-        </el-form-item>
-        <el-form-item label="密码">
-          <el-input
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="brand">智游</div>
+        <h1 class="title">管理员登录</h1>
+        <p class="subtitle">登录管理后台</p>
+      </div>
+
+      <form @submit.prevent="onSubmit">
+        <div class="form-group">
+          <label class="form-label">管理员账号</label>
+          <input
+            v-model="form.username"
+            type="text"
+            class="form-input"
+            placeholder="请输入管理员账号"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input
             v-model="form.password"
             type="password"
-            show-password
+            class="form-input"
             placeholder="请输入密码"
+            autocomplete="current-password"
           />
-        </el-form-item>
-        <el-form-item label="验证码">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">验证码</label>
           <div class="captcha-row">
-            <el-input v-model="form.captchaCode" maxlength="6" placeholder="请输入验证码" />
-            <el-image class="captcha-image" :src="captchaImage" fit="contain" @click="loadCaptcha">
-              <template #error>
-                <div class="captcha-placeholder" @click="loadCaptcha">点击刷新</div>
-              </template>
-            </el-image>
+            <input
+              v-model="form.captchaCode"
+              type="text"
+              class="form-input"
+              placeholder="验证码"
+              maxlength="6"
+            />
+            <img :src="captchaImage" class="captcha-img" alt="验证码" @click="loadCaptcha" />
           </div>
-        </el-form-item>
-        <el-button type="primary" :loading="submitting" @click="onSubmit">登录后台</el-button>
-      </el-form>
-    </el-card>
+        </div>
+
+        <button type="submit" class="submit-btn" :disabled="submitting">
+          {{ submitting ? "登录中..." : "登录后台" }}
+        </button>
+      </form>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
 import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/store";
 import { getCaptcha } from "@/api/auth";
 import { ROUTE_PATHS } from "@/router/constants";
 
-const userStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const submitting = ref(false);
 const captchaImage = ref("");
 
 const form = reactive({
   username: "",
   password: "",
-  loginType: "username" as const,
   captchaId: "",
   captchaCode: "",
 });
@@ -64,13 +82,13 @@ async function loadCaptcha(): Promise<void> {
 
 async function onSubmit(): Promise<void> {
   if (!form.captchaId || !form.captchaCode) {
-    ElMessage.warning("请先输入验证码");
+    alert("请先输入验证码");
     return;
   }
 
+  submitting.value = true;
   try {
-    submitting.value = true;
-    await userStore.loginAsAdmin(form);
+    await userStore.loginAsAdmin({ ...form, loginType: "username" as const });
     const redirect =
       typeof route.query.redirect === "string" ? route.query.redirect : ROUTE_PATHS.ADMIN_DASHBOARD;
     await router.push(redirect);
@@ -82,42 +100,116 @@ async function onSubmit(): Promise<void> {
 }
 
 onMounted(() => {
-  void loadCaptcha();
+  loadCaptcha();
 });
 </script>
 
 <style scoped>
-.login-page {
+.auth-page {
   display: grid;
   place-items: center;
   min-height: 100vh;
+  background: #ffffff;
 }
 
-.login-card {
-  width: 420px;
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 0;
+}
+
+.brand {
+  font-size: 28px;
+  font-weight: 800;
+  color: #00e676;
+  margin-bottom: 32px;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: #999999;
+  margin: 0 0 40px 0;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #000000;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: #00e676;
+}
+
+.form-input::placeholder {
+  color: #999999;
 }
 
 .captcha-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
-.captcha-image {
-  width: 130px;
-  height: 48px;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
+.captcha-row .form-input {
+  flex: 1;
 }
 
-.captcha-placeholder {
-  display: grid;
-  place-items: center;
+.captcha-img {
+  width: 120px;
+  height: 44px;
+  cursor: pointer;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.submit-btn {
   width: 100%;
-  height: 100%;
-  font-size: 12px;
-  color: #909399;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.submit-btn:hover {
+  background: #00c665;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

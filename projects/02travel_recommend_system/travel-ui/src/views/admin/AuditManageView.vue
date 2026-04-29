@@ -1,433 +1,328 @@
+<!-- 极简风格审核管理页 -->
 <template>
-  <div class="page-container">
-    <el-card class="page-card">
-      <template #header>
-        <div class="card-header">审核管理</div>
-      </template>
+  <div class="page">
+    <h1 class="title">审核管理</h1>
 
-      <el-form :inline="true" :model="query" class="filter-form">
-        <el-form-item label="提交用户ID">
-          <el-input-number
-            v-model="query.submitUserId"
-            :min="1"
-            :controls="false"
-            style="width: 140px"
-            placeholder="请输入用户ID"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.auditStatus" clearable style="width: 100px" placeholder="全部">
-            <el-option
-              v-for="item in auditStatusOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item style="margin-left: auto">
-          <el-button type="primary" @click="onSearch">查询</el-button>
-          <el-button @click="onReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+    <div class="filter-bar">
+      <select v-model="query.auditStatus" class="filter-select" @change="loadData">
+        <option :value="undefined">全部状态</option>
+        <option :value="0">待审核</option>
+        <option :value="1">通过</option>
+        <option :value="2">拒绝</option>
+        <option :value="3">隐藏</option>
+      </select>
+      <button class="btn-search" @click="loadData">查询</button>
+      <button class="btn-reset" @click="resetQuery">重置</button>
+    </div>
 
-      <el-table v-loading="loading" :data="reviewList">
-        <el-table-column label="用户名" min-width="120">
-          <template #default="scope">
-            {{
-              scope.row.snapshot?.userId
-                ? scope.row.snapshot?.username || "ID:" + scope.row.snapshot.userId
-                : "-"
-            }}
-          </template>
-        </el-table-column>
-        <el-table-column label="景点名称" min-width="140">
-          <template #default="scope">{{ scope.row.snapshot?.scenicName || "-" }}</template>
-        </el-table-column>
-        <el-table-column label="评论内容" min-width="200" show-overflow-tooltip>
-          <template #default="scope">{{ scope.row.snapshot?.content || "-" }}</template>
-        </el-table-column>
-        <el-table-column label="评分" width="90">
-          <template #default="scope">
-            {{ formatRating(scope.row.snapshot?.rating ?? scope.row.snapshot?.score) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="scope">
-            <el-tag :type="statusTagType(scope.row.auditStatus)">
-              {{ statusText(scope.row.auditStatus) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="scope">
-            <el-button link type="primary" @click="openDetail(scope.row.id)">查看详情</el-button>
-            <el-popconfirm
-              v-if="scope.row.auditStatus === 0"
-              title="确认通过该评论吗？"
-              confirm-button-text="确认"
-              cancel-button-text="取消"
-              @confirm="handleApprove(scope.row.id)"
-            >
-              <template #reference>
-                <el-button link type="success">通过</el-button>
-              </template>
-            </el-popconfirm>
-            <el-button
-              v-if="scope.row.auditStatus === 0"
-              link
-              type="warning"
-              @click="openRejectDialog(scope.row.id)"
-            >
-              拒绝
-            </el-button>
-            <el-popconfirm
-              v-if="scope.row.auditStatus === 0"
-              title="确认隐藏该评论吗？"
-              confirm-button-text="确认"
-              cancel-button-text="取消"
-              @confirm="handleHide(scope.row.id)"
-            >
-              <template #reference>
-                <el-button link type="danger">隐藏</el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+    <div v-if="loading" class="loading">加载中...</div>
+    <div v-else-if="list.length === 0" class="empty">暂无审核数据</div>
 
-      <div class="pagination-row">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="loadReviewList"
-          @size-change="onSizeChange"
-        />
-      </div>
-    </el-card>
+    <div v-else class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>用户</th>
+            <th>景点</th>
+            <th>评分</th>
+            <th>内容</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in list" :key="item.id">
+            <td>{{ item.snapshot?.username || "用户" }}</td>
+            <td>{{ item.snapshot?.scenicName || "-" }}</td>
+            <td>{{ item.snapshot?.score || "-" }}</td>
+            <td class="content-cell">{{ item.snapshot?.content || "-" }}</td>
+            <td>
+              <span class="badge" :class="statusClass(item.auditStatus)">
+                {{ statusText(item.auditStatus) }}
+              </span>
+            </td>
+            <td>
+              <span v-if="item.auditStatus === 0" class="link" @click="approve(item.id)">通过</span>
+              <span v-if="item.auditStatus === 0" class="link danger" @click="reject(item.id)">
+                拒绝
+              </span>
+              <span class="link" @click="openDetail(item.id)">详情</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <el-dialog
-      v-model="detailVisible"
-      title="评论详情"
-      width="760px"
-      :close-on-click-modal="true"
-      destroy-on-close
-    >
-      <el-descriptions v-if="detailData" :column="2" border>
-        <el-descriptions-item label="ID">{{ detailData.id }}</el-descriptions-item>
-        <el-descriptions-item label="用户名">
-          {{ detailData.snapshot?.username || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="景点名称">
-          {{ detailData.snapshot?.scenicName || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="评分">
-          {{ formatRating(detailData.snapshot?.rating ?? detailData.snapshot?.score) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="状态">
-          {{ statusText(detailData.auditStatus) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间">
-          {{ detailData.createTime || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="评论内容" :span="2">
-          {{ detailData.snapshot?.content || "-" }}
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-divider content-position="left">图片</el-divider>
-      <div v-if="detailData?.snapshot?.images?.length" class="image-list">
-        <el-image
-          v-for="item in detailData.snapshot?.images"
-          :key="item"
-          :src="item"
-          fit="cover"
-          style="width: 120px; height: 80px; border-radius: 6px"
-        />
-      </div>
-      <div v-else class="text-muted">暂无图片</div>
-    </el-dialog>
-
-    <el-dialog
-      v-model="rejectVisible"
-      title="拒绝原因"
-      width="520px"
-      class="audit-form-dialog"
-      destroy-on-close
-    >
-      <div class="dialog-body-scroll">
-        <el-form label-position="top">
-          <el-form-item label="原因" required>
-            <el-input
-              v-model="rejectForm.reason"
-              type="textarea"
-              :rows="3"
-              maxlength="200"
-              show-word-limit
-              placeholder="请输入拒绝原因"
-            />
-          </el-form-item>
-        </el-form>
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="rejectVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitReject">确认拒绝</el-button>
+    <!-- 详情弹窗 -->
+    <div v-if="detailVisible" class="modal-overlay" @click.self="detailVisible = false">
+      <div class="modal">
+        <h2 class="modal-title">审核详情</h2>
+        <div v-if="detailLoading" class="loading">加载中...</div>
+        <div v-else-if="detailSnapshot">
+          <p>
+            <strong>用户：</strong>
+            {{ detailSnapshot.username }}
+          </p>
+          <p>
+            <strong>景点：</strong>
+            {{ detailSnapshot.scenicName }}
+          </p>
+          <p>
+            <strong>评分：</strong>
+            {{ detailSnapshot.score }}
+          </p>
+          <p>
+            <strong>内容：</strong>
+            {{ detailSnapshot.content }}
+          </p>
         </div>
-      </template>
-    </el-dialog>
+        <button class="btn-cancel" @click="detailVisible = false">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
-import { useDebounceFn } from "@vueuse/core";
-import { ElMessage } from "element-plus";
+import { reactive, ref, onMounted } from "vue";
 import {
-  approveAdminAudit,
-  getAdminAuditDetail,
-  getAdminAuditPage,
-  hideAdminAudit,
-  rejectAdminAudit,
-  type AuditItem,
-  type AuditQuery,
+  getAdminAuditPage as getAudits,
+  approveAdminAudit as approveAudit,
+  rejectAdminAudit as rejectAudit,
+  getAdminAuditDetail as getAuditDetail,
 } from "@/api/audit";
-import { getContentAuditStatusDict } from "@/api/dict";
-import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
-
-const { options: auditStatusOptions } = useDictOptions(
-  "content-audit-status",
-  getContentAuditStatusDict
-);
 
 const loading = ref(false);
-const total = ref(0);
-const reviewList = ref<AuditItem[]>([]);
+const list = ref<any[]>([]);
 const detailVisible = ref(false);
-const detailData = ref<AuditItem | null>(null);
-const rejectVisible = ref(false);
-const rejectAuditId = ref<number | null>(null);
-const rejectForm = reactive({ reason: "" });
+const detailLoading = ref(false);
+const detailSnapshot = ref<any>(null);
 
-const query = reactive<AuditQuery>({
-  pageNum: 1,
-  pageSize: 10,
-  contentType: "review",
-  auditStatus: undefined,
-  submitUserId: undefined,
-  contentId: undefined,
+const query = reactive({
+  auditStatus: undefined as number | undefined,
 });
 
-function formatRating(value?: number): string {
-  if (value == null || Number.isNaN(Number(value))) {
-    return "-";
-  }
-  return Number(value).toFixed(1);
-}
-
-function statusText(status?: number): string {
-  return findDictDesc(auditStatusOptions.value, status, "-");
-}
-
-function statusTagType(status?: number): "warning" | "success" | "danger" | "info" {
-  if (status === 0) return "warning";
-  if (status === 1) return "success";
-  if (status === 2) return "danger";
-  if (status === 3) return "info";
-  return "info";
-}
-
-async function loadReviewList(): Promise<void> {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    const page = await getAdminAuditPage({ ...query });
-    reviewList.value = page.records;
-    total.value = page.total;
+    const res = await getAudits({ pageNum: 1, pageSize: 50, auditStatus: query.auditStatus });
+    list.value = res.records || [];
   } catch {
-    ElMessage.error("评论审核列表加载失败");
+    alert("加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-const onSearch = useDebounceFn((): void => {
-  query.pageNum = 1;
-  void loadReviewList();
-}, 300);
-
-function onReset(): void {
+function resetQuery(): void {
   query.auditStatus = undefined;
-  query.submitUserId = undefined;
-  query.contentId = undefined;
-  query.pageNum = 1;
-  void loadReviewList();
+  loadData();
 }
 
-function onSizeChange(): void {
-  query.pageNum = 1;
-  void loadReviewList();
+function statusText(s: number): string {
+  return { 0: "待审核", 1: "通过", 2: "拒绝", 3: "隐藏" }[s] || "-";
+}
+
+function statusClass(s: number): string {
+  return { 0: "pending", 1: "approved", 2: "rejected", 3: "hidden" }[s] || "";
+}
+
+async function approve(id: number): Promise<void> {
+  if (!confirm("确认通过？")) return;
+  try {
+    await approveAudit(id);
+    loadData();
+  } catch {
+    alert("操作失败");
+  }
+}
+
+async function reject(id: number): Promise<void> {
+  const reason = prompt("请输入拒绝原因：");
+  if (reason === null) return;
+  try {
+    await rejectAudit(id, reason || "拒绝");
+    loadData();
+  } catch {
+    alert("操作失败");
+  }
 }
 
 async function openDetail(id: number): Promise<void> {
+  detailVisible.value = true;
+  detailLoading.value = true;
   try {
-    detailData.value = await getAdminAuditDetail(id);
-    detailVisible.value = true;
+    const detail = await getAuditDetail(id);
+    detailSnapshot.value = detail.snapshot;
   } catch {
-    ElMessage.error("加载评论详情失败");
-  }
-}
-
-async function handleApprove(id: number): Promise<void> {
-  try {
-    await approveAdminAudit(id);
-    ElMessage.success("审核通过成功");
-    await loadReviewList();
-  } catch {
-    ElMessage.error("审核通过失败");
-  }
-}
-
-function openRejectDialog(id: number): void {
-  rejectAuditId.value = id;
-  rejectForm.reason = "";
-  rejectVisible.value = true;
-}
-
-async function submitReject(): Promise<void> {
-  if (!rejectAuditId.value) {
-    return;
-  }
-  if (!rejectForm.reason.trim()) {
-    ElMessage.warning("请输入拒绝原因");
-    return;
-  }
-  try {
-    await rejectAdminAudit(rejectAuditId.value, rejectForm.reason.trim());
-    ElMessage.success("审核拒绝成功");
-    rejectVisible.value = false;
-    await loadReviewList();
-  } catch {
-    ElMessage.error("审核拒绝失败");
-  }
-}
-
-async function handleHide(id: number): Promise<void> {
-  try {
-    await hideAdminAudit(id);
-    ElMessage.success("隐藏成功");
-    if (reviewList.value.length === 1 && query.pageNum > 1) {
-      query.pageNum -= 1;
-    }
-    await loadReviewList();
-  } catch {
-    ElMessage.error("隐藏失败");
+    /* empty */
+  } finally {
+    detailLoading.value = false;
   }
 }
 
 onMounted(() => {
-  void loadReviewList();
+  loadData();
 });
 </script>
 
 <style scoped>
-.card-header {
-  font-size: 16px;
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.title {
+  font-size: 28px;
   font-weight: 700;
+  color: #000;
+  margin: 0 0 32px 0;
 }
-
-.filter-form {
+.filter-bar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 6px;
-  margin-bottom: 12px;
-}
-
-.filter-form :deep(.el-form-item) {
-  margin-bottom: 0;
-  margin-right: 0;
-}
-
-.filter-form :deep(.el-form-item__label) {
-  padding-right: 6px;
-}
-
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.text-muted {
-  color: #909399;
-}
-
-.tag-gap {
-  margin-right: 6px;
-}
-
-.page-container {
-  padding: 0px;
-}
-
-.image-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.audit-form-dialog :deep(.el-dialog__header) {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-  margin-right: 0;
-}
-
-.audit-form-dialog :deep(.el-dialog__title) {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.audit-form-dialog :deep(.el-dialog__body) {
-  padding: 0;
-}
-
-.audit-form-dialog .dialog-body-scroll {
-  max-height: calc(85vh - 120px);
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.audit-form-dialog :deep(.el-form-item__label) {
-  font-size: 13px;
-  color: #606266;
-  line-height: 20px;
-  padding-bottom: 4px;
-}
-
-.audit-form-dialog :deep(.el-input__wrapper),
-.audit-form-dialog :deep(.el-textarea__inner) {
-  border-radius: 4px;
-  border-color: #dcdfe6;
-}
-
-.audit-form-dialog :deep(.el-input__wrapper.is-focus),
-.audit-form-dialog :deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 1px #409eff inset;
-}
-
-.audit-form-dialog .dialog-footer {
-  display: flex;
-  justify-content: flex-end;
   gap: 12px;
-  padding: 12px 20px;
-  border-top: 1px solid #f0f0f0;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
 }
-
-.audit-form-dialog :deep(.el-dialog__footer) {
-  padding: 0;
-  border-top: none;
+.filter-select {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+}
+.btn-search {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-reset {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #666;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.table-wrap {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  background: #f9f9f9;
+  border-bottom: 1px solid #f0f0f0;
+}
+.table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #000;
+  border-bottom: 1px solid #f0f0f0;
+}
+.table tr:hover {
+  background: #f9fff9;
+}
+.content-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.badge {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+.badge.pending {
+  background: #fff3e0;
+  color: #000;
+}
+.badge.approved {
+  background: #e8f5e9;
+  color: #000;
+}
+.badge.rejected {
+  background: #ffebee;
+  color: #000;
+}
+.badge.hidden {
+  background: #f5f5f5;
+  color: #999;
+}
+.link {
+  font-size: 13px;
+  color: #000;
+  cursor: pointer;
+  margin-right: 12px;
+}
+.link:hover {
+  color: #00c665;
+}
+.link.danger {
+  color: #ff5252;
+}
+.loading,
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 14px;
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 500px;
+}
+.modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 24px 0;
+}
+.modal p {
+  font-size: 14px;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+.modal p strong {
+  color: #000;
+}
+.btn-cancel {
+  margin-top: 24px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #666;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
 }
 </style>

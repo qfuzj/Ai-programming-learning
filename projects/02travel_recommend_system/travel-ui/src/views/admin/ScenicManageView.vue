@@ -1,1647 +1,416 @@
-<!-- 景点管理页：支持列表查询、查看详情、新增/编辑、删除。 -->
+<!-- 极简风格景点管理页 -->
 <template>
-  <div class="page-container">
-    <el-card class="page-card">
-      <template #header>
-        <div class="card-header">景点管理</div>
-      </template>
+  <div class="page">
+    <div class="header">
+      <h1 class="title">景点管理</h1>
+      <button class="btn-new" @click="showCreate = true">新增景点</button>
+    </div>
 
-      <el-form :inline="true" :model="query" class="filter-form">
-        <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            placeholder="景点名"
-            clearable
-            style="width: 140px"
-            @keyup.enter="onSearch"
-          />
-        </el-form-item>
-        <el-form-item label="景点分类">
-          <el-select v-model="query.category" clearable placeholder="全部" style="width: 120px">
-            <el-option
-              v-for="item in scenicCategoryOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标签作用域">
-          <el-select
-            v-model="query.tagScope"
-            clearable
-            placeholder="全部"
-            style="width: 100px"
-            @change="onTagScopeChange"
-          >
-            <el-option
-              v-for="item in tagScopeOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标签分类">
-          <el-select
-            v-model="query.tagCategory"
-            clearable
-            placeholder="全部"
-            style="width: 120px"
-            :disabled="!query.tagScope"
-            @change="onTagCategoryChange"
-          >
-            <el-option v-for="item in tagCategoryOptions" :key="item" :label="item" :value="item" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="标签">
-          <el-select
-            v-model="query.tagId"
-            clearable
-            placeholder="全部"
-            style="width: 120px"
-            :disabled="!query.tagCategory"
-          >
-            <el-option
-              v-for="item in searchTagOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="省份">
-          <el-select
-            v-model="query.provinceId"
-            clearable
-            placeholder="请选择省份"
-            style="width: 120px"
-            @change="onProvinceChange"
-          >
-            <el-option
-              v-for="item in provinceOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="城市">
-          <el-select
-            v-model="query.cityId"
-            clearable
-            placeholder="请选择城市"
-            style="width: 120px"
-            :disabled="!query.provinceId"
-          >
-            <el-option
-              v-for="item in cityOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 100px">
-            <el-option
-              v-for="item in commonStatusOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="等级">
-          <el-select v-model="query.level" clearable placeholder="全部" style="width: 100px">
-            <el-option
-              v-for="item in scenicLevelOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item style="margin-left: auto">
-          <el-button type="primary" @click="onSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
-        <el-form-item style="margin-left: auto">
-          <el-button type="success" @click="openCreateDialog">新增景点</el-button>
-        </el-form-item>
-      </el-form>
+    <div class="filter-bar">
+      <input
+        v-model="query.keyword"
+        class="filter-input"
+        placeholder="搜索景点..."
+        @keyup.enter="loadData"
+      />
+      <select v-model="query.status" class="filter-select" @change="loadData">
+        <option :value="undefined">全部状态</option>
+        <option :value="1">上架</option>
+        <option :value="0">下架</option>
+      </select>
+      <button class="btn-search" @click="loadData">查询</button>
+      <button class="btn-reset" @click="resetQuery">重置</button>
+    </div>
 
-      <el-table v-loading="loading" :data="scenicList" style="margin-top: 12px">
-        <el-table-column prop="name" label="景点名称" min-width="100" />
-        <el-table-column label="封面" width="100">
-          <template #default="{ row }">
-            <el-image
-              v-if="row.coverImage"
-              :src="row.coverImage"
-              fit="cover"
-              style="width: 72px; height: 48px; border-radius: 6px"
-            />
-            <span v-else class="text-muted">暂无</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="标签" min-width="120">
-          <template #default="{ row }">
-            <template v-if="row.tagList?.length">
-              <el-tag
-                v-for="tag in row.tagList.slice(0, 3)"
-                :key="tag"
-                size="small"
-                class="tag-gap"
-              >
-                {{ tag }}
-              </el-tag>
-            </template>
-            <span v-else class="text-muted">暂无</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag :type="isOnlineStatus(row.status) ? 'success' : 'info'">
-              {{ isOnlineStatus(row.status) ? "上架" : "下架" }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="regionName" label="地区" min-width="60" />
-        <el-table-column label="评分" width="70">
-          <template #default="{ row }">
-            {{ Number(row.score ?? 0).toFixed(1) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="level" label="等级" width="60">
-          <template #default="{ row }">
-            {{ row.level || "未设置" }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="address" label="详细地址" min-width="80" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.address || "暂无" }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="openTime" label="开放时间" min-width="60" show-overflow-tooltip>
-          <template #default="{ row }">
-            {{ row.openTime || "暂无" }}
-          </template>
-        </el-table-column>
-        <el-table-column label="票价" width="80" align="right">
-          <template #default="{ row }">
-            {{ formatTicketPrice(row.ticketPrice) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetailDialog(row)">查看详情</el-button>
-            <el-button link type="primary" @click="openEditDialog(row)">编辑</el-button>
-            <el-popconfirm
-              title="确认删除该景点吗？"
-              confirm-button-text="确认"
-              cancel-button-text="取消"
-              @confirm="handleDelete(row)"
-            >
-              <template #reference>
-                <el-button link type="danger">删除</el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+    <div v-if="loading" class="loading">加载中...</div>
 
-      <div class="pagination-row">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="loadScenicList"
-          @size-change="onSizeChange"
-        />
+    <div v-else-if="list.length === 0" class="empty">暂无景点数据</div>
+
+    <div v-else class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>景点名称</th>
+            <th>地区</th>
+            <th>等级</th>
+            <th>评分</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in list" :key="item.id">
+            <td>{{ item.name }}</td>
+            <td>{{ item.regionName || "-" }}</td>
+            <td>{{ item.level || "-" }}</td>
+            <td>{{ item.score ? item.score.toFixed(1) : "-" }}</td>
+            <td>
+              <span class="badge" :class="item.status === 1 ? 'on' : 'off'">
+                {{ item.status === 1 ? "上架" : "下架" }}
+              </span>
+            </td>
+            <td>
+              <span class="link" @click="editItem(item)">编辑</span>
+              <span class="link danger" @click="deleteItem(item.id)">删除</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <div v-if="showCreate || editingItem" class="modal-overlay" @click.self="closeDialog">
+      <div class="modal">
+        <h2 class="modal-title">{{ editingItem ? "编辑景点" : "新增景点" }}</h2>
+        <div class="form-group">
+          <label class="label">名称</label>
+          <input v-model="form.name" class="input" placeholder="景点名称" />
+        </div>
+        <div class="form-group">
+          <label class="label">地区</label>
+          <select v-model="form.regionId" class="input">
+            <option :value="undefined">请选择</option>
+            <option v-for="r in regionList" :key="r.id" :value="r.id">{{ r.name }}</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" @click="closeDialog">取消</button>
+          <button class="btn-submit" :disabled="saving" @click="save">
+            {{ saving ? "保存中..." : "保存" }}
+          </button>
+        </div>
       </div>
-    </el-card>
-
-    <el-dialog
-      v-model="detailVisible"
-      title="景点详情"
-      width="760px"
-      :close-on-click-modal="true"
-      destroy-on-close
-    >
-      <el-card v-if="detailData" class="detail-card" shadow="never">
-        <template #header>
-          <div class="detail-title-row">
-            <span class="detail-title">{{ detailData.name }}</span>
-            <el-tag :type="detailData.status === 1 ? 'success' : 'info'">
-              {{ detailData.status === 1 ? "上架" : "下架" }}
-            </el-tag>
-          </div>
-        </template>
-
-        <el-row :gutter="16">
-          <el-col :span="24">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="名称">{{ detailData.name || "-" }}</el-descriptions-item>
-              <el-descriptions-item label="地区">
-                {{ detailData.regionName || "-" }}
-              </el-descriptions-item>
-              <el-descriptions-item label="地址">
-                {{ detailData.address || "-" }}
-              </el-descriptions-item>
-              <el-descriptions-item label="等级">
-                {{ detailData.level || "-" }}
-              </el-descriptions-item>
-              <el-descriptions-item label="分类">
-                {{ detailData.category || "-" }}
-              </el-descriptions-item>
-              <el-descriptions-item label="经纬度">
-                {{ formatLngLat(detailData.longitude, detailData.latitude) }}
-              </el-descriptions-item>
-            </el-descriptions>
-          </el-col>
-        </el-row>
-
-        <el-divider content-position="left">评价数据</el-divider>
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="评分">
-            {{ formatNumber(detailData.score) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="评分人数">
-            {{ formatInteger(detailData.ratingCount) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="收藏数">
-            {{ formatInteger(detailData.favoriteCount) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="评论数">
-            {{ formatInteger(detailData.reviewCount) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="浏览数">
-            {{ formatInteger(detailData.viewCount) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="热度分">
-            {{ formatNumber(detailData.hotScore) }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <el-divider content-position="left">时间票务</el-divider>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="开放时间">
-            {{ detailData.openTime || "-" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="票价">
-            {{ formatTicketPrice(detailData.ticketPrice) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="票务说明" :span="2">
-            {{ detailData.ticketInfo || "-" }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <el-divider content-position="left">内容介绍</el-divider>
-        <div class="info-block">
-          <div class="label">简介</div>
-          <div class="value">{{ detailData.description || "-" }}</div>
-        </div>
-        <div class="info-block">
-          <div class="label">详细内容</div>
-          <div class="value">{{ detailData.detailContent || "-" }}</div>
-        </div>
-
-        <el-divider content-position="left">旅游建议</el-divider>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="最佳季节">
-            {{ detailData.bestSeason || "-" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="建议游玩时长">
-            {{ formatHours(detailData.suggestedHours) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="游玩提示" :span="2">
-            {{ detailData.tips || "-" }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <el-divider content-position="left">配置信息</el-divider>
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="状态">
-            {{ detailData.status === 1 ? "上架" : "下架" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="排序值">
-            {{ formatInteger(detailData.sortOrder) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="是否推荐">
-            {{ detailData.isRecommended === 1 ? "是" : "否" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="是否收藏">
-            {{ detailData.isFavorite ? "是" : "否" }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <el-divider content-position="left">标签</el-divider>
-        <div class="info-item">
-          <template v-if="detailData.tagList?.length">
-            <el-tag v-for="tag in detailData.tagList" :key="tag" size="small" class="tag-gap">
-              {{ tag }}
-            </el-tag>
-          </template>
-          <span v-else class="text-muted">暂无</span>
-        </div>
-
-        <el-divider content-position="left">图片列表</el-divider>
-        <div v-if="detailData.images?.length" class="image-list">
-          <el-image
-            v-for="image in detailData.images"
-            :key="image.id"
-            :src="image.imageUrl"
-            fit="cover"
-            class="detail-image"
-          />
-        </div>
-        <div v-else class="text-muted">暂无图片</div>
-      </el-card>
-    </el-dialog>
-
-    <el-dialog
-      v-model="formVisible"
-      :title="isEdit ? '编辑景点' : '新增景点'"
-      width="620px"
-      class="scenic-form-dialog"
-      :close-on-click-modal="false"
-      destroy-on-close
-    >
-      <div class="dialog-body-scroll">
-        <el-form ref="formRef" :model="formModel" :rules="rules" label-position="top">
-          <div class="form-section">
-            <div class="form-section-title">基本信息</div>
-            <div class="form-section-content">
-              <el-form-item label="景点名称" prop="name">
-                <el-input v-model="formModel.name" placeholder="请输入景点名称" />
-              </el-form-item>
-              <el-form-item label="地区" prop="regionId">
-                <el-cascader
-                  v-model="formModel.regionId"
-                  :options="provinceOptions"
-                  :props="regionCascaderProps"
-                  placeholder="请选择省/市/区县"
-                  filterable
-                  clearable
-                  style="width: 100%"
-                />
-              </el-form-item>
-              <el-form-item label="地址" prop="address">
-                <el-input v-model="formModel.address" placeholder="请输入详细地址" />
-              </el-form-item>
-              <el-form-item label="封面图" prop="coverImage">
-                <div class="cover-uploader">
-                  <template v-if="coverImagePreviewUrl">
-                    <div class="cover-image-card">
-                      <img :src="coverImagePreviewUrl" class="cover-image" />
-                      <div class="cover-image-mask" @click="removeCoverImage">
-                        <el-icon class="delete-icon"><Close /></el-icon>
-                      </div>
-                    </div>
-                  </template>
-                  <template v-else>
-                    <div class="cover-upload-btn" @click="triggerCoverUpload">
-                      <el-icon v-if="!coverImageUploadLoading" class="upload-icon">
-                        <Plus />
-                      </el-icon>
-                      <el-icon v-else class="upload-icon is-loading"><Loading /></el-icon>
-                      <div class="upload-text">
-                        {{ coverImageUploadLoading ? "上传中..." : "点击上传" }}
-                      </div>
-                    </div>
-                  </template>
-                  <input
-                    ref="coverImageInputRef"
-                    type="file"
-                    accept="image/*"
-                    style="display: none"
-                    @change="onCoverImageSelected"
-                  />
-                </div>
-              </el-form-item>
-              <el-form-item label="开放时间">
-                <el-input v-model="formModel.openTime" placeholder="例如：08:00-17:30" />
-              </el-form-item>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">描述信息</div>
-            <div class="form-section-content">
-              <el-form-item label="简介" prop="description">
-                <el-input
-                  v-model="formModel.description"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="请输入简介"
-                />
-              </el-form-item>
-              <el-form-item label="详细内容">
-                <el-input
-                  v-model="formModel.detailContent"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="请输入详细内容"
-                />
-              </el-form-item>
-              <el-form-item label="票务说明">
-                <el-input
-                  v-model="formModel.ticketInfo"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="请输入票务说明"
-                />
-              </el-form-item>
-              <el-form-item label="游玩提示">
-                <el-input
-                  v-model="formModel.tips"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="请输入游玩提示"
-                />
-              </el-form-item>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">景点属性</div>
-            <div class="form-section-content">
-              <div class="form-row-grid">
-                <el-form-item label="票价">
-                  <el-input-number
-                    v-model="formModel.ticketPrice"
-                    :min="0"
-                    :precision="2"
-                    :step="1"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-                <el-form-item label="等级">
-                  <el-select
-                    v-model="formModel.level"
-                    clearable
-                    placeholder="请选择等级"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in scenicLevelOptions"
-                      :key="item.code"
-                      :label="item.desc"
-                      :value="item.code"
-                    />
-                  </el-select>
-                </el-form-item>
-              </div>
-              <div class="form-row-grid">
-                <el-form-item label="分类">
-                  <el-select
-                    v-model="formModel.category"
-                    clearable
-                    placeholder="请选择分类"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in scenicCategoryOptions"
-                      :key="item.code"
-                      :label="item.desc"
-                      :value="item.code"
-                    />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="最佳季节">
-                  <el-input v-model="formModel.bestSeason" placeholder="例如：春秋" />
-                </el-form-item>
-              </div>
-              <div class="form-row-grid">
-                <el-form-item label="建议游玩时长">
-                  <el-input
-                    v-model="formModel.suggestedHours"
-                    placeholder="例如：2-3 小时 / 半天 / 1 天"
-                  />
-                </el-form-item>
-                <el-form-item label="状态" prop="status">
-                  <el-radio-group v-model="formModel.status">
-                    <el-radio :value="1">上架</el-radio>
-                    <el-radio :value="0">下架</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-              </div>
-              <div class="form-row-grid">
-                <el-form-item label="排序值">
-                  <el-input-number
-                    v-model="formModel.sortOrder"
-                    :precision="0"
-                    :step="1"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-                <el-form-item label="是否推荐">
-                  <el-radio-group v-model="formModel.isRecommended">
-                    <el-radio :value="1">是</el-radio>
-                    <el-radio :value="0">否</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">标签与图片</div>
-            <div class="form-section-content">
-              <el-form-item label="标签" prop="tagIds">
-                <el-cascader
-                  v-model="tagCascaderValue"
-                  :options="tagCascaderOptions"
-                  :props="tagCascaderProps"
-                  placeholder="请选择标签"
-                  style="width: 100%"
-                  filterable
-                  collapse-tags
-                  :show-all-levels="false"
-                />
-              </el-form-item>
-              <el-form-item label="景点图片">
-                <div class="image-uploader-grid">
-                  <div v-for="(image, idx) in uploadedImages" :key="image.id" class="image-card">
-                    <img :src="image.url" alt="scenic" />
-                    <div class="image-mask">
-                      <el-icon class="image-delete" @click="removeImage(idx)">
-                        <Close />
-                      </el-icon>
-                    </div>
-                  </div>
-                  <div
-                    class="image-upload-btn"
-                    :class="{ 'is-uploading': uploadLoading }"
-                    @click="triggerImageUpload"
-                  >
-                    <el-icon v-if="!uploadLoading" class="upload-icon"><Plus /></el-icon>
-                    <el-icon v-else class="upload-icon is-loading"><Loading /></el-icon>
-                    <span class="upload-text">{{ uploadLoading ? "上传中" : "上传图片" }}</span>
-                  </div>
-                  <input
-                    ref="imageInputRef"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    hidden
-                    @change="onImageFilesSelected"
-                  />
-                </div>
-                <div class="image-hint">支持 JPG/PNG，单张不超过 5MB，可多选上传</div>
-              </el-form-item>
-            </div>
-          </div>
-        </el-form>
-      </div>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="formVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="submitForm">提交</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
-import { ElMessage, type CascaderOption, type FormInstance, type FormRules } from "element-plus";
-import { Plus, Close, Loading } from "@element-plus/icons-vue";
+import { reactive, ref, onMounted } from "vue";
 import {
-  createAdminScenic,
-  getAdminScenicDetail,
-  deleteAdminScenic,
-  getAdminScenicPage,
-  type ScenicCreatePayload,
-  type ScenicDetail,
-  type ScenicItem,
-  type ScenicQuery,
-  type ScenicUpdatePayload,
-  updateAdminScenic,
+  getAdminScenicPage as getScenicList,
+  createAdminScenic as createScenic,
+  updateAdminScenic as updateScenic,
+  deleteAdminScenic as deleteScenic,
 } from "@/api/scenic";
-import { getUploadToken, uploadCallback, getFileResource } from "@/api/file";
-import {
-  getRegionTree,
-  getTags,
-  getTagsByScope,
-  getTagCategories,
-  type CommonTagItem,
-  type CommonRegionNode,
-} from "@/api/common";
-import {
-  getScenicLevelDict,
-  getScenicCategoryDict,
-  getCommonStatusDict,
-  getTagScopeDict,
-  type DictItem,
-} from "@/api/dict";
-
-interface OptionItem {
-  id: number;
-  name: string;
-}
-
-interface SearchQuery extends ScenicQuery {
-  provinceId?: number;
-  cityId?: number;
-  status?: number;
-  level?: string;
-  category?: string;
-  tagId?: number;
-  tagScope?: string;
-  tagCategory?: string;
-}
-
-interface ScenicFormModel {
-  id?: number;
-  name: string;
-  regionId?: number;
-  address: string;
-  coverImage: string;
-  description: string;
-  detailContent: string;
-  openTime: string;
-  ticketInfo: string;
-  ticketPrice?: number;
-  level: string;
-  category: string;
-  bestSeason: string;
-  suggestedHours?: string;
-  tips: string;
-  sortOrder?: number;
-  isRecommended: number;
-  tagIds: number[];
-  imageIds: number[];
-  status: number;
-}
+import { getRegionTree } from "@/api/common";
 
 const loading = ref(false);
-const submitLoading = ref(false);
-const scenicList = ref<ScenicItem[]>([]);
-const total = ref(0);
+const saving = ref(false);
+const list = ref<any[]>([]);
+const regionList = ref<any[]>([]);
+const showCreate = ref(false);
+const editingItem = ref<any>(null);
 
-const detailVisible = ref(false);
-const detailData = ref<ScenicDetail | null>(null);
-
-const formVisible = ref(false);
-const isEdit = ref(false);
-const formRef = ref<FormInstance>();
-
-const regionOptions = ref<OptionItem[]>([]);
-const provinceOptions = ref<CommonRegionNode[]>([]);
-
-// 级联选择器配置：支持省/市/区县任意层级选中，只回传当前节点 id
-const regionCascaderProps = {
-  value: "id",
-  label: "name",
-  children: "children",
-  emitPath: false,
-  checkStrictly: true,
-};
-const cityOptions = ref<CommonRegionNode[]>([]);
-const tagOptions = ref<CommonTagItem[]>([]);
-const tagScopeOptions = ref<DictItem[]>([]);
-const tagCategoryOptions = ref<string[]>([]);
-const searchTagOptions = ref<CommonTagItem[]>([]);
-const scenicLevelOptions = ref<DictItem[]>([]);
-const scenicCategoryOptions = ref<DictItem[]>([]);
-const commonStatusOptions = ref<DictItem[]>([]);
-
-const tagCascaderProps = {
-  multiple: true,
-  checkStrictly: false,
-  emitPath: true,
-};
-
-const tagCascaderOptions = computed<CascaderOption[]>(() => {
-  const scopeMap = new Map<string, { label: string; categories: Map<string, CascaderOption[]> }>();
-  for (const tag of tagOptions.value) {
-    if (!tag.scope || !tag.category) continue;
-    if (!scopeMap.has(tag.scope)) {
-      const scopeLabel = tagScopeOptions.value.find((s) => s.code === tag.scope)?.desc ?? tag.scope;
-      scopeMap.set(tag.scope, { label: scopeLabel, categories: new Map() });
-    }
-    const scopeData = scopeMap.get(tag.scope)!;
-    if (!scopeData.categories.has(tag.category)) {
-      scopeData.categories.set(tag.category, []);
-    }
-    scopeData.categories.get(tag.category)!.push({
-      value: tag.id,
-      label: tag.name,
-    } as CascaderOption);
-  }
-  return Array.from(scopeMap.entries()).map(([scopeValue, scopeData]) => ({
-    value: scopeValue,
-    label: scopeData.label,
-    children: Array.from(scopeData.categories.entries()).map(([catValue, tags]) => ({
-      value: catValue,
-      label: catValue,
-      children: tags,
-    })),
-  })) as CascaderOption[];
-});
-
-const tagCascaderValue = computed<(string | number)[][]>({
-  get() {
-    return formModel.tagIds
-      .map((id) => {
-        const tag = tagOptions.value.find((t) => t.id === id);
-        if (!tag) return null;
-        return [tag.scope, tag.category, tag.id];
-      })
-      .filter((item): item is [string, string, number] => item !== null);
-  },
-  set(val) {
-    if (!val || val.length === 0) {
-      formModel.tagIds = [];
-      return;
-    }
-    formModel.tagIds = Array.from(
-      new Set(val.map((path) => Number(path[path.length - 1])).filter((id) => Number.isFinite(id)))
-    );
-  },
-});
-
-const query = reactive<SearchQuery>({
-  pageNum: 1,
-  pageSize: 10,
+const query = reactive({
   keyword: "",
-  provinceId: undefined,
-  cityId: undefined,
-  status: undefined,
-  level: undefined,
-  category: undefined,
-  tagId: undefined,
-  tagScope: undefined,
-  tagCategory: undefined,
+  status: undefined as number | undefined,
 });
 
-const formModel = reactive<ScenicFormModel>({
+const form = reactive({
   name: "",
-  regionId: undefined,
-  address: "",
-  coverImage: "",
-  description: "",
-  detailContent: "",
-  openTime: "",
-  ticketInfo: "",
-  ticketPrice: undefined,
-  level: "",
-  category: "",
-  bestSeason: "",
-  suggestedHours: undefined,
-  tips: "",
-  sortOrder: undefined,
-  isRecommended: 0,
-  tagIds: [],
-  imageIds: [],
-  status: 1,
+  regionId: undefined as number | undefined,
 });
 
-interface UploadedImage {
-  id: number;
-  url: string;
-}
-
-const uploadedImages = ref<UploadedImage[]>([]);
-const imageInputRef = ref<HTMLInputElement>();
-const uploadLoading = ref(false);
-const coverImageInputRef = ref<HTMLInputElement>();
-const coverImageUploadLoading = ref(false);
-const coverImagePreviewUrl = ref("");
-
-function syncImageIds(): void {
-  formModel.imageIds = uploadedImages.value.map((item) => item.id);
-}
-
-function triggerImageUpload(): void {
-  if (uploadLoading.value) return;
-  imageInputRef.value?.click();
-}
-
-function triggerCoverUpload(): void {
-  if (coverImageUploadLoading.value) return;
-  coverImageInputRef.value?.click();
-}
-
-async function onCoverImageSelected(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-
-  if (!file.type.startsWith("image/")) {
-    ElMessage.warning("请选择图片文件");
-    input.value = "";
-    return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    ElMessage.warning("图片大小不能超过 5MB");
-    input.value = "";
-    return;
-  }
-
-  coverImageUploadLoading.value = true;
-  try {
-    const tokenRes = await getUploadToken({
-      bizType: "cover",
-      fileName: file.name,
-      fileSize: file.size,
-    });
-    const uploadUrl = String(tokenRes.uploadUrl || "");
-    const bucketName = String(tokenRes.bucketName || "");
-    const objectKey = String(tokenRes.objectKey || "");
-    if (!uploadUrl || !bucketName || !objectKey) {
-      throw new Error("上传凭证不完整");
-    }
-
-    const uploadResponse = await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": file.type || "application/octet-stream" },
-    });
-    if (!uploadResponse.ok) throw new Error("文件上传失败");
-
-    const fileId = await uploadCallback({
-      bucketName,
-      objectKey,
-      originalName: file.name,
-      bizType: "cover",
-    });
-    const fileResource = await getFileResource(fileId);
-    coverImagePreviewUrl.value = fileResource.url || "";
-    formModel.coverImage = String(fileId);
-    ElMessage.success("封面上传成功");
-  } catch {
-    ElMessage.error("封面上传失败，请重试");
-  } finally {
-    coverImageUploadLoading.value = false;
-    input.value = "";
-  }
-}
-
-function removeCoverImage(): void {
-  coverImagePreviewUrl.value = "";
-  formModel.coverImage = "";
-}
-
-async function uploadSingleImage(file: File): Promise<UploadedImage | null> {
-  if (!/^image\//.test(file.type)) {
-    ElMessage.warning(`${file.name} 不是图片文件`);
-    return null;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    ElMessage.warning(`${file.name} 超过 5MB`);
-    return null;
-  }
-  try {
-    const tokenRes = await getUploadToken({
-      bizType: "scenic",
-      fileName: file.name,
-      fileSize: file.size,
-    });
-    const uploadUrl = String(tokenRes.uploadUrl || "");
-    const bucketName = String(tokenRes.bucketName || "");
-    const objectKey = String(tokenRes.objectKey || "");
-    if (!uploadUrl || !bucketName || !objectKey) {
-      throw new Error("上传凭证不完整");
-    }
-    const uploadResponse = await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": file.type || "application/octet-stream" },
-    });
-    if (!uploadResponse.ok) throw new Error("文件上传失败");
-    const fileId = await uploadCallback({
-      bucketName,
-      objectKey,
-      originalName: file.name,
-      bizType: "scenic",
-    });
-    const fileResource = await getFileResource(fileId);
-    return { id: fileId, url: fileResource.url || "" };
-  } catch {
-    ElMessage.error(`${file.name} 上传失败`);
-    return null;
-  }
-}
-
-async function onImageFilesSelected(event: Event): Promise<void> {
-  const input = event.target as HTMLInputElement;
-  const files = Array.from(input.files ?? []);
-  if (!files.length) return;
-  uploadLoading.value = true;
-  try {
-    for (const file of files) {
-      const uploaded = await uploadSingleImage(file);
-      if (uploaded) {
-        uploadedImages.value.push(uploaded);
-      }
-    }
-    syncImageIds();
-  } finally {
-    uploadLoading.value = false;
-    input.value = "";
-  }
-}
-
-function removeImage(index: number): void {
-  uploadedImages.value.splice(index, 1);
-  syncImageIds();
-}
-
-const rules: FormRules<ScenicFormModel> = {
-  name: [{ required: true, message: "请输入景点名称", trigger: "blur" }],
-  regionId: [{ required: true, message: "请选择地区", trigger: "change" }],
-  address: [{ required: true, message: "请输入地址", trigger: "blur" }],
-};
-
-function isOnlineStatus(status: unknown): boolean {
-  return Number(status) === 1;
-}
-
-function formatTicketPrice(ticketPrice?: number): string {
-  if (ticketPrice == null) {
-    return "暂无";
-  }
-  if (Number(ticketPrice) <= 0) {
-    return "免费";
-  }
-  return `￥${Number(ticketPrice).toFixed(0)}`;
-}
-
-function formatNumber(value?: number): string {
-  if (value == null || Number.isNaN(Number(value))) {
-    return "-";
-  }
-  return String(value);
-}
-
-function formatInteger(value?: number): string {
-  if (value == null || Number.isNaN(Number(value))) {
-    return "-";
-  }
-  return String(Math.trunc(value));
-}
-
-function formatHours(value?: string | number): string {
-  if (value == null || value === "" || Number.isNaN(Number(value))) {
-    return "-";
-  }
-  return `${value} 小时`;
-}
-
-function formatLngLat(longitude?: number, latitude?: number): string {
-  if (longitude == null || latitude == null) {
-    return "-";
-  }
-  return `${longitude}, ${latitude}`;
-}
-
-function flattenRegions(list: CommonRegionNode[]): OptionItem[] {
-  const result: OptionItem[] = [];
-  const walk = (nodes: CommonRegionNode[]): void => {
-    nodes.forEach((node) => {
-      result.push({ id: Number(node.id), name: node.name });
-      if (node.children?.length) {
-        walk(node.children);
-      }
-    });
-  };
-  walk(list);
-  return result;
-}
-
-function resetFormModel(): void {
-  formModel.id = undefined;
-  formModel.name = "";
-  formModel.regionId = undefined;
-  formModel.address = "";
-  formModel.coverImage = "";
-  coverImagePreviewUrl.value = "";
-  formModel.description = "";
-  formModel.detailContent = "";
-  formModel.openTime = "";
-  formModel.ticketInfo = "";
-  formModel.ticketPrice = undefined;
-  formModel.level = "";
-  formModel.category = "";
-  formModel.bestSeason = "";
-  formModel.suggestedHours = undefined;
-  formModel.tips = "";
-  formModel.sortOrder = undefined;
-  formModel.isRecommended = 0;
-  formModel.tagIds = [];
-  formModel.imageIds = [];
-  formModel.status = 1;
-  uploadedImages.value = [];
-}
-
-async function loadMetaData(): Promise<void> {
-  const [regions, tags, levels, categories, statuses, scopes] = await Promise.all([
-    getRegionTree(),
-    getTags(),
-    getScenicLevelDict(),
-    getScenicCategoryDict(),
-    getCommonStatusDict(),
-    getTagScopeDict(),
-  ]);
-  provinceOptions.value = regions;
-  regionOptions.value = flattenRegions(regions);
-  tagOptions.value = tags;
-  scenicLevelOptions.value = levels;
-  scenicCategoryOptions.value = categories;
-  commonStatusOptions.value = statuses;
-  tagScopeOptions.value = scopes;
-}
-
-async function onTagScopeChange(scope?: string): Promise<void> {
-  query.tagCategory = undefined;
-  query.tagId = undefined;
-  searchTagOptions.value = [];
-  if (scope) {
-    try {
-      tagCategoryOptions.value = await getTagCategories(scope);
-    } catch {
-      tagCategoryOptions.value = [];
-    }
-  } else {
-    tagCategoryOptions.value = [];
-  }
-}
-
-async function onTagCategoryChange(category?: string): Promise<void> {
-  query.tagId = undefined;
-  if (category && query.tagScope) {
-    try {
-      const allTags = await getTagsByScope(query.tagScope);
-      searchTagOptions.value = allTags.filter((t) => t.category === category);
-    } catch {
-      searchTagOptions.value = [];
-    }
-  } else {
-    searchTagOptions.value = [];
-  }
-}
-
-async function loadScenicList(): Promise<void> {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    const result = await getAdminScenicPage(buildSearchParams());
-    scenicList.value = result.records;
-    total.value = result.total;
+    const res = await getScenicList({
+      pageNum: 1,
+      pageSize: 50,
+      keyword: query.keyword || undefined,
+    });
+    list.value = res.records || [];
+  } catch {
+    alert("加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-function buildSearchParams(): ScenicQuery {
-  return {
-    pageNum: query.pageNum,
-    pageSize: query.pageSize,
-    keyword: query.keyword || undefined,
-    // 城市优先；仅选择省份时按省份过滤；都不选则不传。
-    regionId: query.cityId ?? query.provinceId ?? undefined,
-    status: query.status ?? undefined,
-    level: query.level || undefined,
-    category: query.category || undefined,
-    tagId: query.tagId ?? undefined,
-    tagScope: query.tagScope || undefined,
-    tagCategory: query.tagCategory || undefined,
-  };
+async function loadRegions(): Promise<void> {
+  try {
+    regionList.value = await getRegionTree();
+  } catch {
+    /* empty */
+  }
 }
 
-function onSearch(): void {
-  query.pageNum = 1;
-  void loadScenicList();
-}
-
-function onProvinceChange(provinceId?: number): void {
-  const currentProvince = provinceOptions.value.find(
-    (item) => Number(item.id) === Number(provinceId)
-  );
-  cityOptions.value = currentProvince?.children ?? [];
-  query.cityId = undefined;
-}
-
-function handleReset(): void {
+function resetQuery(): void {
   query.keyword = "";
-  query.provinceId = undefined;
-  query.cityId = undefined;
   query.status = undefined;
-  query.level = undefined;
-  query.category = undefined;
-  query.tagId = undefined;
-  query.tagScope = undefined;
-  query.tagCategory = undefined;
-  tagCategoryOptions.value = [];
-  searchTagOptions.value = [];
-  cityOptions.value = [];
-  query.pageNum = 1;
-  void loadScenicList();
+  loadData();
 }
 
-function onSizeChange(): void {
-  query.pageNum = 1;
-  void loadScenicList();
+function editItem(item: any): void {
+  editingItem.value = item;
+  form.name = item.name;
+  form.regionId = item.regionId;
+  showCreate.value = true;
 }
 
-async function resolveImageUrls<T extends { imageUrl?: string; fileResourceId?: number }>(
-  images: T[] | undefined
-): Promise<T[]> {
-  if (!images?.length) return [];
-  return Promise.all(
-    images.map(async (item) => {
-      if (item.imageUrl) return item;
-      const fileId = Number(item.fileResourceId);
-      if (!Number.isFinite(fileId) || fileId <= 0) return item;
-      try {
-        const resource = await getFileResource(fileId);
-        return { ...item, imageUrl: resource.url || "" };
-      } catch {
-        return item;
-      }
-    })
-  );
-}
-
-async function openDetailDialog(row: ScenicItem): Promise<void> {
-  try {
-    const detail = await getAdminScenicDetail(row.id);
-    detail.images = await resolveImageUrls(detail.images);
-    detailData.value = detail;
-    detailVisible.value = true;
-  } catch {
-    ElMessage.error("获取景点详情失败");
+async function save(): Promise<void> {
+  if (!form.name.trim()) {
+    alert("请输入名称");
+    return;
   }
-}
-
-function openCreateDialog(): void {
-  isEdit.value = false;
-  resetFormModel();
-  formVisible.value = true;
-}
-
-async function openEditDialog(row: ScenicItem): Promise<void> {
-  isEdit.value = true;
-  resetFormModel();
+  saving.value = true;
   try {
-    const detail = await getAdminScenicDetail(row.id);
-    formModel.id = row.id;
-    formModel.name = detail.name;
-    formModel.regionId = detail.regionId;
-    formModel.address = detail.address || "";
-    formModel.coverImage = detail.coverImage || "";
-    if (detail.coverImage && /^\d+$/.test(detail.coverImage.trim())) {
-      try {
-        const resource = await getFileResource(Number(detail.coverImage));
-        coverImagePreviewUrl.value = resource.url || "";
-      } catch {
-        coverImagePreviewUrl.value = "";
-      }
+    if (editingItem.value) {
+      await updateScenic(editingItem.value.id, { name: form.name, regionId: form.regionId });
     } else {
-      coverImagePreviewUrl.value = detail.coverImage || "";
+      await createScenic({ name: form.name, regionId: form.regionId } as any);
     }
-    formModel.description = detail.description || "";
-    formModel.detailContent = detail.detailContent || "";
-    formModel.openTime = detail.openTime || "";
-    formModel.ticketInfo = detail.ticketInfo || "";
-    formModel.ticketPrice = detail.ticketPrice;
-    formModel.level = detail.level || "";
-    formModel.category = detail.category || "";
-    formModel.bestSeason = detail.bestSeason || "";
-    formModel.suggestedHours = detail.suggestedHours;
-    formModel.tips = detail.tips || "";
-    formModel.sortOrder = detail.sortOrder;
-    formModel.isRecommended = detail.isRecommended ?? 0;
-    formModel.status = detail.status ?? 1;
-    formModel.tagIds = detail.tagIds ?? [];
-    const resolvedImages = await resolveImageUrls(detail.images);
-    uploadedImages.value = resolvedImages
-      .map((item) => ({
-        id: Number(item.fileResourceId),
-        url: item.imageUrl ?? "",
-      }))
-      .filter((item) => Number.isFinite(item.id) && item.id > 0);
-    syncImageIds();
-    formVisible.value = true;
+    closeDialog();
+    loadData();
   } catch {
-    ElMessage.error("加载编辑数据失败");
-  }
-}
-
-async function submitForm(): Promise<void> {
-  if (!formRef.value) return;
-  const valid = await formRef.value.validate().catch(() => false);
-  if (!valid) return;
-
-  const payload: ScenicCreatePayload = {
-    name: formModel.name,
-    regionId: Number(formModel.regionId),
-    address: formModel.address,
-    coverImage: formModel.coverImage || undefined,
-    description: formModel.description || undefined,
-    detailContent: formModel.detailContent || undefined,
-    openTime: formModel.openTime || undefined,
-    ticketInfo: formModel.ticketInfo || undefined,
-    ticketPrice: formModel.ticketPrice,
-    level: formModel.level || undefined,
-    category: formModel.category || undefined,
-    bestSeason: formModel.bestSeason || undefined,
-    suggestedHours: formModel.suggestedHours,
-    tips: formModel.tips || undefined,
-    sortOrder: formModel.sortOrder,
-    isRecommended: formModel.isRecommended,
-    tagIds: formModel.tagIds,
-    imageIds: formModel.imageIds,
-    status: formModel.status,
-  };
-
-  submitLoading.value = true;
-  try {
-    if (isEdit.value && formModel.id) {
-      const updatePayload: ScenicUpdatePayload = {
-        ...payload,
-      };
-      await updateAdminScenic(formModel.id, updatePayload);
-      ElMessage.success("编辑成功");
-    } else {
-      await createAdminScenic(payload);
-      ElMessage.success("新增成功");
-    }
-
-    formVisible.value = false;
-    void loadScenicList();
-  } catch {
-    ElMessage.error(isEdit.value ? "编辑失败" : "新增失败");
+    alert("保存失败");
   } finally {
-    submitLoading.value = false;
+    saving.value = false;
   }
 }
 
-async function handleDelete(row: ScenicItem): Promise<void> {
+async function deleteItem(id: number): Promise<void> {
+  if (!confirm("确定删除？")) return;
   try {
-    await deleteAdminScenic(row.id);
-    ElMessage.success("删除成功");
-    if (scenicList.value.length === 1 && query.pageNum && query.pageNum > 1) {
-      query.pageNum -= 1;
-    }
-    await loadScenicList();
+    await deleteScenic(id);
+    loadData();
   } catch {
-    ElMessage.error("删除失败");
+    alert("删除失败");
   }
 }
 
-onMounted(async () => {
-  try {
-    await loadMetaData();
-  } catch {
-    ElMessage.warning("基础数据加载失败，部分功能可能受影响");
-  }
-  await loadScenicList();
+function closeDialog(): void {
+  showCreate.value = false;
+  editingItem.value = null;
+  form.name = "";
+  form.regionId = undefined;
+}
+
+onMounted(() => {
+  loadData();
+  loadRegions();
 });
 </script>
 
 <style scoped>
-.card-header {
-  font-size: 16px;
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.title {
+  font-size: 28px;
   font-weight: 700;
+  color: #000;
+  margin: 0 0 32px 0;
 }
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 6px;
-  margin-bottom: 12px;
-}
-
-.filter-form :deep(.el-form-item) {
-  margin-bottom: 0;
-  margin-right: 0;
-}
-
-.filter-form :deep(.el-form-item__label) {
-  padding-right: 6px;
-}
-
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.tag-gap {
-  margin-right: 6px;
-}
-
-.text-muted {
-  color: #909399;
-}
-
-.detail-card {
-  border: 1px solid #ebeef5;
-}
-
-.detail-title-row {
+.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.detail-title {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.image-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: #909399;
-  background: #f5f7fa;
-  border-radius: 8px;
-}
-
-.info-item {
-  margin-bottom: 10px;
-  line-height: 1.6;
-}
-
-.info-block {
-  margin-bottom: 14px;
-}
-
-.label {
-  margin-right: 6px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.value {
-  color: #606266;
-}
-
-.image-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.detail-image {
-  width: 120px;
-  height: 80px;
-  border-radius: 6px;
-  border: 1px solid #ebeef5;
-}
-
-.page-container {
-  padding: 0px;
-}
-
-.scenic-form-dialog :deep(.el-dialog__header) {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-  margin-right: 0;
-}
-
-.scenic-form-dialog :deep(.el-dialog__title) {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.scenic-form-dialog :deep(.el-dialog__body) {
-  padding: 0;
-}
-
-.scenic-form-dialog .dialog-body-scroll {
-  max-height: calc(85vh - 120px);
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.scenic-form-dialog .form-section {
   margin-bottom: 24px;
 }
-
-.scenic-form-dialog .form-section:last-child {
-  margin-bottom: 0;
-}
-
-.scenic-form-dialog .form-section-title {
+.btn-new {
+  padding: 10px 24px;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.scenic-form-dialog :deep(.el-form-item__label) {
-  font-size: 13px;
-  color: #606266;
-  line-height: 20px;
-  padding-bottom: 4px;
-}
-
-.scenic-form-dialog :deep(.el-form-item) {
-  margin-bottom: 16px;
-}
-
-.scenic-form-dialog :deep(.el-form-item:last-child) {
-  margin-bottom: 0;
-}
-
-.scenic-form-dialog .form-row-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 16px;
-}
-
-.scenic-form-dialog .form-row-grid :deep(.el-form-item) {
-  margin-bottom: 16px;
-}
-
-.scenic-form-dialog :deep(.el-input__wrapper),
-.scenic-form-dialog :deep(.el-textarea__inner),
-.scenic-form-dialog :deep(.el-input-number .el-input__wrapper) {
-  border-radius: 4px;
-}
-
-.scenic-form-dialog :deep(.el-input__wrapper),
-.scenic-form-dialog :deep(.el-textarea__inner) {
-  border-color: #dcdfe6;
-}
-
-.scenic-form-dialog :deep(.el-input__wrapper.is-focus),
-.scenic-form-dialog :deep(.el-textarea__inner:focus) {
-  box-shadow: 0 0 0 1px #409eff inset;
-}
-
-.scenic-form-dialog .dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 12px 20px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.scenic-form-dialog :deep(.el-dialog__footer) {
-  padding: 0;
-  border-top: none;
-}
-
-.scenic-form-dialog .image-uploader-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 10px;
-  width: 100%;
-}
-
-.scenic-form-dialog .image-card {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #fafafa;
-}
-
-.scenic-form-dialog .image-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.scenic-form-dialog .image-mask {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  transition: opacity 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.scenic-form-dialog .image-card:hover .image-mask {
-  opacity: 1;
-}
-
-.scenic-form-dialog .image-delete {
-  color: #fff;
-  font-size: 20px;
+  color: #000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
 }
-
-.scenic-form-dialog .image-upload-btn {
-  aspect-ratio: 1 / 1;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: #909399;
-  cursor: pointer;
-  background: #fafafa;
-  transition:
-    border-color 0.15s,
-    color 0.15s;
+.btn-new:hover {
+  background: #00c665;
 }
 
-.scenic-form-dialog .image-upload-btn:hover {
-  border-color: #409eff;
-  color: #409eff;
-}
-
-.scenic-form-dialog .image-upload-btn.is-uploading {
-  cursor: not-allowed;
-  color: #c0c4cc;
-  border-color: #e4e7ed;
-}
-
-.scenic-form-dialog .image-upload-btn .upload-icon {
-  font-size: 22px;
-}
-
-.scenic-form-dialog .image-upload-btn .upload-text {
-  font-size: 12px;
-}
-
-.scenic-form-dialog .image-hint {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #909399;
-  line-height: 18px;
-}
-
-.scenic-form-dialog .cover-uploader {
+.filter-bar {
   display: flex;
   gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
-
-.scenic-form-dialog .cover-image-card {
-  position: relative;
-  width: 200px;
-  height: 120px;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid #dcdfe6;
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+}
+.filter-input:focus {
+  border-color: #00e676;
+}
+.filter-select {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
   cursor: pointer;
-  flex-shrink: 0;
+}
+.btn-search {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-reset {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #666;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.scenic-form-dialog .cover-image {
+.table-wrap {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  background: #f9f9f9;
+  border-bottom: 1px solid #f0f0f0;
+}
+.table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #000;
+  border-bottom: 1px solid #f0f0f0;
+}
+.table tr:hover {
+  background: #f9fff9;
+}
+.badge {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+.badge.on {
+  background: #e8f5e9;
+  color: #000;
+}
+.badge.off {
+  background: #f5f5f5;
+  color: #999;
+}
+.link {
+  font-size: 13px;
+  color: #000;
+  cursor: pointer;
+  margin-right: 12px;
+}
+.link:hover {
+  color: #00c665;
+}
+.link.danger {
+  color: #ff5252;
+}
+.link.danger:hover {
+  color: #ff1744;
 }
 
-.scenic-form-dialog .cover-image-mask {
-  position: absolute;
-  top: 0;
-  left: 0;
+.loading,
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
   width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
+  max-width: 500px;
 }
-
-.scenic-form-dialog .cover-image-card:hover .cover-image-mask {
-  opacity: 1;
+.modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 24px 0;
 }
-
-.scenic-form-dialog .cover-upload-btn {
-  width: 200px;
-  height: 120px;
-  border-radius: 6px;
-  border: 1px dashed #dcdfe6;
+.form-group {
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: border-color 0.2s;
-  background: #fafbfc;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: 8px;
 }
-
-.scenic-form-dialog .cover-upload-btn:hover {
-  border-color: #409eff;
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+}
+.input {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  font-family: inherit;
+}
+.input:focus {
+  border-color: #00e676;
+}
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+.btn-cancel {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #666;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-submit {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

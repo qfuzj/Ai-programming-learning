@@ -76,7 +76,7 @@ export const adminRoutes: RouteRecordRaw[] = [
   {
     path: "/admin/login",
     name: "AdminLogin",
-    component: () => import("@/views/auth/admin-login.vue"),
+    component: () => import("@/views/auth/AdminLoginView.vue"),
     meta: { title: "后台登录", requiresAuth: false, hidden: true },
   },
 ];

@@ -1,308 +1,310 @@
+<!-- 极简风格AI推荐页 -->
 <template>
-  <div class="recommend-page">
-    <section class="hero">
-      <div>
-        <p class="hero-eyebrow">AI 推荐</p>
-        <h1>基于召回结果生成更自然的推荐理由</h1>
-        <p class="hero-desc">
-          当前列表保留规则排序分
-          <code>rankScore</code>
-          ，推荐理由优先由 LLM 生成，失败时自动降级为规则文案。
-        </p>
-      </div>
-    </section>
+  <div class="page">
+    <div class="header">
+      <h1 class="title">AI 推荐</h1>
+      <p class="subtitle">基于智能算法为您推荐景点</p>
+      <button class="btn-refresh" :disabled="loading" @click="loadData">刷新推荐</button>
+    </div>
 
-    <el-card class="page-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>推荐结果</span>
-          <el-button :loading="loading" @click="loadRecommendations">刷新推荐</el-button>
+    <div v-if="loading" class="grid">
+      <div v-for="n in 6" :key="n" class="skeleton-card">
+        <div class="skeleton-img"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
+      </div>
+    </div>
+
+    <div v-else-if="list.length === 0" class="empty">暂无推荐结果</div>
+
+    <div v-else class="grid">
+      <div v-for="item in list" :key="item.scenicId" class="card" @click="goDetail(item)">
+        <div class="card-img">
+          <img :src="item.coverImage || ''" :alt="item.scenicName" />
         </div>
-      </template>
-
-      <el-skeleton v-if="loading" animated :rows="8" />
-      <el-empty v-else-if="page.records.length === 0" description="暂无推荐结果" />
-
-      <div v-else class="recommend-list">
-        <article
-          v-for="item in page.records"
-          :key="`${item.recommendRecordId}-${item.resultItemId}-${item.scenicId}`"
-          class="recommend-card"
-          @click="goToDetail(item)"
-        >
-          <el-image class="cover" :src="item.coverImage || ''" fit="cover">
-            <template #error>
-              <div class="cover-fallback">暂无图片</div>
-            </template>
-          </el-image>
-          <div class="recommend-body">
-            <div class="recommend-top">
-              <h3>{{ item.scenicName }}</h3>
-              <div class="score-group">
-                <span class="score-label">公共评分</span>
-                <strong>{{ formatScore(item.score) }}</strong>
-              </div>
-            </div>
-            <p class="reason">{{ item.reason || "正在生成推荐理由" }}</p>
-            <div class="meta">
-              <span>来源：{{ item.sourceType || "-" }}</span>
-              <span>排序分：{{ formatRankScore(item.rankScore) }}</span>
-            </div>
+        <div class="card-body">
+          <h3 class="card-title">{{ item.scenicName }}</h3>
+          <p class="card-reason">{{ item.reason || "为您智能推荐" }}</p>
+          <div class="card-meta">
+            <span v-if="item.score" class="score">{{ item.score.toFixed(1) }}分</span>
+            <span v-if="item.sourceType" class="source">{{ item.sourceType }}</span>
           </div>
-        </article>
+        </div>
       </div>
+    </div>
 
-      <div class="pagination">
-        <el-pagination
-          background
-          layout="prev, pager, next"
-          :current-page="query.pageNum"
-          :page-size="query.pageSize"
-          :total="page.total"
-          @current-change="onPageChange"
-        />
-      </div>
-    </el-card>
+    <div v-if="total > 0" class="pagination">
+      <button
+        class="page-btn"
+        :disabled="query.pageNum <= 1"
+        @click="changePage(query.pageNum - 1)"
+      >
+        上一页
+      </button>
+      <span class="page-info">{{ query.pageNum }} / {{ Math.ceil(total / query.pageSize) }}</span>
+      <button
+        class="page-btn"
+        :disabled="query.pageNum >= Math.ceil(total / query.pageSize)"
+        @click="changePage(query.pageNum + 1)"
+      >
+        下一页
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { reactive, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
 import { fetchAiRecommendations, sendRecommendClick, type AiRecommendItem } from "@/api/recommend";
-import type { PageResult } from "@/types/api";
 
 const router = useRouter();
-
 const loading = ref(false);
+const list = ref<AiRecommendItem[]>([]);
+const total = ref(0);
+
 const query = reactive({
   pageNum: 1,
   pageSize: 8,
 });
-const page = ref<PageResult<AiRecommendItem>>({
-  records: [],
-  total: 0,
-  pageNum: 1,
-  pageSize: 8,
-  totalPage: 0,
-});
 
-function formatScore(score?: number): string {
-  return typeof score === "number" ? score.toFixed(1) : "0.0";
+function goDetail(item: AiRecommendItem): void {
+  if (item.recommendRecordId && item.resultItemId && item.scenicId) {
+    sendRecommendClick({
+      recommendRecordId: item.recommendRecordId,
+      resultItemId: item.resultItemId,
+      scenicId: item.scenicId,
+    }).catch(() => {});
+  }
+  router.push(`/scenic/${item.scenicId}`);
 }
 
-function formatRankScore(score?: number): string {
-  return typeof score === "number" ? score.toFixed(2) : "0.00";
+function changePage(page: number): void {
+  query.pageNum = page;
+  loadData();
 }
 
-async function loadRecommendations(): Promise<void> {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    page.value = await fetchAiRecommendations(query);
-  } catch (error) {
-    console.error(error);
-    ElMessage.error("推荐结果加载失败");
+    const res = await fetchAiRecommendations(query);
+    list.value = res.records || [];
+    total.value = res.total || 0;
+  } catch {
+    alert("推荐结果加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-function onPageChange(pageNum: number): void {
-  query.pageNum = pageNum;
-  void loadRecommendations();
-}
-
-function goToDetail(item: AiRecommendItem): void {
-  recordRecommendClick(item);
-  void router.push(`/scenic/${item.scenicId}`);
-}
-
-function recordRecommendClick(item: AiRecommendItem): void {
-  if (!item.recommendRecordId || !item.resultItemId || !item.scenicId) {
-    return;
-  }
-  void sendRecommendClick({
-    recommendRecordId: item.recommendRecordId,
-    resultItemId: item.resultItemId,
-    scenicId: item.scenicId,
-  }).catch((error) => {
-    console.error("record recommend click failed", error);
-  });
-}
-
 onMounted(() => {
-  void loadRecommendations();
+  loadData();
 });
 </script>
 
 <style scoped>
-.recommend-page {
+.page {
   max-width: 1200px;
-  padding: 24px;
   margin: 0 auto;
+  padding: 40px 24px;
 }
 
-.hero {
-  padding: 24px 28px;
-  margin-bottom: 20px;
-  background: linear-gradient(135deg, #f4fbff 0%, #eef8f3 100%);
-  border: 1px solid #e6eef0;
-  border-radius: 24px;
+.header {
+  margin-bottom: 40px;
 }
 
-.hero-eyebrow {
-  margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #3b82f6;
-}
-
-.hero h1 {
-  margin: 0 0 12px;
-  font-size: 30px;
+.title {
+  font-size: 32px;
   font-weight: 700;
-  color: #111827;
+  color: #000000;
+  margin: 0 0 8px 0;
 }
 
-.hero-desc {
-  margin: 0;
-  line-height: 1.7;
-  color: #4b5563;
+.subtitle {
+  font-size: 15px;
+  color: #999999;
+  margin: 0 0 20px 0;
 }
 
-.page-card {
-  border-radius: 24px;
+.btn-refresh {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.card-header {
+.btn-refresh:hover:not(:disabled) {
+  background: #00c665;
+}
+
+.btn-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card */
+.card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card-img {
+  width: 100%;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 16px 4px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 8px 0;
+}
+
+.card-reason {
+  font-size: 14px;
+  color: #666666;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.card-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
 }
 
-.recommend-list {
-  display: grid;
-  gap: 16px;
+.score {
+  font-size: 14px;
+  font-weight: 600;
+  color: #000000;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.recommend-card {
-  display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: 18px;
-  padding: 16px;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #e9edf2;
-  border-radius: 20px;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+.source {
+  font-size: 12px;
+  color: #999999;
 }
 
-.recommend-card:hover {
-  border-color: #bfd6ff;
-  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-  transform: translateY(-1px);
-}
-
-.cover {
-  width: 100%;
-  height: 122px;
-  overflow: hidden;
-  border-radius: 16px;
-}
-
-.cover-fallback {
+/* Pagination */
+.pagination {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: #9ca3af;
-  background: #f3f4f6;
-}
-
-.recommend-body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.recommend-top {
-  display: flex;
   gap: 16px;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  margin-top: 40px;
 }
 
-.recommend-top h3 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #111827;
+.page-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #000000;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.score-group {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  min-width: 90px;
-  color: #6b7280;
+.page-btn:hover:not(:disabled) {
+  border-color: #00e676;
+  background: #f9fff9;
 }
 
-.score-group strong {
-  font-size: 24px;
-  color: #0f172a;
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.score-label {
-  font-size: 12px;
+.page-info {
+  font-size: 14px;
+  color: #999999;
 }
 
-.reason {
-  margin: 0 0 14px;
+/* Empty */
+.empty {
+  padding: 80px 20px;
+  text-align: center;
+  color: #999999;
   font-size: 15px;
-  line-height: 1.8;
-  color: #374151;
 }
 
-.meta {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  margin-top: auto;
-  font-size: 13px;
-  color: #6b7280;
+/* Skeleton */
+.skeleton-card {
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
+.skeleton-img {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
 }
 
-@media (max-width: 768px) {
-  .recommend-page {
-    padding: 16px;
-  }
+.skeleton-line {
+  height: 16px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+}
 
-  .recommend-card {
-    grid-template-columns: 1fr;
-  }
+.skeleton-line.short {
+  width: 60%;
+}
 
-  .cover {
-    height: 180px;
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
   }
-
-  .recommend-top {
-    flex-direction: column;
-  }
-
-  .score-group {
-    align-items: flex-start;
+  100% {
+    background-position: -200% 0;
   }
 }
 </style>

@@ -1,60 +1,85 @@
-<!-- 用户登录页：用于普通用户登录入口。 -->
+<!-- 极简风格用户登录页 -->
 <template>
-  <div class="login-page">
-    <el-card class="login-card">
-      <template #header>
-        <strong>用户登录</strong>
-      </template>
-      <el-form :model="form" label-position="top" @submit.prevent>
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="密码">
-          <el-input
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="brand">智游</div>
+        <h1 class="title">登录</h1>
+        <p class="subtitle">登录您的账户以继续使用</p>
+      </div>
+
+      <form @submit.prevent="onSubmit">
+        <div class="form-group">
+          <label class="form-label">用户名</label>
+          <input
+            v-model="form.username"
+            type="text"
+            class="form-input"
+            placeholder="请输入用户名"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input
             v-model="form.password"
             type="password"
-            show-password
+            class="form-input"
             placeholder="请输入密码"
+            autocomplete="current-password"
           />
-        </el-form-item>
-        <el-form-item label="验证码">
-          <div class="captcha-row">
-            <el-input v-model="form.captchaCode" maxlength="6" placeholder="请输入验证码" />
-            <el-image class="captcha-image" :src="captchaImage" fit="contain" @click="loadCaptcha">
-              <template #error>
-                <div class="captcha-placeholder" @click="loadCaptcha">点击刷新</div>
-              </template>
-            </el-image>
-          </div>
-        </el-form-item>
-        <el-button type="primary" :loading="submitting" @click="onSubmit">登录</el-button>
-        <div class="auth-links">
-          <el-button text @click="goRegister">没有账号？去注册</el-button>
-          <el-button text @click="goResetPassword">忘记密码</el-button>
         </div>
-      </el-form>
-    </el-card>
+
+        <div class="form-group">
+          <label class="form-label">验证码</label>
+          <div class="captcha-row">
+            <input
+              v-model="form.captchaCode"
+              type="text"
+              class="form-input"
+              placeholder="验证码"
+              maxlength="6"
+            />
+            <img :src="captchaImage" class="captcha-img" alt="验证码" @click="loadCaptcha" />
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" :disabled="submitting">
+          {{ submitting ? "登录中..." : "登录" }}
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <span class="link" @click="goRegister">没有账号？去注册</span>
+        <span class="divider">|</span>
+        <span class="link" @click="goResetPassword">忘记密码</span>
+      </div>
+
+      <div v-if="route.query.registered" class="success-msg">
+        注册成功，欢迎 {{ route.query.username }}，请登录
+      </div>
+      <div v-if="route.query.reset === '1'" class="success-msg">密码重置成功，请使用新密码登录</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
+import { onMounted, reactive, ref, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/store";
 import { getCaptcha } from "@/api/auth";
 import { ROUTE_PATHS } from "@/router/constants";
 
-const userStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const submitting = ref(false);
 const captchaImage = ref("");
 
 const form = reactive({
   username: "",
   password: "",
-  loginType: "username" as const,
   captchaId: "",
   captchaCode: "",
 });
@@ -67,19 +92,14 @@ async function loadCaptcha(): Promise<void> {
 }
 
 async function onSubmit(): Promise<void> {
-  form.username = form.username.trim();
-  form.captchaCode = form.captchaCode.trim();
-
   if (!form.captchaId || !form.captchaCode) {
-    ElMessage.warning("请先输入验证码");
+    alert("请先输入验证码");
     return;
   }
 
+  submitting.value = true;
   try {
-    submitting.value = true;
-    await userStore.loginAsUser(form);
-    ElMessage.success("登录成功");
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await userStore.loginAsUser({ ...form, loginType: "username" as const });
     const redirect =
       typeof route.query.redirect === "string" ? route.query.redirect : ROUTE_PATHS.USER_HOME;
     await router.push(redirect);
@@ -90,6 +110,14 @@ async function onSubmit(): Promise<void> {
   }
 }
 
+function goRegister(): void {
+  router.push("/register");
+}
+
+function goResetPassword(): void {
+  router.push("/reset-password");
+}
+
 onMounted(() => {
   const prefillUsername = sessionStorage.getItem("auth_prefill_username");
   if (prefillUsername) {
@@ -97,66 +125,155 @@ onMounted(() => {
     sessionStorage.removeItem("auth_prefill_username");
   }
 
-  void nextTick(() => {
+  nextTick(() => {
     if (route.query.registered === "1") {
       const username = typeof route.query.username === "string" ? route.query.username : "";
-      ElMessage.success(username ? `注册成功，欢迎 ${username}，请登录` : "注册成功，请登录");
-    }
-    if (route.query.reset === "1") {
-      ElMessage.success("密码重置成功，请使用新密码登录");
+      alert(username ? `注册成功，欢迎 ${username}，请登录` : "注册成功，请登录");
     }
   });
 
-  void loadCaptcha();
+  loadCaptcha();
 });
-
-function goRegister(): void {
-  void router.push("/register");
-}
-
-function goResetPassword(): void {
-  void router.push("/reset-password");
-}
 </script>
 
 <style scoped>
-.login-page {
+.auth-page {
   display: grid;
   place-items: center;
   min-height: 100vh;
+  background: #ffffff;
 }
 
-.login-card {
-  width: 400px;
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 0;
+}
+
+.brand {
+  font-size: 28px;
+  font-weight: 800;
+  color: #00e676;
+  margin-bottom: 32px;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: #999999;
+  margin: 0 0 40px 0;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #000000;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: #00e676;
+}
+
+.form-input::placeholder {
+  color: #999999;
 }
 
 .captcha-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
-.captcha-image {
-  width: 130px;
-  height: 48px;
+.captcha-row .form-input {
+  flex: 1;
+}
+
+.captcha-img {
+  width: 120px;
+  height: 44px;
   cursor: pointer;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
-.captcha-placeholder {
-  display: grid;
-  place-items: center;
+.submit-btn {
   width: 100%;
-  height: 100%;
-  font-size: 12px;
-  color: #909399;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
 }
 
-.auth-links {
-  margin-top: 8px;
+.submit-btn:hover {
+  background: #00c665;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  font-size: 14px;
+}
+
+.link {
+  color: #000000;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.link:hover {
+  color: #00c665;
+}
+
+.divider {
+  color: #e0e0e0;
+}
+
+.success-msg {
+  margin-top: 16px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #000000;
+  background: #e8f5e9;
+  border-radius: 8px;
+  text-align: center;
 }
 </style>

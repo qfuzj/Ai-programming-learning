@@ -1,582 +1,303 @@
+<!-- 极简风格地区管理页 -->
 <template>
-  <div class="page-container">
-    <el-card class="page-card">
-      <template #header>
-        <div class="card-header">地区管理</div>
-      </template>
+  <div class="page">
+    <div class="header">
+      <h1 class="title">地区管理</h1>
+      <button class="btn-new" @click="showCreate = true">新增地区</button>
+    </div>
 
-      <el-form :inline="true" :model="query" class="filter-form">
-        <el-form-item label="地区名称">
-          <el-input v-model="query.name" clearable style="width: 140px" placeholder="请输入名称" />
-        </el-form-item>
-        <el-form-item label="层级">
-          <el-select v-model="query.level" clearable style="width: 100px" placeholder="全部">
-            <el-option
-              v-for="item in levelOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="所属地区">
-          <el-cascader
-            v-model="query.parentId"
-            :options="regionTreeForQuery"
-            :props="queryCascaderProps"
-            placeholder="全部"
-            clearable
-            filterable
-            style="width: 140px"
-          />
-        </el-form-item>
-        <el-form-item label="热门">
-          <el-select v-model="query.isHot" clearable style="width: 100px" placeholder="全部">
-            <el-option
-              v-for="item in yesNoOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item style="margin-left: auto">
-          <el-button type="primary" @click="onSearch">查询</el-button>
-          <el-button @click="onReset">重置</el-button>
-        </el-form-item>
-        <el-form-item style="margin-left: auto">
-          <el-button type="success" @click="openCreate">新增地区</el-button>
-        </el-form-item>
-      </el-form>
+    <div v-if="loading" class="loading">加载中...</div>
+    <div v-else-if="regionTree.length === 0" class="empty">暂无地区数据</div>
 
-      <el-table v-loading="loading" :data="regionList">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="name" label="地区名称" min-width="160" />
-        <el-table-column prop="shortName" label="简称" width="120" />
-        <el-table-column label="层级" width="90">
-          <template #default="scope">{{ levelText(scope.row.level) }}</template>
-        </el-table-column>
-        <el-table-column prop="code" label="编码" width="120" />
-        <el-table-column prop="pinyin" label="拼音" width="120" />
-        <el-table-column prop="sortOrder" label="排序" width="80" />
-        <el-table-column label="热门" width="80">
-          <template #default="scope">
-            <el-tag :type="scope.row.isHot === 1 ? 'success' : 'info'">
-              {{ findDictDesc(yesNoOptions, scope.row.isHot, "-") }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="scope">
-            <el-button link type="warning" @click="openEdit(scope.row)">编辑</el-button>
-            <el-popconfirm
-              title="确认删除该地区吗？"
-              confirm-button-text="确认"
-              cancel-button-text="取消"
-              @confirm="handleDelete(scope.row.id)"
-            >
-              <template #reference>
-                <el-button link type="danger">删除</el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-row">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="loadRegionList"
-          @size-change="onSizeChange"
-        />
-      </div>
-    </el-card>
-
-    <el-dialog
-      v-model="formVisible"
-      :title="dialogTitle"
-      width="620px"
-      class="region-form-dialog"
-      destroy-on-close
-    >
-      <div class="dialog-body-scroll">
-        <el-form ref="formRef" :model="formModel" :rules="formRules" label-position="top">
-          <div class="form-section">
-            <div class="form-section-title">基础信息</div>
-            <div class="form-section-content">
-              <el-form-item label="层级" prop="level">
-                <el-select v-model="formModel.level" style="width: 100%" @change="onLevelChange">
-                  <el-option
-                    v-for="item in levelOptions"
-                    :key="item.code"
-                    :label="item.desc"
-                    :value="item.code"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="父级ID" prop="parentId">
-                <el-input v-if="formModel.level === 1" value="无（顶级）" disabled />
-                <el-select
-                  v-else-if="formModel.level === 2"
-                  v-model="formModel.parentId"
-                  placeholder="请选择所属省份"
-                  filterable
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="item in provinceList"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.id"
-                  />
-                </el-select>
-                <el-cascader
-                  v-else-if="formModel.level === 3"
-                  v-model="formModel.parentId"
-                  :options="provinceList"
-                  :props="cascaderProps"
-                  placeholder="请选择所属省份 → 城市"
-                  filterable
-                  clearable
-                  style="width: 100%"
-                />
-              </el-form-item>
-              <el-form-item label="地区名称" prop="name">
-                <el-input v-model="formModel.name" placeholder="请输入地区名称" />
-              </el-form-item>
-              <div class="form-row-grid">
-                <el-form-item label="简称" prop="shortName">
-                  <el-input v-model="formModel.shortName" placeholder="请输入简称" />
-                </el-form-item>
-                <el-form-item label="编码" prop="code">
-                  <el-input v-model="formModel.code" placeholder="请输入编码" />
-                </el-form-item>
-              </div>
-              <el-form-item label="拼音" prop="pinyin">
-                <el-input v-model="formModel.pinyin" placeholder="请输入拼音" />
-              </el-form-item>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">地理位置</div>
-            <div class="form-section-content">
-              <div class="form-row-grid">
-                <el-form-item label="经度" prop="longitude">
-                  <el-input-number
-                    v-model="formModel.longitude"
-                    :min="-180"
-                    :max="180"
-                    :step="0.0001"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-                <el-form-item label="纬度" prop="latitude">
-                  <el-input-number
-                    v-model="formModel.latitude"
-                    :min="-90"
-                    :max="90"
-                    :step="0.0001"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <div class="form-section-title">运营属性</div>
-            <div class="form-section-content">
-              <div class="form-row-grid">
-                <el-form-item label="排序" prop="sortOrder">
-                  <el-input-number
-                    v-model="formModel.sortOrder"
-                    :min="0"
-                    :max="9999"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-                <el-form-item label="热门" prop="isHot">
-                  <el-select v-model="formModel.isHot" style="width: 100%">
-                    <el-option
-                      v-for="item in yesNoOptions"
-                      :key="item.code"
-                      :label="item.desc"
-                      :value="item.code"
-                    />
-                  </el-select>
-                </el-form-item>
-              </div>
-            </div>
-          </div>
-        </el-form>
-      </div>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="formVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
+    <div v-else class="tree">
+      <div v-for="r in regionTree" :key="r.id" class="tree-item">
+        <div class="tree-row">
+          <span class="name">{{ r.name }}</span>
+          <span class="level">{{ levelText(r.level) }}</span>
+          <span class="actions">
+            <span class="link" @click="editItem(r)">编辑</span>
+            <span class="link danger" @click="deleteItem(r.id)">删除</span>
+          </span>
         </div>
-      </template>
-    </el-dialog>
+        <div v-if="r.children && r.children.length > 0" class="tree-children">
+          <div v-for="c in r.children" :key="c.id" class="tree-row child">
+            <span class="name">{{ c.name }}</span>
+            <span class="level">{{ levelText(c.level) }}</span>
+            <span class="actions">
+              <span class="link" @click="editItem(c)">编辑</span>
+              <span class="link danger" @click="deleteItem(c.id)">删除</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增/编辑弹窗 -->
+    <div v-if="showCreate || editing" class="modal-overlay" @click.self="closeDialog">
+      <div class="modal">
+        <h2 class="modal-title">{{ editing ? "编辑地区" : "新增地区" }}</h2>
+        <div class="form-group">
+          <label class="label">名称</label>
+          <input v-model="form.name" class="input" placeholder="地区名称" />
+        </div>
+        <div class="form-group">
+          <label class="label">层级</label>
+          <select v-model="form.level" class="input">
+            <option :value="1">省</option>
+            <option :value="2">市</option>
+            <option :value="3">区/县</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn-cancel" @click="closeDialog">取消</button>
+          <button class="btn-submit" :disabled="saving" @click="save">
+            {{ saving ? "保存中..." : "保存" }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
-import type { CascaderOption, FormInstance, FormRules } from "element-plus";
+import { reactive, ref, onMounted } from "vue";
 import {
-  createAdminRegion,
-  deleteAdminRegion,
-  getAdminRegionPage,
-  updateAdminRegion,
   getRegionTree,
-  type AdminRegionItem,
-  type AdminRegionQuery,
-  type RegionPayload,
-  type CommonRegionNode,
+  createAdminRegion as createRegion,
+  updateAdminRegion as updateRegion,
+  deleteAdminRegion as deleteRegion,
 } from "@/api/common";
-import { getRegionLevelDict, getYesNoFlagDict } from "@/api/dict";
-import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
-
-const { options: levelOptions } = useDictOptions("region-level", getRegionLevelDict);
-const { options: yesNoOptions } = useDictOptions("yes-no-flag", getYesNoFlagDict);
 
 const loading = ref(false);
-const submitting = ref(false);
-const total = ref(0);
-const regionList = ref<AdminRegionItem[]>([]);
-const regionTree = ref<CommonRegionNode[]>([]);
+const saving = ref(false);
+const regionTree = ref<any[]>([]);
+const showCreate = ref(false);
+const editing = ref<any>(null);
 
-const provinceList = computed(() => {
-  return regionTree.value;
-});
-
-// 查询级联只展示到市一级（省 -> 市），不展示区县
-const regionTreeForQuery = computed<CascaderOption[]>(() => {
-  return regionTree.value.map((province) => ({
-    ...province,
-    children: (province.children || []).map((city) => ({
-      ...city,
-      children: undefined,
-    })),
-  })) as CascaderOption[];
-});
-
-// 查询级联选择器配置
-const queryCascaderProps = {
-  value: "id",
-  label: "name",
-  children: "children",
-  emitPath: false,
-  checkStrictly: true,
-};
-
-// 表单级联选择器配置：允许选中任意层级节点作为 parentId（包括市级别）
-const cascaderProps = {
-  value: "id",
-  label: "name",
-  children: "children",
-  emitPath: false,
-  checkStrictly: true,
-};
-
-const formVisible = ref(false);
-const editingId = ref<number | null>(null);
-const formRef = ref<FormInstance>();
-
-const query = reactive<AdminRegionQuery>({
-  pageNum: 1,
-  pageSize: 10,
-  parentId: undefined,
-  name: "",
-  level: undefined,
-  code: "",
-  isHot: undefined,
-});
-
-const formModel = reactive<RegionPayload>({
-  parentId: 0,
-  name: "",
-  shortName: "",
-  level: 1,
-  code: "",
-  pinyin: "",
-  longitude: undefined,
-  latitude: undefined,
-  sortOrder: 0,
-  isHot: 0,
-});
-
-const formRules: FormRules<RegionPayload> = {
-  name: [{ required: true, message: "请输入地区名称", trigger: "blur" }],
-  level: [{ required: true, message: "请选择层级", trigger: "change" }],
-};
-
-const onLevelChange = (val: number) => {
-  formModel.parentId = val === 1 ? 0 : 0; // default 0 if not set
-};
-
-const fetchRegionTree = async (): Promise<void> => {
-  try {
-    regionTree.value = await getRegionTree();
-  } catch (error) {
-    ElMessage.error("地区树加载失败");
-    console.error("加载地区树失败", error);
-  }
-};
-
-const dialogTitle = computed(() => (editingId.value ? "编辑地区" : "新增地区"));
-
+const form = reactive({ name: "", level: 1 });
 function levelText(level: number): string {
-  return findDictDesc(levelOptions.value, level, "-");
+  if (level === 1) return "省";
+  if (level === 2) return "市";
+  if (level === 3) return "区/县";
+  return "未知";
 }
 
-async function loadRegionList(): Promise<void> {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    const page = await getAdminRegionPage({
-      ...query,
-      name: query.name || undefined,
-      code: query.code || undefined,
-    });
-    regionList.value = page.records;
-    total.value = page.total;
+    regionTree.value = await getRegionTree();
   } catch {
-    ElMessage.error("地区列表加载失败");
+    alert("加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-function onSearch(): void {
-  query.pageNum = 1;
-  void loadRegionList();
+function editItem(item: any): void {
+  editing.value = item;
+  form.name = item.name;
+  form.level = item.level;
+  showCreate.value = true;
 }
-
-function onReset(): void {
-  query.name = "";
-  query.level = undefined;
-  query.isHot = undefined;
-  query.parentId = undefined;
-  query.code = "";
-  query.isHot = undefined;
-  query.pageNum = 1;
-  void loadRegionList();
-}
-
-function onSizeChange(): void {
-  query.pageNum = 1;
-  void loadRegionList();
-}
-
-function resetFormModel(): void {
-  formModel.parentId = 0;
-  formModel.name = "";
-  formModel.shortName = "";
-  formModel.level = 1;
-  formModel.code = "";
-  formModel.pinyin = "";
-  formModel.longitude = undefined;
-  formModel.latitude = undefined;
-  formModel.sortOrder = 0;
-  formModel.isHot = 0;
-}
-
-function openCreate(): void {
-  editingId.value = null;
-  resetFormModel();
-  formVisible.value = true;
-}
-
-function openEdit(row: AdminRegionItem): void {
-  editingId.value = row.id;
-  formModel.parentId = row.parentId;
-  formModel.name = row.name;
-  formModel.shortName = row.shortName ?? "";
-  formModel.level = row.level;
-  formModel.code = row.code ?? "";
-  formModel.pinyin = row.pinyin ?? "";
-  formModel.longitude = row.longitude;
-  formModel.latitude = row.latitude;
-  formModel.sortOrder = row.sortOrder ?? 0;
-  formModel.isHot = row.isHot ?? 0;
-  formVisible.value = true;
-}
-
-async function handleSubmit(): Promise<void> {
-  const form = formRef.value;
-  if (!form) {
+async function save(): Promise<void> {
+  if (!form.name.trim()) {
+    alert("请输入名称");
     return;
   }
-  await form.validate();
-  submitting.value = true;
+  saving.value = true;
   try {
-    const payload: RegionPayload = {
-      ...formModel,
-      shortName: formModel.shortName || undefined,
-      code: formModel.code || undefined,
-      pinyin: formModel.pinyin || undefined,
-    };
-    if (editingId.value) {
-      await updateAdminRegion(editingId.value, payload);
-      ElMessage.success("地区更新成功");
+    if (editing.value) {
+      await updateRegion(editing.value.id, {
+        parentId: editing.value.parentId || 0,
+        name: form.name,
+        level: form.level,
+      });
     } else {
-      await createAdminRegion(payload);
-      ElMessage.success("地区创建成功");
+      await createRegion({ parentId: 0, name: form.name, level: form.level });
     }
-    formVisible.value = false;
-    await Promise.all([loadRegionList(), fetchRegionTree()]);
+    closeDialog();
+    loadData();
   } catch {
-    ElMessage.error("保存失败");
+    alert("保存失败");
   } finally {
-    submitting.value = false;
+    saving.value = false;
   }
 }
-
-async function handleDelete(id: number): Promise<void> {
+async function deleteItem(id: number): Promise<void> {
+  if (!confirm("确定删除？")) return;
   try {
-    await deleteAdminRegion(id);
-    ElMessage.success("删除成功");
-    if (regionList.value.length === 1 && query.pageNum > 1) {
-      query.pageNum -= 1;
-    }
-    await Promise.all([loadRegionList(), fetchRegionTree()]);
+    await deleteRegion(id);
+    loadData();
   } catch {
-    ElMessage.error("删除失败");
+    alert("删除失败");
   }
+}
+function closeDialog(): void {
+  showCreate.value = false;
+  editing.value = null;
+  form.name = "";
+  form.level = 1;
 }
 
 onMounted(() => {
-  void loadRegionList();
-  void fetchRegionTree();
+  loadData();
 });
 </script>
 
 <style scoped>
-.card-header {
-  font-size: 16px;
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.title {
+  font-size: 28px;
   font-weight: 700;
+  color: #000;
+  margin: 0 0 32px 0;
 }
-
-.filter-form {
+.header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px 6px;
-  margin-bottom: 12px;
-}
-
-.filter-form :deep(.el-form-item) {
-  margin-bottom: 0;
-  margin-right: 0;
-}
-
-.filter-form :deep(.el-form-item__label) {
-  padding-right: 6px;
-}
-
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.page-container {
-  padding: 0px;
-}
-
-.region-form-dialog :deep(.el-dialog__header) {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
-  margin-right: 0;
-}
-
-.region-form-dialog :deep(.el-dialog__title) {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.region-form-dialog :deep(.el-dialog__body) {
-  padding: 0;
-}
-
-.region-form-dialog .dialog-body-scroll {
-  max-height: calc(85vh - 120px);
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.region-form-dialog .form-section {
+  justify-content: space-between;
   margin-bottom: 24px;
 }
-
-.region-form-dialog .form-section:last-child {
-  margin-bottom: 0;
-}
-
-.region-form-dialog .form-section-title {
+.btn-new {
+  padding: 10px 24px;
   font-size: 14px;
   font-weight: 500;
-  color: #303133;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
+  color: #000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-new:hover {
+  background: #00c665;
+}
+.tree {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 16px;
+}
+.tree-item {
   border-bottom: 1px solid #f0f0f0;
 }
-
-.region-form-dialog :deep(.el-form-item__label) {
-  font-size: 13px;
-  color: #606266;
-  line-height: 20px;
-  padding-bottom: 4px;
+.tree-item:last-child {
+  border-bottom: none;
 }
-
-.region-form-dialog :deep(.el-form-item) {
-  margin-bottom: 16px;
-}
-
-.region-form-dialog :deep(.el-form-item:last-child) {
-  margin-bottom: 0;
-}
-
-.region-form-dialog .form-row-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 16px;
-}
-
-.region-form-dialog .form-row-grid :deep(.el-form-item) {
-  margin-bottom: 16px;
-}
-
-.region-form-dialog :deep(.el-input__wrapper),
-.region-form-dialog :deep(.el-textarea__inner),
-.region-form-dialog :deep(.el-input-number .el-input__wrapper) {
-  border-radius: 4px;
-}
-
-.region-form-dialog :deep(.el-input__wrapper) {
-  border-color: #dcdfe6;
-}
-
-.region-form-dialog :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #409eff inset;
-}
-
-.region-form-dialog .dialog-footer {
+.tree-row {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 12px 20px;
-  border-top: 1px solid #f0f0f0;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
 }
-
-.region-form-dialog :deep(.el-dialog__footer) {
-  padding: 0;
-  border-top: none;
+.tree-row.child {
+  padding-left: 32px;
+}
+.name {
+  flex: 1;
+  font-size: 15px;
+  color: #000;
+  font-weight: 500;
+}
+.level {
+  font-size: 12px;
+  color: #999;
+  background: #f5f5f5;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+}
+.link {
+  font-size: 13px;
+  color: #000;
+  cursor: pointer;
+}
+.link:hover {
+  color: #00c665;
+}
+.link.danger {
+  color: #ff5252;
+}
+.loading,
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 14px;
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 500px;
+}
+.modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #000;
+  margin: 0 0 24px 0;
+}
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+}
+.input {
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+}
+.input:focus {
+  border-color: #00e676;
+}
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+.btn-cancel {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #666;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-submit {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
 </style>

@@ -1,112 +1,90 @@
+<!-- 极简风格管理后台工作台 -->
 <template>
-  <div class="page-container">
-    <el-card class="page-card">
-      <template #header>
-        <div class="card-header">工作台</div>
-      </template>
+  <div class="page">
+    <h1 class="title">工作台</h1>
 
-      <el-row :gutter="12">
-        <el-col :span="6"><el-statistic title="用户总数" :value="overview.totalUsers" /></el-col>
-        <el-col :span="6">
-          <el-statistic title="景点总数" :value="overview.totalScenicSpots" />
-        </el-col>
-        <el-col :span="6"><el-statistic title="评论总数" :value="overview.totalReviews" /></el-col>
-        <el-col :span="6">
-          <el-statistic title="旅行计划数" :value="overview.totalTravelPlans" />
-        </el-col>
-      </el-row>
-      <el-row :gutter="12" style="margin-top: 12px">
-        <el-col :span="6">
-          <el-statistic title="推荐请求数" :value="overview.totalRecommendRequests" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="LLM 调用数" :value="overview.totalLlmCalls" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="浏览总数" :value="overview.totalBrowseCount" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic title="收藏总数" :value="overview.totalFavoriteCount" />
-        </el-col>
-      </el-row>
+    <!-- 统计卡片 -->
+    <div class="stat-grid">
+      <div v-for="s in stats" :key="s.label" class="stat-card">
+        <div class="stat-value">{{ s.value }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </div>
+    </div>
 
-      <el-divider content-position="left">景点热度排行榜</el-divider>
-      <el-table v-loading="hotLoading" :data="hotRanking.slice(0, 20)">
-        <el-table-column label="排名" width="70">
-          <template #default="scope">{{ scope.$index + 1 }}</template>
-        </el-table-column>
-        <el-table-column prop="scenicName" label="景点名称" min-width="160" />
-        <el-table-column prop="pvCount" label="PV" width="90" />
-        <el-table-column prop="uvCount" label="UV" width="90" />
-        <el-table-column prop="favoriteCount" label="收藏数" width="100" />
-        <el-table-column prop="reviewCount" label="评论数" width="100" />
-        <el-table-column prop="recommendShowCount" label="推荐展示数" width="120" />
-        <el-table-column prop="recommendClickCount" label="推荐点击数" width="120" />
-        <el-table-column label="平均评分" width="100">
-          <template #default="scope">{{ formatOneDecimal(scope.row.avgRating) }}</template>
-        </el-table-column>
-      </el-table>
+    <!-- 景点热度排行 -->
+    <section class="section">
+      <h2 class="section-title">景点热度排行</h2>
+      <div v-if="hotLoading" class="loading">加载中...</div>
+      <div v-else-if="hotRanking.length === 0" class="empty">暂无数据</div>
+      <div v-else class="rank-list">
+        <div v-for="(item, idx) in hotRanking.slice(0, 10)" :key="item.scenicId" class="rank-item">
+          <span class="rank" :class="{ top: idx < 3 }">{{ idx + 1 }}</span>
+          <span class="name">{{ item.scenicName }}</span>
+          <span class="count">PV {{ item.pvCount || 0 }}</span>
+        </div>
+      </div>
+    </section>
 
-      <el-divider content-position="left">推荐分析摘要</el-divider>
-      <el-descriptions v-loading="recommendLoading" :column="3" border>
-        <el-descriptions-item label="总推荐请求数">
-          {{ safeInt(recommend.totalRecommendRequests) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="总推荐点击数">
-          {{ safeInt(recommend.totalRecommendClicks) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="总推荐收藏数">
-          {{ safeInt(recommend.totalRecommendFavorites) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="点击率">
-          {{ formatPercent(recommend.clickRate) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="收藏率">
-          {{ formatPercent(recommend.favoriteRate) }}
-        </el-descriptions-item>
-      </el-descriptions>
+    <!-- 推荐分析 -->
+    <section class="section">
+      <h2 class="section-title">推荐分析</h2>
+      <div v-if="recLoading" class="loading">加载中...</div>
+      <div v-else class="stat-grid small">
+        <div class="stat-card">
+          <div class="stat-value">{{ safeInt(recommend.totalRecommendRequests) }}</div>
+          <div class="stat-label">总推荐请求</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ safeInt(recommend.totalRecommendClicks) }}</div>
+          <div class="stat-label">总推荐点击</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ formatPercent(recommend.clickRate) }}</div>
+          <div class="stat-label">点击率</div>
+        </div>
+      </div>
+    </section>
 
-      <el-divider content-position="left">LLM 分析摘要</el-divider>
-      <el-descriptions v-loading="llmLoading" :column="3" border>
-        <el-descriptions-item label="总调用次数">
-          {{ safeInt(llm.totalCallCount) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="成功次数">
-          {{ safeInt(llm.successCallCount) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="失败次数">
-          {{ safeInt(llm.failCallCount) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="总 Token 数">
-          {{ safeInt(llm.totalTokens) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="总费用">
-          {{ formatCost(llm.totalCostAmount) }}
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+    <!-- LLM 分析 -->
+    <section class="section">
+      <h2 class="section-title">LLM 分析</h2>
+      <div v-if="llmLoading" class="loading">加载中...</div>
+      <div v-else class="stat-grid small">
+        <div class="stat-card">
+          <div class="stat-value">{{ safeInt(llm.totalCallCount) }}</div>
+          <div class="stat-label">总调用次数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ safeInt(llm.successCallCount) }}</div>
+          <div class="stat-label">成功次数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ safeInt(llm.failCallCount) }}</div>
+          <div class="stat-label">失败次数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ safeInt(llm.totalTokens) }}</div>
+          <div class="stat-label">总 Token</div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
+import { reactive, ref, onMounted } from "vue";
 import {
-  getDashboardLlmAnalysis,
   getDashboardOverview,
-  getDashboardRecommendAnalysis,
   getDashboardScenicHotRanking,
-  type DashboardOverview,
-  type LlmAnalysisSummary,
-  type RecommendAnalysisSummary,
-  type ScenicHotRankingItem,
+  getDashboardRecommendAnalysis,
+  getDashboardLlmAnalysis,
 } from "@/api/dashboard";
 
 const hotLoading = ref(false);
-const recommendLoading = ref(false);
+const recLoading = ref(false);
 const llmLoading = ref(false);
 
-const overview = reactive<DashboardOverview>({
+const overview = reactive({
   totalUsers: 0,
   totalScenicSpots: 0,
   totalReviews: 0,
@@ -117,110 +95,230 @@ const overview = reactive<DashboardOverview>({
   totalFavoriteCount: 0,
 });
 
-const hotRanking = ref<ScenicHotRankingItem[]>([]);
-const recommend = reactive<RecommendAnalysisSummary>({});
-const llm = reactive<LlmAnalysisSummary>({});
+const stats = ref<{ label: string; value: number }[]>([]);
 
-function safeInt(value?: number): number {
-  if (value == null || Number.isNaN(Number(value))) {
-    return 0;
-  }
-  return Math.trunc(Number(value));
+function buildStats(): void {
+  stats.value = [
+    { label: "用户总数", value: overview.totalUsers },
+    { label: "景点总数", value: overview.totalScenicSpots },
+    { label: "评论总数", value: overview.totalReviews },
+    { label: "行程总数", value: overview.totalTravelPlans },
+    { label: "推荐请求", value: overview.totalRecommendRequests },
+    { label: "LLM 调用", value: overview.totalLlmCalls },
+    { label: "浏览总数", value: overview.totalBrowseCount },
+    { label: "收藏总数", value: overview.totalFavoriteCount },
+  ];
 }
 
-function formatOneDecimal(value?: number): string {
-  if (value == null || Number.isNaN(Number(value))) {
-    return "-";
-  }
-  return Number(value).toFixed(1);
-}
+const hotRanking = ref<any[]>([]);
 
-function formatPercent(value?: number): string {
-  if (value == null || Number.isNaN(Number(value))) {
-    return "0.00%";
-  }
-  return `${(Number(value) * 100).toFixed(2)}%`;
-}
-
-function formatCost(value?: number): string {
-  if (value == null || Number.isNaN(Number(value))) {
-    return "0.0000 元";
-  }
-  return `${Number(value).toFixed(4)} 元`;
-}
-
-async function loadOverview(): Promise<void> {
-  try {
-    const data = await getDashboardOverview();
-    Object.assign(overview, data);
-  } catch {
-    ElMessage.warning("概览数据加载失败");
-  }
-}
-
-async function loadHotRanking(): Promise<void> {
+async function loadHot(): Promise<void> {
   hotLoading.value = true;
   try {
     hotRanking.value = await getDashboardScenicHotRanking();
-  } catch {
-    ElMessage.warning("热度排行加载失败");
   } finally {
     hotLoading.value = false;
   }
 }
 
+const recommend = reactive({
+  totalRecommendRequests: 0,
+  totalRecommendClicks: 0,
+  clickRate: 0,
+});
+
 async function loadRecommend(): Promise<void> {
-  recommendLoading.value = true;
+  recLoading.value = true;
   try {
     Object.assign(recommend, await getDashboardRecommendAnalysis());
-  } catch {
-    ElMessage.warning("推荐分析加载失败");
   } finally {
-    recommendLoading.value = false;
+    recLoading.value = false;
   }
 }
+
+const llm = reactive({
+  totalCallCount: 0,
+  successCallCount: 0,
+  failCallCount: 0,
+  totalTokens: 0,
+});
 
 async function loadLlm(): Promise<void> {
   llmLoading.value = true;
   try {
     Object.assign(llm, await getDashboardLlmAnalysis());
-  } catch {
-    ElMessage.warning("LLM 分析加载失败");
   } finally {
     llmLoading.value = false;
   }
 }
 
-onMounted(() => {
-  void Promise.all([loadOverview(), loadHotRanking(), loadRecommend(), loadLlm()]);
+function safeInt(v?: number): number {
+  return typeof v === "number" && !isNaN(v) ? Math.trunc(v) : 0;
+}
+
+function formatPercent(v?: number): string {
+  return typeof v === "number" && !isNaN(v) ? `${(v * 100).toFixed(2)}%` : "0.00%";
+}
+
+onMounted(async () => {
+  try {
+    Object.assign(overview, await getDashboardOverview());
+    buildStats();
+  } catch {
+    /* empty */
+  }
+  loadHot();
+  loadRecommend();
+  loadLlm();
 });
 </script>
 
 <style scoped>
-.card-header {
-  font-size: 16px;
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.title {
+  font-size: 32px;
   font-weight: 700;
+  color: #000000;
+  margin: 0 0 32px 0;
 }
 
-.filter-form {
-  margin-bottom: 12px;
+/* Stat grid */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 48px;
 }
 
-.pagination-row {
+.stat-grid.small {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stat-grid.small {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-grid.small {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  border-color: #00e676;
+  box-shadow: 0 2px 8px rgba(0, 230, 118, 0.1);
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #999999;
+}
+
+/* Section */
+.section {
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 20px 0;
+}
+
+/* Rank list */
+.rank-list {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.text-muted {
-  color: #909399;
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  transition: border-color 0.2s;
 }
 
-.tag-gap {
-  margin-right: 6px;
+.rank-item:hover {
+  border-color: #00e676;
 }
 
-.page-container {
-  padding: 0px;
+.rank {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #999999;
+  background: #f5f5f5;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rank.top {
+  background: #00e676;
+  color: #000000;
+}
+
+.name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: #000000;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  font-size: 13px;
+  color: #999999;
+  flex-shrink: 0;
+}
+
+/* Loading / Empty */
+.loading,
+.empty {
+  padding: 40px;
+  text-align: center;
+  color: #999999;
+  font-size: 14px;
 }
 </style>

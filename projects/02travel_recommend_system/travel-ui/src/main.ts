@@ -5,7 +5,7 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import { setupStore } from "@/store";
 import { setupRouter } from "@/router";
-import "./styles.css";
+import "@/styles/global.css";
 
 // 修复按需引入时，编程式 API（如 ElMessage）不显示样式的问题
 import "element-plus/theme-chalk/src/message.scss";

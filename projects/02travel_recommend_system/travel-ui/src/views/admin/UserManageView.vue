@@ -1,269 +1,232 @@
+<!-- 极简风格用户管理页 -->
 <template>
-  <div class="page-container">
-    <el-card class="page-card">
-      <template #header>
-        <div class="card-header">用户管理</div>
-      </template>
+  <div class="page">
+    <h1 class="title">用户管理</h1>
 
-      <el-form :inline="true" :model="query" class="filter-form">
-        <el-form-item label="关键词">
-          <el-input
-            v-model="query.keyword"
-            clearable
-            style="width: 160px"
-            placeholder="用户名/昵称/手机号"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 100px">
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item style="margin-left: auto">
-          <el-button type="primary" @click="onSearch">查询</el-button>
-          <el-button @click="onReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+    <div class="filter-bar">
+      <input
+        v-model="query.keyword"
+        class="filter-input"
+        placeholder="搜索用户名/手机号..."
+        @keyup.enter="loadData"
+      />
+      <select v-model="query.status" class="filter-select" @change="loadData">
+        <option :value="undefined">全部状态</option>
+        <option :value="1">启用</option>
+        <option :value="0">禁用</option>
+      </select>
+      <button class="btn-search" @click="loadData">查询</button>
+      <button class="btn-reset" @click="resetQuery">重置</button>
+    </div>
 
-      <el-table v-loading="loading" :data="userList">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column label="头像" width="80">
-          <template #default="scope">
-            <el-avatar :size="40" :src="scope.row.avatar">
-              {{ scope.row.nickname?.charAt(0) || "U" }}
-            </el-avatar>
-          </template>
-        </el-table-column>
-        <el-table-column prop="username" label="用户名" min-width="120" />
-        <el-table-column prop="nickname" label="昵称" min-width="120" />
-        <el-table-column label="性别" width="80">
-          <template #default="scope">
-            {{ formatGender(scope.row.gender) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="90">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ findDictDesc(statusOptions, scope.row.status, "-") }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="phone" label="手机号" width="140" />
-        <el-table-column prop="lastLoginTime" label="最后登录" width="180" />
-        <el-table-column prop="createdAt" label="注册时间" width="180" />
-        <el-table-column prop="birthday" label="生日" width="120" />
-        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="scope">
-            <el-button link type="primary" @click="openDetail(scope.row.id)">详情</el-button>
-            <el-popconfirm
-              v-if="scope.row.status === 0"
-              title="确认启用该用户吗？"
-              confirm-button-text="确认"
-              cancel-button-text="取消"
-              @confirm="onToggleStatus(scope.row, 1)"
-            >
-              <template #reference>
-                <el-button link type="success">启用</el-button>
-              </template>
-            </el-popconfirm>
-            <el-popconfirm
-              v-if="scope.row.status === 1"
-              title="确认禁用该用户吗？"
-              confirm-button-text="确认"
-              cancel-button-text="取消"
-              @confirm="onToggleStatus(scope.row, 0)"
-            >
-              <template #reference>
-                <el-button link type="danger">禁用</el-button>
-              </template>
-            </el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
+    <div v-if="loading" class="loading">加载中...</div>
+    <div v-else-if="list.length === 0" class="empty">暂无用户数据</div>
 
-      <div class="pagination-row">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="loadUsers"
-          @size-change="onSizeChange"
-        />
-      </div>
-    </el-card>
-
-    <el-dialog v-model="detailVisible" title="用户详情" width="760px" destroy-on-close>
-      <div v-if="detailData" class="detail-container">
-        <div class="user-avatar-section">
-          <el-avatar :size="80" :src="detailData.avatar">
-            {{ detailData.nickname?.charAt(0) || "U" }}
-          </el-avatar>
-        </div>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="用户ID">{{ detailData.id }}</el-descriptions-item>
-          <el-descriptions-item label="用户名">
-            {{ detailData.username || "-" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="昵称">{{ detailData.nickname || "-" }}</el-descriptions-item>
-          <el-descriptions-item label="性别">
-            {{ formatGender(detailData.gender) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="生日">{{ detailData.birthday || "-" }}</el-descriptions-item>
-          <el-descriptions-item label="手机号">{{ detailData.phone || "-" }}</el-descriptions-item>
-          <el-descriptions-item label="邮箱">{{ detailData.email || "-" }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            {{ findDictDesc(statusOptions, detailData.status, "-") }}
-          </el-descriptions-item>
-          <el-descriptions-item label="注册时间">
-            {{ detailData.createdAt || "-" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="最后登录" :span="2">
-            {{ detailData.lastLoginTime || "-" }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </div>
-    </el-dialog>
+    <div v-else class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>用户名</th>
+            <th>昵称</th>
+            <th>手机号</th>
+            <th>性别</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in list" :key="item.id">
+            <td>{{ item.id }}</td>
+            <td>{{ item.username }}</td>
+            <td>{{ item.nickname || "-" }}</td>
+            <td>{{ item.phone || "-" }}</td>
+            <td>{{ item.gender === 1 ? "男" : item.gender === 2 ? "女" : "未知" }}</td>
+            <td>
+              <span class="badge" :class="item.status === 1 ? 'on' : 'off'">
+                {{ item.status === 1 ? "启用" : "禁用" }}
+              </span>
+            </td>
+            <td>
+              <span class="link" @click="toggleStatus(item)">
+                {{ item.status === 1 ? "禁用" : "启用" }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
+import { reactive, ref, onMounted } from "vue";
 import {
-  getAdminUserDetail,
-  getAdminUserPage,
-  updateAdminUserStatus,
-  type AdminUserItem,
-  type AdminUserQuery,
+  getAdminUserPage as getUserPage,
+  updateAdminUserStatus as updateUserStatus,
 } from "@/api/user-admin";
-import { getCommonStatusDict, getGenderDict } from "@/api/dict";
-import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
-
-const { options: statusOptions } = useDictOptions("common-status", getCommonStatusDict);
-const { options: genderOptions } = useDictOptions("gender", getGenderDict);
 
 const loading = ref(false);
-const total = ref(0);
-const userList = ref<AdminUserItem[]>([]);
-const detailVisible = ref(false);
-const detailData = ref<AdminUserItem | null>(null);
+const list = ref<any[]>([]);
 
-const query = reactive<AdminUserQuery>({
-  pageNum: 1,
-  pageSize: 10,
+const query = reactive({
   keyword: "",
-  status: undefined,
+  status: undefined as number | undefined,
 });
 
-function formatGender(gender: number | undefined): string {
-  return findDictDesc(genderOptions.value, gender, "未知");
-}
-
-async function loadUsers(): Promise<void> {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    const page = await getAdminUserPage({
-      ...query,
+    const res = await getUserPage({
+      pageNum: 1,
+      pageSize: 50,
       keyword: query.keyword || undefined,
     });
-    userList.value = page.records;
-    total.value = page.total;
+    list.value = res.records || [];
   } catch {
-    ElMessage.error("用户列表加载失败");
+    alert("加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-function onSearch(): void {
-  query.pageNum = 1;
-  void loadUsers();
-}
-
-function onReset(): void {
+function resetQuery(): void {
   query.keyword = "";
   query.status = undefined;
-  query.pageNum = 1;
-  void loadUsers();
+  loadData();
 }
 
-function onSizeChange(): void {
-  query.pageNum = 1;
-  void loadUsers();
-}
-
-async function onToggleStatus(row: AdminUserItem, status: number): Promise<void> {
+async function toggleStatus(item: any): Promise<void> {
+  const newStatus = item.status === 1 ? 0 : 1;
+  if (!confirm(`确认${newStatus === 1 ? "启用" : "禁用"}该用户？`)) return;
   try {
-    await updateAdminUserStatus(row.id, status);
-    ElMessage.success("状态已更新");
-    await loadUsers();
+    await updateUserStatus(item.id, newStatus);
+    loadData();
   } catch {
-    ElMessage.error("状态更新失败");
-  }
-}
-
-async function openDetail(id: number): Promise<void> {
-  try {
-    detailData.value = await getAdminUserDetail(id);
-    detailVisible.value = true;
-  } catch {
-    ElMessage.error("用户详情加载失败");
+    alert("操作失败");
   }
 }
 
 onMounted(() => {
-  void loadUsers();
+  loadData();
 });
 </script>
 
 <style scoped>
-.card-header {
-  font-size: 16px;
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.title {
+  font-size: 28px;
   font-weight: 700;
+  color: #000;
+  margin: 0 0 32px 0;
 }
-
-.filter-form {
+.filter-bar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 6px;
-  margin-bottom: 12px;
-}
-
-.filter-form :deep(.el-form-item) {
-  margin-bottom: 0;
-  margin-right: 0;
-}
-
-.filter-form :deep(.el-form-item__label) {
-  padding-right: 6px;
-}
-
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.page-container {
-  padding: 0px;
-}
-
-.detail-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.user-avatar-section {
+  gap: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+}
+.filter-input:focus {
+  border-color: #00e676;
+}
+.filter-select {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  cursor: pointer;
+}
+.btn-search {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-reset {
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #666;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.table-wrap {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  background: #f9f9f9;
+  border-bottom: 1px solid #f0f0f0;
+}
+.table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #000;
+  border-bottom: 1px solid #f0f0f0;
+}
+.table tr:hover {
+  background: #f9fff9;
+}
+.badge {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+}
+.badge.on {
+  background: #e8f5e9;
+  color: #000;
+}
+.badge.off {
+  background: #f5f5f5;
+  color: #999;
+}
+.link {
+  font-size: 13px;
+  color: #000;
+  cursor: pointer;
+}
+.link:hover {
+  color: #00c665;
+}
+.loading,
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 14px;
 }
 </style>

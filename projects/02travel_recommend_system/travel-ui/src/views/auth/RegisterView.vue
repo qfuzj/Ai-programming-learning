@@ -1,57 +1,92 @@
+<!-- 极简风格用户注册页 -->
 <template>
-  <div class="register-page">
-    <el-card class="register-card">
-      <template #header>
-        <strong>用户注册</strong>
-      </template>
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="brand">智游</div>
+        <h1 class="title">注册</h1>
+        <p class="subtitle">创建您的账户</p>
+      </div>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent>
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入手机号" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" />
-        </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input
+      <form @submit.prevent="onSubmit">
+        <div class="form-group">
+          <label class="form-label">用户名</label>
+          <input
+            v-model="form.username"
+            type="text"
+            class="form-input"
+            placeholder="请输入用户名"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">手机号</label>
+          <input
+            v-model="form.phone"
+            type="tel"
+            class="form-input"
+            placeholder="请输入手机号"
+            autocomplete="tel"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input
+            v-model="form.password"
+            type="password"
+            class="form-input"
+            placeholder="请输入密码（6-20位）"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">确认密码</label>
+          <input
             v-model="form.confirmPassword"
             type="password"
-            show-password
+            class="form-input"
             placeholder="请再次输入密码"
+            autocomplete="new-password"
           />
-        </el-form-item>
-        <el-form-item label="验证码" prop="captchaCode">
-          <div class="captcha-row">
-            <el-input v-model="form.captchaCode" maxlength="6" placeholder="请输入验证码" />
-            <el-image class="captcha-image" :src="captchaImage" fit="contain" @click="loadCaptcha">
-              <template #error>
-                <div class="captcha-placeholder" @click="loadCaptcha">点击刷新</div>
-              </template>
-            </el-image>
-          </div>
-        </el-form-item>
+        </div>
 
-        <el-button type="primary" :loading="submitting" @click="onSubmit">注册</el-button>
-        <el-button text @click="goLogin">已有账号，去登录</el-button>
-      </el-form>
-    </el-card>
+        <div class="form-group">
+          <label class="form-label">验证码</label>
+          <div class="captcha-row">
+            <input
+              v-model="form.captchaCode"
+              type="text"
+              class="form-input"
+              placeholder="验证码"
+              maxlength="6"
+            />
+            <img :src="captchaImage" class="captcha-img" alt="验证码" @click="loadCaptcha" />
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" :disabled="submitting">
+          {{ submitting ? "注册中..." : "注册" }}
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <span class="link" @click="goLogin">已有账号，去登录</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
-import type { FormInstance, FormRules } from "element-plus";
 import { useRouter } from "vue-router";
 import { getCaptcha, registerUser } from "@/api/auth";
 import { ROUTE_PATHS } from "@/router/constants";
 import type { RegisterPayload } from "@/types/auth";
 
 const router = useRouter();
-const formRef = ref<FormInstance>();
 const submitting = ref(false);
 const captchaImage = ref("");
 
@@ -64,32 +99,6 @@ const form = reactive<RegisterPayload>({
   captchaCode: "",
 });
 
-const rules: FormRules<RegisterPayload> = {
-  username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
-  phone: [
-    { required: true, message: "请输入手机号", trigger: "blur" },
-    { pattern: /^1\d{10}$/, message: "手机号格式不正确", trigger: "blur" },
-  ],
-  password: [
-    { required: true, message: "请输入密码", trigger: "blur" },
-    { min: 6, max: 20, message: "密码长度为 6-20 位", trigger: "blur" },
-  ],
-  confirmPassword: [
-    { required: true, message: "请再次输入密码", trigger: "blur" },
-    {
-      validator: (_rule, value, callback) => {
-        if (value !== form.password) {
-          callback(new Error("两次输入的密码不一致"));
-          return;
-        }
-        callback();
-      },
-      trigger: "blur",
-    },
-  ],
-  captchaCode: [{ required: true, message: "请输入验证码", trigger: "blur" }],
-};
-
 async function loadCaptcha(): Promise<void> {
   const res = await getCaptcha("register");
   form.captchaId = res.captchaId;
@@ -98,17 +107,24 @@ async function loadCaptcha(): Promise<void> {
 }
 
 async function onSubmit(): Promise<void> {
-  const formIns = formRef.value;
-  if (!formIns) {
+  if (!form.username.trim()) {
+    alert("请输入用户名");
     return;
   }
-  const valid = await formIns.validate().catch(() => false);
-  if (!valid) {
+  if (!/^1\d{10}$/.test(form.phone.trim())) {
+    alert("请输入正确的手机号");
     return;
   }
-  if (!form.captchaId) {
-    ElMessage.warning("验证码已失效，请刷新后重试");
-    await loadCaptcha();
+  if (form.password.length < 6 || form.password.length > 20) {
+    alert("密码长度为6-20位");
+    return;
+  }
+  if (form.password !== form.confirmPassword) {
+    alert("两次输入的密码不一致");
+    return;
+  }
+  if (!form.captchaId || !form.captchaCode) {
+    alert("请先输入验证码");
     return;
   }
 
@@ -136,46 +152,137 @@ async function onSubmit(): Promise<void> {
 }
 
 function goLogin(): void {
-  void router.push(ROUTE_PATHS.USER_LOGIN);
+  router.push(ROUTE_PATHS.USER_LOGIN);
 }
 
 onMounted(() => {
-  void loadCaptcha();
+  loadCaptcha();
 });
 </script>
 
 <style scoped>
-.register-page {
+.auth-page {
   display: grid;
   place-items: center;
   min-height: 100vh;
+  background: #ffffff;
 }
 
-.register-card {
-  width: 430px;
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 0;
+}
+
+.brand {
+  font-size: 28px;
+  font-weight: 800;
+  color: #00e676;
+  margin-bottom: 32px;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: #999999;
+  margin: 0 0 40px 0;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  color: #000000;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: #00e676;
+}
+
+.form-input::placeholder {
+  color: #999999;
 }
 
 .captcha-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
-.captcha-image {
-  width: 130px;
-  height: 48px;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
+.captcha-row .form-input {
+  flex: 1;
 }
 
-.captcha-placeholder {
-  display: grid;
-  place-items: center;
+.captcha-img {
+  width: 120px;
+  height: 44px;
+  cursor: pointer;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.submit-btn {
   width: 100%;
-  height: 100%;
-  font-size: 12px;
-  color: #909399;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
+  background: #00e676;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+
+.submit-btn:hover {
+  background: #00c665;
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  font-size: 14px;
+}
+
+.link {
+  color: #000000;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.link:hover {
+  color: #00c665;
 }
 </style>

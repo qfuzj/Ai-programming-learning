@@ -1,149 +1,290 @@
-<!-- AI 对话详情页：展示消息并发送新消息。 -->
+<!-- 极简风格AI对话详情页 -->
 <template>
-  <PageStub :title="pageTitle" description="支持查看历史消息并继续对话。">
-    <el-skeleton v-if="loading" animated :rows="6" />
-    <template v-else>
-      <el-empty v-if="messages.length === 0" description="暂无消息" />
+  <div class="page">
+    <div class="header">
+      <button class="btn-back" @click="router.push('/ai/chat')">← 返回</button>
+      <h1 class="title">{{ title }}</h1>
+    </div>
+
+    <div class="chat-box">
+      <div v-if="loading" class="loading">加载中...</div>
+
+      <div v-else-if="messages.length === 0" class="empty">暂无消息，开始对话吧</div>
+
       <div v-else class="message-list">
-        <div v-for="item in messages" :key="item.messageId" :class="['message-item', item.role]">
-          <div class="message-role">{{ item.role === "user" ? "我" : "AI" }}</div>
-          <div class="message-content">{{ item.content }}</div>
+        <div v-for="msg in messages" :key="msg.messageId" class="message" :class="msg.role">
+          <div class="avatar">{{ msg.role === "user" ? "我" : "AI" }}</div>
+          <div class="bubble">{{ msg.content }}</div>
         </div>
       </div>
 
-      <el-input v-model="message" type="textarea" :rows="4" placeholder="输入消息并发送" />
-      <div class="action-row">
-        <el-button :loading="sending" type="primary" @click="sendMessage">发送</el-button>
+      <div class="input-bar">
+        <textarea
+          v-model="text"
+          class="input"
+          placeholder="输入消息..."
+          rows="2"
+          @keyup.enter.ctrl="send"
+        ></textarea>
+        <button class="btn-send" :disabled="sending || !text.trim()" @click="send">发送</button>
       </div>
-    </template>
-  </PageStub>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { ref, computed, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import {
-  ContentType,
   getConversationDetail,
   getConversationMessages,
   sendConversationMessage,
   type ChatMessageItem,
+  ContentType,
 } from "@/api/conversation";
 
 const route = useRoute();
-const conversationId = computed(() => Number(route.params.conversationId));
-const pageTitle = ref("会话详情");
+const router = useRouter();
 const loading = ref(false);
 const sending = ref(false);
 const messages = ref<ChatMessageItem[]>([]);
-const message = ref("");
+const text = ref("");
+const title = ref("会话详情");
 
-function buildLocalMessage(payload: {
-  messageId: number;
-  role: "user" | "assistant";
-  content: string;
-  tokensUsed?: number;
-}): ChatMessageItem {
-  return {
-    messageId: payload.messageId,
-    role: payload.role,
-    content: payload.content,
-    contentType: ContentType.TEXT,
-    tokensUsed: payload.tokensUsed ?? 0,
-    llmCallLogId: 0,
-    createdAt: new Date().toISOString(),
-  };
-}
+const conversationId = computed(() => Number(route.params.conversationId));
 
-async function loadConversation(): Promise<void> {
+async function loadData(): Promise<void> {
   const id = conversationId.value;
   if (!id) {
     messages.value = [];
     return;
   }
-
   loading.value = true;
   try {
-    const [detail, messageList] = await Promise.all([
+    const [detail, msgs] = await Promise.all([
       getConversationDetail(id),
       getConversationMessages(id),
     ]);
-    pageTitle.value = detail.title || `会话详情 #${id}`;
-    messages.value = messageList;
+    title.value = detail.title || `会话 #${id}`;
+    messages.value = msgs || [];
+  } catch {
+    alert("加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-async function sendMessage(): Promise<void> {
-  const content = message.value.trim();
-  if (!content || !conversationId.value) {
-    return;
-  }
-
+async function send(): Promise<void> {
+  const content = text.value.trim();
+  if (!content || !conversationId.value) return;
   sending.value = true;
   try {
-    const response = await sendConversationMessage(conversationId.value, content);
-    const userMessage = buildLocalMessage({
-      messageId: response.userMessageId,
-      role: "user",
-      content,
-    });
-    const assistantMessage = buildLocalMessage({
-      messageId: response.assistantMessageId,
-      role: "assistant",
-      content: response.replyContent,
-      tokensUsed: response.tokenUsage,
-    });
-
-    messages.value = [...messages.value, userMessage, assistantMessage];
-    message.value = "";
+    const res = await sendConversationMessage(conversationId.value, content);
+    messages.value = [
+      ...messages.value,
+      buildMsg(res.userMessageId, "user", content),
+      buildMsg(res.assistantMessageId, "assistant", res.replyContent),
+    ];
+    text.value = "";
+  } catch {
+    alert("发送失败");
   } finally {
     sending.value = false;
   }
 }
 
+function buildMsg(id: number, role: "user" | "assistant", content: string): ChatMessageItem {
+  return {
+    messageId: id,
+    role,
+    content,
+    contentType: ContentType.TEXT,
+    tokensUsed: 0,
+    llmCallLogId: 0,
+    createdAt: new Date().toISOString(),
+  };
+}
+
 watch(
   conversationId,
   () => {
-    void loadConversation();
+    if (conversationId.value) loadData();
   },
   { immediate: true }
 );
+onMounted(() => {
+  if (conversationId.value) loadData();
+});
 </script>
 
 <style scoped>
-.message-list {
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 16px;
 }
 
-.message-item {
-  padding: 12px 14px;
-  background: #f8fafc;
-  border-radius: 12px;
-}
-
-.message-item.assistant {
-  background: #eef2ff;
-}
-
-.message-role {
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.message-content {
-  word-break: break-word;
-  white-space: pre-wrap;
-}
-
-.action-row {
+.header {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.btn-back {
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #666666;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  border-color: #000000;
+  color: #000000;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0;
+}
+
+.chat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f9f9f9;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.message.user {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.message.user .avatar {
+  background: #00e676;
+  color: #000000;
+}
+
+.message.assistant .avatar {
+  background: #e0e0e0;
+  color: #000000;
+}
+
+.bubble {
+  max-width: 70%;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  border-radius: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message.user .bubble {
+  background: #00e676;
+  color: #000000;
+  border-bottom-right-radius: 4px;
+}
+
+.message.assistant .bubble {
+  background: #ffffff;
+  color: #000000;
+  border: 1px solid #f0f0f0;
+  border-bottom-left-radius: 4px;
+}
+
+.input-bar {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border-top: 1px solid #f0f0f0;
+  align-items: flex-end;
+}
+
+.input {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #000000;
+  background: #f5f5f5;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  background: #ffffff;
+  border-color: #00e676;
+}
+
+.btn-send {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+  background: #00e676;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-send:hover:not(:disabled) {
+  background: #00c665;
+}
+
+.btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading,
+.empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  color: #999999;
+  font-size: 14px;
 }
 </style>

@@ -93,19 +93,19 @@ export const userRoutes: RouteRecordRaw[] = [
   {
     path: "/login",
     name: "UserLogin",
-    component: () => import("@/views/auth/login.vue"),
+    component: () => import("@/views/auth/UserLoginView.vue"),
     meta: { title: "用户登录", requiresAuth: false, hidden: true },
   },
   {
     path: "/register",
     name: "UserRegister",
-    component: () => import("@/views/auth/register.vue"),
+    component: () => import("@/views/auth/RegisterView.vue"),
     meta: { title: "用户注册", requiresAuth: false, hidden: true },
   },
   {
     path: "/reset-password",
     name: "UserResetPassword",
-    component: () => import("@/views/auth/reset-password.vue"),
+    component: () => import("@/views/auth/ResetPasswordView.vue"),
     meta: { title: "重置密码", requiresAuth: false, hidden: true },
   },
 ];

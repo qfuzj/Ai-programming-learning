@@ -1,244 +1,258 @@
-<!-- 用户端布局：顶部导航 + 主内容区域。 -->
+<!-- 极简风格用户端布局 -->
 <template>
-  <el-container class="user-layout" direction="vertical">
-    <el-header class="user-header">
+  <div class="layout">
+    <header class="header">
       <div class="header-inner">
-        <router-link to="/" class="brand">智游 Advisor</router-link>
-        <div class="header-center">
-          <el-menu
-            :default-active="activePath"
-            mode="horizontal"
-            router
-            :ellipsis="false"
-            class="center-menu"
+        <router-link to="/" class="brand">智游</router-link>
+
+        <nav class="nav">
+          <router-link to="/" class="nav-link" :class="{ active: isActive('/') }">发现</router-link>
+          <router-link to="/scenic" class="nav-link" :class="{ active: isActive('/scenic') }">
+            景点
+          </router-link>
+          <router-link
+            to="/ai/recommend"
+            class="nav-link"
+            :class="{ active: isActive('/ai/recommend') }"
           >
-            <el-menu-item index="/">发现</el-menu-item>
-            <el-menu-item index="/scenic">景点</el-menu-item>
-            <el-menu-item index="/ai/recommend">AI 推荐</el-menu-item>
-            <el-menu-item index="/ai/chat">AI 聊天</el-menu-item>
-          </el-menu>
-        </div>
+            推荐
+          </router-link>
+          <router-link to="/ai/chat" class="nav-link" :class="{ active: isActive('/ai/chat') }">
+            对话
+          </router-link>
+        </nav>
+
         <div class="header-right">
-          <el-dropdown v-if="userStore.isAuthenticated" trigger="click" @command="handleCommand">
-            <div class="user-dropdown">
-              <el-avatar :size="32" :src="displayAvatar">
-                {{ displayUserName.charAt(0) }}
-              </el-avatar>
-              <span class="user-name">
-                {{ displayUserName }}
-              </span>
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          <template v-if="userStore.isAuthenticated">
+            <div class="user-menu" @click="showDropdown = !showDropdown">
+              <div class="avatar">{{ displayUserName.charAt(0) }}</div>
+              <span class="username">{{ displayUserName }}</span>
             </div>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="/profile">个人中心</el-dropdown-item>
-                <el-dropdown-item command="/itinerary">我的行程</el-dropdown-item>
-                <el-dropdown-item command="/itinerary/ai-generate">AI 生成行程</el-dropdown-item>
-                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-          <el-button
-            v-else
-            type="primary"
-            round
-            class="login-btn"
-            @click="router.push(ROUTE_PATHS.USER_LOGIN)"
-          >
+            <div v-if="showDropdown" class="dropdown" @click.stop>
+              <router-link to="/profile" class="dropdown-item">个人中心</router-link>
+              <router-link to="/itinerary" class="dropdown-item">我的行程</router-link>
+              <router-link to="/itinerary/ai-generate" class="dropdown-item">
+                AI生成行程
+              </router-link>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-item danger" @click="onLogout">退出登录</div>
+            </div>
+          </template>
+          <button v-else class="btn-login" @click="router.push(ROUTE_PATHS.USER_LOGIN)">
             登录
-          </el-button>
+          </button>
         </div>
       </div>
-    </el-header>
-    <el-main class="user-main">
+    </header>
+
+    <main class="main">
       <router-view />
-    </el-main>
-  </el-container>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/store";
 import { ROUTE_PATHS } from "@/router/constants";
-import { ArrowDown } from "@element-plus/icons-vue";
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
-const USER_MENU_INDEXES = [ROUTE_PATHS.USER_HOME, "/scenic", "/ai/recommend", "/ai/chat"] as const;
-const DEFAULT_AVATAR = "https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png";
-
-const displayAvatar = computed(() => {
-  const avatar = userStore.profile?.avatar;
-  if (!avatar) return DEFAULT_AVATAR;
-  const trimmed = avatar.trim();
-  if (!trimmed || trimmed === "null" || trimmed === "undefined") {
-    return DEFAULT_AVATAR;
-  }
-  return trimmed;
-});
+const showDropdown = ref(false);
 
 const displayUserName = computed(() => {
-  return userStore.profile?.nickname || userStore.profile?.username || "个人中心";
+  return userStore.profile?.nickname || userStore.profile?.username || "用户";
 });
 
-const activePath = computed(() => {
-  const currentPath = route.path;
-
-  if (currentPath === ROUTE_PATHS.USER_HOME) {
-    return ROUTE_PATHS.USER_HOME;
-  }
-
-  const matchedMenu = USER_MENU_INDEXES.find(
-    (menuPath) =>
-      menuPath !== ROUTE_PATHS.USER_HOME &&
-      (currentPath === menuPath || currentPath.startsWith(`${menuPath}/`))
-  );
-
-  return matchedMenu ?? currentPath;
-});
-
-async function handleCommand(command: string) {
-  if (command === "logout") {
-    await onLogout();
-  } else {
-    void router.push(command);
-  }
+function isActive(path: string): boolean {
+  if (path === "/") return route.path === "/";
+  return route.path.startsWith(path);
 }
 
 async function onLogout(): Promise<void> {
   try {
     await userStore.logout();
   } finally {
+    showDropdown.value = false;
     await router.push(ROUTE_PATHS.USER_LOGIN);
   }
 }
+
+function handleClickOutside(e: Event) {
+  const target = e.target as HTMLElement;
+  if (!target.closest(".user-menu") && !target.closest(".dropdown")) {
+    showDropdown.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 </script>
 
 <style scoped>
-.user-layout {
-  width: 100% !important;
-  max-width: 100% !important;
+.layout {
   min-height: 100vh;
+  background: #ffffff;
 }
 
-:deep(.el-container) {
-  width: 100% !important;
-}
-
-.user-header {
+.header {
   position: sticky;
   top: 0;
   z-index: 100;
-  height: 54px;
-  padding: 0;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .header-inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   max-width: 1200px;
-  height: 100%;
+  height: 64px;
   padding: 0 24px;
   margin: 0 auto;
 }
 
 .brand {
-  flex-shrink: 0;
   font-size: 24px;
-  font-weight: 700;
-  color: #000;
-  text-decoration: none;
-  cursor: pointer;
+  font-weight: 800;
+  color: #000000;
+  letter-spacing: -0.5px;
 }
 
-.header-center {
+.nav {
   display: flex;
-  flex: 1;
-  justify-content: center;
+  gap: 32px;
+  align-items: center;
+  margin-left: 64px;
 }
 
-.center-menu {
-  height: 54px;
-  font-size: 16px;
+.nav-link {
+  font-size: 15px;
   font-weight: 500;
-  background-color: transparent;
-  border-bottom: none !important;
+  color: #999999;
+  transition: color 0.2s;
+  padding: 4px 0;
+  position: relative;
 }
 
-.center-menu:deep(.el-menu-item),
-.center-menu:deep(.el-sub-menu__title) {
-  font-size: 16px;
-  color: #000;
-  background-color: transparent !important;
-  border-bottom: 2px solid transparent !important;
+.nav-link:hover {
+  color: #000000;
 }
 
-.center-menu:deep(.el-menu-item:hover),
-.center-menu:deep(.el-sub-menu__title:hover) {
-  color: #000;
-  border-bottom-color: #000 !important;
+.nav-link.active {
+  color: #000000;
 }
 
-.center-menu:deep(.el-menu-item.is-active) {
-  color: #000 !important;
-  border-bottom: 2px solid #000 !important;
+.nav-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #00e676;
 }
 
 .header-right {
-  display: flex;
-  flex-shrink: 0;
-  gap: 12px;
-  align-items: center;
+  margin-left: auto;
+  position: relative;
 }
 
-.user-dropdown {
+.user-menu {
   display: flex;
-  gap: 8px;
   align-items: center;
-  padding: 4px 12px 4px 6px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #000;
+  gap: 10px;
   cursor: pointer;
+  padding: 6px 12px;
   border-radius: 999px;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
 }
 
-.user-name {
+.user-menu:hover {
+  background: #f5f5f5;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: #00e676;
+  color: #000000;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 50%;
+}
+
+.username {
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.user-dropdown:hover {
-  background-color: #f5f7fa;
+.dropdown {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  min-width: 180px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.user-main {
-  position: relative;
-  top: 0;
-  flex: 1;
-  width: 100% !important;
-  min-width: 0;
-  padding: 0;
-  overflow: visible;
-  /* Prevent el-main from clipping vertically */
-  background: #fff;
+.dropdown-item {
+  display: block;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #000000;
+  border-radius: 8px;
+  transition: background 0.2s;
 }
 
-.login-btn {
-  color: #fff;
-  background-color: #000;
+.dropdown-item:hover {
+  background: #f5f5f5;
+}
+
+.dropdown-item.danger {
+  color: #ff5252;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 4px 0;
+}
+
+.btn-login {
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000000;
+  background: #00e676;
   border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.login-btn:hover {
-  background-color: #333;
+.btn-login:hover {
+  background: #00c665;
+}
+
+.main {
+  min-height: calc(100vh - 64px);
 }
 </style>

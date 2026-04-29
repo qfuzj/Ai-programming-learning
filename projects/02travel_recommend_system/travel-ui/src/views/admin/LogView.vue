@@ -1,250 +1,112 @@
+<!-- 极简风格操作日志页 -->
 <template>
-  <div class="page-container">
-    <el-card class="page-card">
-      <template #header>
-        <div class="card-header">操作日志</div>
-      </template>
+  <div class="page">
+    <h1 class="title">操作日志</h1>
 
-      <el-form :inline="true" :model="query" class="filter-form">
-        <el-form-item label="模块">
-          <el-select v-model="query.module" clearable placeholder="全部" style="width: 120px">
-            <el-option
-              v-for="item in moduleOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="动作">
-          <el-input v-model="query.action" clearable placeholder="如 update" style="width: 120px" />
-        </el-form-item>
-        <el-form-item label="管理员">
-          <el-input
-            v-model="query.adminUsername"
-            clearable
-            placeholder="管理员用户名"
-            style="width: 140px"
-          />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" clearable placeholder="全部" style="width: 100px">
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.code"
-              :label="item.desc"
-              :value="item.code"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item style="margin-left: auto">
-          <el-button type="primary" @click="onSearch">查询</el-button>
-          <el-button @click="onReset">重置</el-button>
-        </el-form-item>
-      </el-form>
+    <div v-if="loading" class="loading">加载中...</div>
+    <div v-else-if="list.length === 0" class="empty">暂无日志数据</div>
 
-      <el-table v-loading="loading" :data="logList">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="module" label="模块" width="120" />
-        <el-table-column prop="action" label="动作" width="120" />
-        <el-table-column prop="adminUsername" label="管理员" width="140" />
-        <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="requestUrl" label="请求地址" min-width="220" show-overflow-tooltip />
-        <el-table-column prop="executionTimeMs" label="耗时(ms)" width="100" />
-        <el-table-column label="状态" width="90">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
-              {{ findDictDesc(statusOptions, scope.row.status, "-") }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdAt" label="时间" width="180" />
-        <el-table-column label="操作" width="100" fixed="right">
-          <template #default="scope">
-            <el-button link type="primary" @click="openDetail(scope.row.id)">详情</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-row">
-        <el-pagination
-          v-model:current-page="query.pageNum"
-          v-model:page-size="query.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @current-change="loadLogs"
-          @size-change="onSizeChange"
-        />
-      </div>
-    </el-card>
-
-    <el-dialog v-model="detailVisible" title="日志详情" width="860px" destroy-on-close>
-      <el-descriptions v-if="detailData" :column="2" border>
-        <el-descriptions-item label="日志ID">{{ detailData.id }}</el-descriptions-item>
-        <el-descriptions-item label="管理员">
-          {{ detailData.adminUsername || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="模块">{{ detailData.module || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="动作">{{ detailData.action || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="请求方法">
-          {{ detailData.requestMethod || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="请求地址">
-          {{ detailData.requestUrl || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="耗时(ms)">
-          {{ detailData.executionTimeMs ?? "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="状态">
-          {{ findDictDesc(statusOptions, detailData.status, "-") }}
-        </el-descriptions-item>
-        <el-descriptions-item label="IP地址">
-          {{ detailData.ipAddress || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="时间">{{ detailData.createdAt || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="描述" :span="2">
-          {{ detailData.description || "-" }}
-        </el-descriptions-item>
-      </el-descriptions>
-
-      <el-divider content-position="left">请求参数</el-divider>
-      <el-input
-        :model-value="detailData?.requestParams || '-'"
-        type="textarea"
-        :rows="4"
-        readonly
-      />
-
-      <el-divider content-position="left">响应数据</el-divider>
-      <el-input :model-value="detailData?.responseData || '-'" type="textarea" :rows="4" readonly />
-
-      <el-divider content-position="left">错误信息</el-divider>
-      <el-input :model-value="detailData?.errorMessage || '-'" type="textarea" :rows="3" readonly />
-    </el-dialog>
+    <div v-else class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>管理员</th>
+            <th>模块</th>
+            <th>操作</th>
+            <th>时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in list" :key="item.id">
+            <td>{{ item.adminName || "管理员" }}</td>
+            <td>
+              <span class="badge">{{ item.module || "-" }}</span>
+            </td>
+            <td>{{ item.operation || "-" }}</td>
+            <td>{{ item.createdAt || "-" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
-import {
-  getOperationLogDetail,
-  getOperationLogPage,
-  type OperationLogDetailItem,
-  type OperationLogListItem,
-  type OperationLogQuery,
-} from "@/api/log";
-import { getOperationLogModuleDict, getOperationLogStatusDict } from "@/api/dict";
-import { findDictDesc, useDictOptions } from "@/composables/useDictOptions";
-
-const { options: moduleOptions } = useDictOptions(
-  "operation-log-module",
-  getOperationLogModuleDict
-);
-const { options: statusOptions } = useDictOptions(
-  "operation-log-status",
-  getOperationLogStatusDict
-);
+import { ref, onMounted } from "vue";
+import { getOperationLogPage as getLogPage } from "@/api/log";
 
 const loading = ref(false);
-const total = ref(0);
-const logList = ref<OperationLogListItem[]>([]);
-const detailVisible = ref(false);
-const detailData = ref<OperationLogDetailItem | null>(null);
+const list = ref<any[]>([]);
 
-const query = reactive<OperationLogQuery>({
-  pageNum: 1,
-  pageSize: 10,
-  module: "",
-  action: "",
-  adminUsername: "",
-  status: undefined,
-});
-
-async function loadLogs(): Promise<void> {
+async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    const page = await getOperationLogPage({
-      pageNum: query.pageNum,
-      pageSize: query.pageSize,
-      module: query.module || undefined,
-      action: query.action || undefined,
-      adminUsername: query.adminUsername || undefined,
-      status: query.status,
-    });
-    logList.value = page.records;
-    total.value = page.total;
+    const res = await getLogPage({ pageNum: 1, pageSize: 50 });
+    list.value = res.records || [];
   } catch {
-    ElMessage.error("操作日志加载失败");
+    alert("加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-function onSearch(): void {
-  query.pageNum = 1;
-  void loadLogs();
-}
-
-function onReset(): void {
-  query.module = "";
-  query.action = "";
-  query.adminUsername = "";
-  query.status = undefined;
-  query.pageNum = 1;
-  void loadLogs();
-}
-
-function onSizeChange(): void {
-  query.pageNum = 1;
-  void loadLogs();
-}
-
-async function openDetail(id: number): Promise<void> {
-  try {
-    detailData.value = await getOperationLogDetail(id);
-    detailVisible.value = true;
-  } catch {
-    ElMessage.error("日志详情加载失败");
-  }
-}
-
 onMounted(() => {
-  void loadLogs();
+  loadData();
 });
 </script>
 
 <style scoped>
-.card-header {
-  font-size: 16px;
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.title {
+  font-size: 28px;
   font-weight: 700;
+  color: #000;
+  margin: 0 0 32px 0;
 }
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 6px;
-  margin-bottom: 12px;
+.table-wrap {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
 }
-
-.filter-form :deep(.el-form-item) {
-  margin-bottom: 0;
-  margin-right: 0;
+.table {
+  width: 100%;
+  border-collapse: collapse;
 }
-
-.filter-form :deep(.el-form-item__label) {
-  padding-right: 6px;
+.table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  background: #f9f9f9;
+  border-bottom: 1px solid #f0f0f0;
 }
-
-.pagination-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+.table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #000;
+  border-bottom: 1px solid #f0f0f0;
 }
-
-.page-container {
-  padding: 0px;
+.table tr:hover {
+  background: #f9fff9;
+}
+.badge {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #f0f0f0;
+  color: #000;
+  border-radius: 999px;
+}
+.loading,
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  font-size: 14px;
 }
 </style>
