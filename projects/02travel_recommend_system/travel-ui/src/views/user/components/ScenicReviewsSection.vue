@@ -56,33 +56,33 @@ const emit = defineEmits<{
 
 <style scoped>
 .reviews-section {
-  margin-top: 48px;
   padding-top: 32px;
+  margin-top: 48px;
   border-top: 1px solid #eaeaea;
 }
 
 .reviews-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 24px;
 }
 
 .reviews-header h2 {
+  margin: 0;
   font-size: 24px;
   font-weight: 800;
   color: #1a1a1a;
-  margin: 0;
 }
 
 .write-review-btn {
-  border: 1px solid #1a1a1a;
   color: #1a1a1a;
+  border: 1px solid #1a1a1a;
 }
 
 .pagination-container {
-  margin-top: 24px;
   display: flex;
   justify-content: center;
+  margin-top: 24px;
 }
 </style>

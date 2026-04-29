@@ -41,17 +41,17 @@
           </p>
         </div>
         <div class="hero-stats">
-          <div class="stat-item" style="animation-delay: 0.1s">
+          <div class="stat-item" style="animation-delay: 0.05s">
             <span class="stat-number">{{ stats.browseCount }}</span>
             <span class="stat-label">浏览次数</span>
           </div>
           <div class="stat-divider"></div>
-          <div class="stat-item" style="animation-delay: 0.2s">
+          <div class="stat-item" style="animation-delay: 0.1s">
             <span class="stat-number">{{ stats.favoriteCount }}</span>
             <span class="stat-label">收藏景点</span>
           </div>
           <div class="stat-divider"></div>
-          <div class="stat-item" style="animation-delay: 0.3s">
+          <div class="stat-item" style="animation-delay: 0.15s">
             <span class="stat-number">{{ stats.reviewCount }}</span>
             <span class="stat-label">发布点评</span>
           </div>
@@ -78,7 +78,7 @@
       <!-- Left Sidebar -->
       <aside class="sidebar">
         <!-- Preference Tags -->
-        <section class="sidebar-card" style="animation-delay: 0.4s">
+        <section class="sidebar-card" style="animation-delay: 0.15s">
           <div class="card-header">
             <h3 class="card-title">
               <svg
@@ -139,7 +139,7 @@
         </section>
 
         <!-- Portrait Summary -->
-        <section v-if="portrait" class="sidebar-card" style="animation-delay: 0.5s">
+        <section v-if="portrait" class="sidebar-card" style="animation-delay: 0.2s">
           <div class="card-header">
             <h3 class="card-title">
               <svg
@@ -226,7 +226,7 @@
                 v-for="(item, idx) in favList"
                 :key="item.scenicId"
                 class="content-card"
-                :style="{ animationDelay: `${idx * 0.08}s` }"
+                :style="{ animationDelay: `${idx * 0.04}s` }"
                 @click="router.push(`/scenic/${item.scenicId}`)"
               >
                 <div class="card-img-wrapper">
@@ -316,7 +316,7 @@
                 v-for="(item, idx) in reviewList"
                 :key="item.id"
                 class="content-card review-card"
-                :style="{ animationDelay: `${idx * 0.08}s` }"
+                :style="{ animationDelay: `${idx * 0.04}s` }"
               >
                 <div class="card-info">
                   <div class="review-header">
@@ -408,7 +408,7 @@
                 v-for="(item, idx) in histList"
                 :key="item.id"
                 class="content-card"
-                :style="{ animationDelay: `${idx * 0.08}s` }"
+                :style="{ animationDelay: `${idx * 0.04}s` }"
                 @click="router.push(`/scenic/${item.scenicId}`)"
               >
                 <div class="card-img-wrapper">
@@ -744,8 +744,9 @@ async function loadPortrait(): Promise<void> {
 async function loadMyTags(): Promise<void> {
   tagLoading.value = true;
   try {
-    const tags = await getMyPreferenceTags();
-    myTagIds.value = tags.map((t: any) => Number(t.id ?? t));
+    const [tags, myTags] = await Promise.all([getTags(), getMyPreferenceTags()]);
+    allTags.value = tags;
+    myTagIds.value = myTags.map((t: any) => Number(t.id ?? t));
   } catch {
     // Ignore
   } finally {
@@ -958,8 +959,8 @@ onMounted(async () => {
 /* ========== Fonts & Base ========== */
 .profile-page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 0 24px 60px;
+  margin: 0 auto;
   font-family:
     "Noto Sans SC",
     -apple-system,
@@ -973,58 +974,55 @@ onMounted(async () => {
   position: relative;
   padding: 48px 40px 40px;
   margin: 24px 0 40px;
-  border-radius: 20px;
   overflow: hidden;
   background: #ffffff;
   border: 1px solid #f0f0f0;
+  border-radius: 20px;
 }
 
 .hero-bg {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
+  inset: 0;
+  pointer-events: none;
   background: linear-gradient(
     135deg,
     rgba(0, 230, 118, 0.08) 0%,
     rgba(0, 230, 118, 0.03) 50%,
     transparent 100%
   );
-  pointer-events: none;
 }
 
 .hero-content {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 28px;
   flex-wrap: wrap;
+  gap: 28px;
+  align-items: center;
 }
 
 .avatar-wrapper {
   position: relative;
-  cursor: pointer;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .avatar-ring {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #00e676 0%, #00c665 100%);
   display: grid;
   place-items: center;
-  box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
+  width: 80px;
+  height: 80px;
   overflow: hidden;
+  background: linear-gradient(135deg, #00e676 0%, #00c665 100%);
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
 }
 
 .avatar-wrapper:hover .avatar-ring {
-  transform: scale(1.05);
   box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4);
+  transform: scale(1.05);
 }
 
 .avatar-img {
@@ -1044,16 +1042,16 @@ onMounted(async () => {
   position: absolute;
   bottom: -4px;
   left: 50%;
-  transform: translateX(-50%);
+  padding: 2px 8px;
   font-size: 11px;
   color: #999;
+  white-space: nowrap;
+  pointer-events: none;
   background: rgba(255, 255, 255, 0.9);
-  padding: 2px 8px;
   border-radius: 10px;
   opacity: 0;
+  transform: translateX(-50%);
   transition: opacity 0.2s;
-  pointer-events: none;
-  white-space: nowrap;
 }
 
 .avatar-wrapper:hover .avatar-edit-hint {
@@ -1066,24 +1064,24 @@ onMounted(async () => {
 }
 
 .hero-name {
+  margin: 0 0 6px 0;
   font-size: 26px;
   font-weight: 700;
-  color: #000000;
-  margin: 0 0 6px 0;
   line-height: 1.3;
+  color: #000000;
 }
 
 .hero-signature {
-  font-size: 14px;
-  color: #666666;
   margin: 0 0 8px 0;
+  font-size: 14px;
   line-height: 1.5;
+  color: #666666;
 }
 
 .hero-meta {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   margin: 0;
   font-size: 14px;
   color: #999999;
@@ -1092,10 +1090,10 @@ onMounted(async () => {
 .meta-tag {
   display: inline-block;
   padding: 2px 10px;
-  background: #f5f5f5;
-  border-radius: 12px;
   font-size: 12px;
   color: #666;
+  background: #f5f5f5;
+  border-radius: 12px;
 }
 
 .meta-dot {
@@ -1108,25 +1106,25 @@ onMounted(async () => {
 
 .hero-stats {
   display: flex;
-  align-items: center;
   gap: 24px;
+  align-items: center;
   margin-left: auto;
-  animation: fadeInUp 0.5s ease both;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 4px;
-  animation: fadeInUp 0.5s ease both;
+  align-items: center;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .stat-number {
   font-size: 24px;
   font-weight: 700;
-  color: #000000;
   line-height: 1;
+  color: #000000;
 }
 
 .stat-label {
@@ -1143,23 +1141,23 @@ onMounted(async () => {
 
 .btn-edit-hero {
   display: flex;
-  align-items: center;
   gap: 6px;
+  align-items: center;
   padding: 10px 20px;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 10px;
-  cursor: pointer;
   transition: all 0.25s ease;
-  font-family: inherit;
 }
 
 .btn-edit-hero:hover {
-  border-color: #00e676;
   background: #f0faf4;
+  border-color: #00e676;
 }
 
 /* ========== Main Layout ========== */
@@ -1171,22 +1169,22 @@ onMounted(async () => {
 
 /* ========== Sidebar ========== */
 .sidebar {
-  width: 280px;
-  flex-shrink: 0;
   position: sticky;
   top: 24px;
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   gap: 16px;
+  width: 280px;
 }
 
 .sidebar-card {
+  padding: 24px;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 16px;
-  padding: 24px;
-  animation: fadeInUp 0.5s ease both;
   transition: border-color 0.25s ease;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .sidebar-card:hover {
@@ -1195,19 +1193,19 @@ onMounted(async () => {
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
 
 .card-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: #000000;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .card-title svg {
@@ -1215,21 +1213,21 @@ onMounted(async () => {
 }
 
 .btn-icon {
-  width: 32px;
-  height: 32px;
   display: grid;
   place-items: center;
+  width: 32px;
+  height: 32px;
+  color: #999;
+  cursor: pointer;
   background: #fafafa;
   border: 1px solid #f0f0f0;
   border-radius: 8px;
-  cursor: pointer;
-  color: #999;
   transition: all 0.2s ease;
 }
 
 .btn-icon:hover {
-  background: #f0faf4;
   color: #00c665;
+  background: #f0faf4;
   border-color: #00e676;
 }
 
@@ -1243,8 +1241,8 @@ onMounted(async () => {
   height: 28px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
   border-radius: 6px;
+  animation: shimmer 1.5s infinite;
 }
 
 @keyframes shimmer {
@@ -1259,11 +1257,11 @@ onMounted(async () => {
 .sidebar-empty {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   padding: 12px 0;
-  color: #ccc;
   font-size: 13px;
+  color: #ccc;
   text-align: center;
 }
 
@@ -1281,10 +1279,10 @@ onMounted(async () => {
 
 .tag-category {
   font-size: 11px;
+  font-weight: 500;
   color: #999;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 500;
 }
 
 .tag-list {
@@ -1294,10 +1292,10 @@ onMounted(async () => {
 }
 
 .tag-chip {
+  padding: 5px 14px;
   font-size: 13px;
   color: #000000;
   background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
-  padding: 5px 14px;
   border-radius: 20px;
   transition:
     transform 0.2s ease,
@@ -1305,8 +1303,8 @@ onMounted(async () => {
 }
 
 .tag-chip:hover {
-  transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 230, 118, 0.15);
+  transform: translateY(-1px);
 }
 
 /* Tag dialog categories */
@@ -1315,8 +1313,8 @@ onMounted(async () => {
   flex-direction: column;
   gap: 16px;
   max-height: 300px;
-  overflow-y: auto;
   padding: 4px 0;
+  overflow-y: auto;
 }
 
 .tag-category-section {
@@ -1326,12 +1324,12 @@ onMounted(async () => {
 }
 
 .tag-category-title {
+  padding-bottom: 6px;
   font-size: 12px;
-  color: #999;
   font-weight: 500;
+  color: #999;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding-bottom: 6px;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -1350,15 +1348,15 @@ onMounted(async () => {
 
 .portrait-row {
   display: flex;
-  align-items: flex-start;
   gap: 10px;
+  align-items: flex-start;
 }
 
 .portrait-icon {
-  color: #00e676;
-  font-size: 12px;
-  margin-top: 3px;
   flex-shrink: 0;
+  margin-top: 3px;
+  font-size: 12px;
+  color: #00e676;
 }
 
 .portrait-label {
@@ -1371,18 +1369,18 @@ onMounted(async () => {
 
 .portrait-value {
   display: block;
-  font-size: 14px;
-  color: #000;
-  font-weight: 500;
   margin-top: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000;
 }
 
 .portrait-summary {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.7;
-  margin: 8px 0 0;
   padding-top: 12px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #666;
   border-top: 1px solid #f5f5f5;
 }
 
@@ -1396,27 +1394,27 @@ onMounted(async () => {
 .tab-nav {
   display: flex;
   gap: 8px;
-  border-bottom: 2px solid #f5f5f5;
   margin-bottom: 28px;
+  border-bottom: 2px solid #f5f5f5;
 }
 
 .tab-btn {
+  position: relative;
+  bottom: -2px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
   padding: 12px 20px;
+  font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   color: #999;
+  cursor: pointer;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  cursor: pointer;
   transition: all 0.25s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  bottom: -2px;
-  animation: fadeInUp 0.5s ease both;
-  font-family: inherit;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .tab-btn:hover {
@@ -1424,23 +1422,23 @@ onMounted(async () => {
 }
 
 .tab-btn.active {
-  color: #000;
   font-weight: 600;
+  color: #000;
   border-bottom-color: #00e676;
 }
 
 .tab-count {
+  padding: 1px 8px;
   font-size: 12px;
+  font-weight: 400;
   color: #999;
   background: #f5f5f5;
-  padding: 1px 8px;
   border-radius: 10px;
-  font-weight: 400;
 }
 
 .tab-btn.active .tab-count {
-  background: #e8f5e9;
   color: #00c665;
+  background: #e8f5e9;
 }
 
 /* Tab Panel */
@@ -1459,8 +1457,8 @@ onMounted(async () => {
   height: 88px;
   background: linear-gradient(90deg, #f8f8f8 25%, #f0f0f0 50%, #f8f8f8 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
   border-radius: 12px;
+  animation: shimmer 1.5s infinite;
 }
 
 /* Empty State */
@@ -1488,15 +1486,15 @@ onMounted(async () => {
 
 .content-card {
   display: flex;
-  align-items: center;
   gap: 16px;
+  align-items: center;
   padding: 16px;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 14px;
   transition: all 0.3s ease;
-  cursor: pointer;
-  animation: fadeInUp 0.5s ease both;
+  animation: fadeInUp 0.3s ease both;
 }
 
 .content-card:hover {
@@ -1507,11 +1505,11 @@ onMounted(async () => {
 
 .card-img-wrapper {
   position: relative;
+  flex-shrink: 0;
   width: 88px;
   height: 64px;
-  flex-shrink: 0;
-  border-radius: 10px;
   overflow: hidden;
+  border-radius: 10px;
 }
 
 .card-img {
@@ -1528,8 +1526,8 @@ onMounted(async () => {
 .card-img-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.03) 100%);
   pointer-events: none;
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.03) 100%);
 }
 
 .card-info {
@@ -1544,20 +1542,20 @@ onMounted(async () => {
 
 .review-header {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   margin-bottom: 6px;
 }
 
 .card-title {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 15px;
   font-weight: 600;
   color: #000000;
-  margin: 0;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .card-title:hover {
@@ -1565,90 +1563,90 @@ onMounted(async () => {
 }
 
 .score-badge {
+  flex-shrink: 0;
+  padding: 2px 10px;
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
   background: linear-gradient(135deg, #00e676 0%, #00c665 100%);
-  padding: 2px 10px;
   border-radius: 12px;
-  flex-shrink: 0;
 }
 
 .review-content {
-  font-size: 14px;
-  color: #666666;
   margin: 0 0 6px 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 14px;
   line-height: 1.5;
+  color: #666666;
+  white-space: nowrap;
 }
 
 .card-meta {
+  margin: 0;
   font-size: 12px;
   color: #999999;
-  margin: 0;
 }
 
 .btn-remove-mini {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
   width: 32px;
   height: 32px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
+  color: #999;
   cursor: pointer;
-  color: #ccc;
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   transition: all 0.2s ease;
-  flex-shrink: 0;
 }
 
 .btn-remove-mini:hover {
   color: #ff5252;
-  border-color: #ff5252;
   background: #fff5f5;
+  border-color: #ff5252;
 }
 
 /* Pagination */
 .pagination {
   display: flex;
-  justify-content: center;
-  align-items: center;
   gap: 16px;
-  margin-top: 28px;
+  align-items: center;
+  justify-content: center;
   padding: 16px 0;
+  margin-top: 28px;
 }
 
 .page-btn {
   display: flex;
-  align-items: center;
   gap: 6px;
+  align-items: center;
   padding: 8px 18px;
+  font-family: inherit;
   font-size: 13px;
   color: #000;
+  cursor: pointer;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s ease;
-  font-family: inherit;
 }
 
 .page-btn:hover:not(:disabled) {
-  border-color: #00e676;
   background: #f0faf4;
+  border-color: #00e676;
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .page-info {
+  min-width: 60px;
   font-size: 13px;
   color: #999;
-  min-width: 60px;
   text-align: center;
 }
 
@@ -1656,11 +1654,11 @@ onMounted(async () => {
 .modal-mask {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(4px);
+  z-index: 1000;
   display: grid;
   place-items: center;
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
   animation: fadeIn 0.2s ease;
 }
 
@@ -1674,11 +1672,11 @@ onMounted(async () => {
 }
 
 .modal-dialog {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 28px;
   width: 100%;
   max-width: 480px;
+  padding: 28px;
+  background: #ffffff;
+  border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
   animation: scaleIn 0.3s ease;
 }
@@ -1696,60 +1694,60 @@ onMounted(async () => {
 
 .modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 24px;
 }
 
 .modal-title {
+  margin: 0;
   font-size: 20px;
   font-weight: 700;
   color: #000;
-  margin: 0;
 }
 
 .hero-signature {
-  font-size: 14px;
-  color: #666666;
   margin: 0 0 8px 0;
+  font-size: 14px;
   line-height: 1.5;
+  color: #666666;
 }
 
 .meta-item {
   display: inline-block;
   padding: 2px 10px;
-  background: #f5f5f5;
-  border-radius: 12px;
   font-size: 12px;
   color: #666;
+  background: #f5f5f5;
+  border-radius: 12px;
 }
 
 .meta-sep {
-  color: #ddd;
   margin: 0 4px;
+  color: #ddd;
 }
 
 .role-tag {
-  background: #e8f5e9;
   color: #00c665;
+  background: #e8f5e9;
 }
 
 .btn-modal-close {
-  width: 36px;
-  height: 36px;
   display: grid;
   place-items: center;
+  width: 36px;
+  height: 36px;
+  color: #999;
+  cursor: pointer;
   background: #fafafa;
   border: none;
   border-radius: 10px;
-  cursor: pointer;
-  color: #999;
   transition: all 0.2s ease;
 }
 
 .btn-modal-close:hover {
-  background: #f0f0f0;
   color: #000;
+  background: #f0f0f0;
 }
 
 .modal-body {
@@ -1772,21 +1770,21 @@ onMounted(async () => {
 
 .field-input {
   padding: 10px 14px;
+  font-family: inherit;
   font-size: 14px;
   color: #000;
+  outline: none;
   background: #fafafa;
   border: 1px solid #e8e8e8;
   border-radius: 10px;
-  outline: none;
   transition:
     border-color 0.2s ease,
     background 0.2s ease;
-  font-family: inherit;
 }
 
 .field-input:focus {
-  border-color: #00e676;
   background: #fff;
+  border-color: #00e676;
 }
 
 .select-wrapper {
@@ -1794,37 +1792,37 @@ onMounted(async () => {
 }
 
 .field-select {
-  appearance: none;
   width: 100%;
+  appearance: none;
   cursor: pointer;
 }
 
 .select-arrow {
   position: absolute;
-  right: 14px;
   top: 50%;
-  transform: translateY(-50%);
+  right: 14px;
   pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .modal-footer {
   display: flex;
   gap: 12px;
-  margin-top: 24px;
   justify-content: flex-end;
+  margin-top: 24px;
 }
 
 .btn-cancel {
   padding: 10px 24px;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 500;
   color: #666;
+  cursor: pointer;
   background: #fafafa;
   border: 1px solid #e8e8e8;
   border-radius: 10px;
-  cursor: pointer;
   transition: all 0.2s ease;
-  font-family: inherit;
 }
 
 .btn-cancel:hover {
@@ -1833,18 +1831,18 @@ onMounted(async () => {
 
 .btn-primary {
   display: flex;
-  align-items: center;
   gap: 6px;
+  align-items: center;
   padding: 10px 24px;
+  font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   color: #000;
+  cursor: pointer;
   background: linear-gradient(135deg, #00e676 0%, #00d66b 100%);
   border: none;
   border-radius: 10px;
-  cursor: pointer;
   transition: all 0.25s ease;
-  font-family: inherit;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -1853,8 +1851,8 @@ onMounted(async () => {
 }
 
 .btn-primary:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn-spinner {
@@ -1875,12 +1873,12 @@ onMounted(async () => {
 /* Tag Grid in Modal */
 .tag-checkbox {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
+  padding: 6px 12px;
   font-size: 14px;
   color: #000;
   cursor: pointer;
-  padding: 6px 12px;
   border-radius: 8px;
   transition: background 0.2s ease;
 }
@@ -1894,14 +1892,14 @@ onMounted(async () => {
 }
 
 .checkbox-custom {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
   width: 18px;
   height: 18px;
   border: 2px solid #e0e0e0;
   border-radius: 4px;
-  display: grid;
-  place-items: center;
   transition: all 0.2s ease;
-  flex-shrink: 0;
 }
 
 .tag-checkbox input:checked + .checkbox-custom {
@@ -1910,9 +1908,9 @@ onMounted(async () => {
 }
 
 .tag-checkbox input:checked + .checkbox-custom::after {
-  content: "";
   width: 6px;
   height: 10px;
+  content: "";
   border: solid #fff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg) translate(-1px, -1px);
@@ -1926,29 +1924,29 @@ onMounted(async () => {
 .page-loading {
   display: flex;
   flex-direction: column;
+  gap: 16px;
   align-items: center;
   justify-content: center;
   height: 60vh;
-  gap: 16px;
 }
 
 .loading-pulse {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
   background: #00e676;
+  border-radius: 50%;
   animation: pulse 1.2s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%,
   100% {
-    transform: scale(1);
     opacity: 0.5;
+    transform: scale(1);
   }
   50% {
-    transform: scale(1.2);
     opacity: 1;
+    transform: scale(1.2);
   }
 }
 
@@ -1975,8 +1973,8 @@ onMounted(async () => {
     flex-direction: column;
   }
   .sidebar {
-    width: 100%;
     position: static;
+    width: 100%;
   }
   .hero-header {
     padding: 32px 24px 28px;
@@ -1986,9 +1984,9 @@ onMounted(async () => {
     align-items: flex-start;
   }
   .hero-stats {
-    margin-left: 0;
-    width: 100%;
     justify-content: space-around;
+    width: 100%;
+    margin-left: 0;
   }
   .hero-name {
     font-size: 24px;

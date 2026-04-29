@@ -47,15 +47,15 @@ const emit = defineEmits<{
 
 <style scoped>
 .header-section {
-  background: #fff;
   padding: 20px;
-  border-radius: 8px;
   margin-bottom: 20px;
+  background: #fff;
+  border-radius: 8px;
 }
 
 .title-with-tags {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
 }
 </style>

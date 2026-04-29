@@ -229,38 +229,38 @@ async function handleSubmit(): Promise<void> {
 
 .review-image-uploader {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
+  gap: 10px;
 }
 
 .review-image-card {
   position: relative;
+  flex-shrink: 0;
   width: 100px;
   height: 100px;
-  border-radius: 6px;
   overflow: hidden;
-  border: 1px solid #dcdfe6;
   cursor: pointer;
-  flex-shrink: 0;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
 }
 
 .review-img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .review-image-mask {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -270,24 +270,24 @@ async function handleSubmit(): Promise<void> {
 }
 
 .delete-icon {
-  color: #fff;
   font-size: 18px;
+  color: #fff;
 }
 
 .review-upload-btn {
-  width: 100px;
-  height: 100px;
-  border-radius: 6px;
-  border: 1px dashed #dcdfe6;
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
+  gap: 4px;
   align-items: center;
   justify-content: center;
+  width: 100px;
+  height: 100px;
   cursor: pointer;
-  transition: border-color 0.2s;
   background: #fafbfc;
-  gap: 4px;
-  flex-shrink: 0;
+  border: 1px dashed #dcdfe6;
+  border-radius: 6px;
+  transition: border-color 0.2s;
 }
 
 .review-upload-btn:hover {

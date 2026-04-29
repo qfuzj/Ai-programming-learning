@@ -176,15 +176,15 @@ onMounted(async () => {
 <style scoped>
 .page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .title {
+  margin: 0 0 32px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 32px 0;
 }
 
 /* Stat grid */
@@ -219,11 +219,11 @@ onMounted(async () => {
 }
 
 .stat-card {
+  padding: 24px;
+  text-align: center;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  padding: 24px;
-  text-align: center;
   transition: all 0.2s;
 }
 
@@ -233,10 +233,10 @@ onMounted(async () => {
 }
 
 .stat-value {
+  margin-bottom: 8px;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin-bottom: 8px;
 }
 
 .stat-label {
@@ -250,10 +250,10 @@ onMounted(async () => {
 }
 
 .section-title {
+  margin: 0 0 20px 0;
   font-size: 22px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 20px 0;
 }
 
 /* Rank list */
@@ -265,8 +265,8 @@ onMounted(async () => {
 
 .rank-item {
   display: flex;
-  align-items: center;
   gap: 16px;
+  align-items: center;
   padding: 12px 16px;
   background: #ffffff;
   border: 1px solid #f0f0f0;
@@ -279,46 +279,46 @@ onMounted(async () => {
 }
 
 .rank {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
   width: 28px;
   height: 28px;
-  display: grid;
-  place-items: center;
   font-size: 13px;
   font-weight: 700;
   color: #999999;
   background: #f5f5f5;
   border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .rank.top {
-  background: #00e676;
   color: #000000;
+  background: #00e676;
 }
 
 .name {
   flex: 1;
-  font-size: 15px;
-  font-weight: 500;
-  color: #000000;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 500;
+  color: #000000;
   white-space: nowrap;
 }
 
 .count {
+  flex-shrink: 0;
   font-size: 13px;
   color: #999999;
-  flex-shrink: 0;
 }
 
 /* Loading / Empty */
 .loading,
 .empty {
   padding: 40px;
-  text-align: center;
-  color: #999999;
   font-size: 14px;
+  color: #999999;
+  text-align: center;
 }
 </style>

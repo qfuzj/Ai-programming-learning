@@ -120,8 +120,8 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 900px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .header {
@@ -132,10 +132,10 @@ onMounted(() => {
 }
 
 .title {
+  margin: 0;
   font-size: 28px;
   font-weight: 700;
   color: #000000;
-  margin: 0;
 }
 
 .btn-clear {
@@ -143,16 +143,16 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #ff5252;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #ff5252;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-clear:hover {
-  background: #ff5252;
   color: #ffffff;
+  background: #ff5252;
 }
 
 /* List */
@@ -165,13 +165,13 @@ onMounted(() => {
 .list-item {
   display: flex;
   gap: 16px;
+  align-items: center;
   padding: 16px;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  cursor: pointer;
   transition: all 0.2s;
-  align-items: center;
 }
 
 .list-item:hover {
@@ -180,12 +180,12 @@ onMounted(() => {
 }
 
 .item-img {
+  flex-shrink: 0;
   width: 100px;
   height: 70px;
   object-fit: cover;
-  border-radius: 8px;
-  flex-shrink: 0;
   background: #f5f5f5;
+  border-radius: 8px;
 }
 
 .item-info {
@@ -194,39 +194,39 @@ onMounted(() => {
 }
 
 .item-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #000000;
   margin: 0 0 6px 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
   white-space: nowrap;
 }
 
 .item-meta {
-  font-size: 13px;
-  color: #999999;
-  margin: 0 0 4px 0;
   display: flex;
   gap: 12px;
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #999999;
 }
 
 .item-time {
+  margin: 0;
   font-size: 12px;
   color: #bbbbbb;
-  margin: 0;
 }
 
 .btn-delete {
+  flex-shrink: 0;
   padding: 6px 14px;
   font-size: 13px;
   color: #999999;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  cursor: pointer;
   transition: all 0.2s;
-  flex-shrink: 0;
 }
 
 .btn-delete:hover {
@@ -237,9 +237,9 @@ onMounted(() => {
 /* Pagination */
 .pagination {
   display: flex;
+  gap: 16px;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   margin-top: 40px;
 }
 
@@ -247,10 +247,10 @@ onMounted(() => {
   padding: 8px 16px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -259,8 +259,8 @@ onMounted(() => {
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .page-info {
@@ -270,14 +270,14 @@ onMounted(() => {
 
 /* Empty */
 .empty {
-  text-align: center;
   padding: 80px 20px;
   color: #999999;
+  text-align: center;
 }
 
 .empty p {
-  font-size: 16px;
   margin: 0 0 16px 0;
+  font-size: 16px;
 }
 
 .btn-link {
@@ -285,10 +285,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
 }
 
 .btn-link:hover {
@@ -309,18 +309,18 @@ onMounted(() => {
 }
 
 .skeleton-img {
+  flex-shrink: 0;
   width: 100px;
   height: 70px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 8px;
-  flex-shrink: 0;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-lines {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 8px;
   justify-content: center;
@@ -330,8 +330,8 @@ onMounted(() => {
   height: 16px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line.short {

@@ -5,8 +5,8 @@
 /* 通用工具类 */
 .container {
   max-width: var(--max-width);
-  margin: 0 auto;
   padding: 0 var(--space-lg);
+  margin: 0 auto;
 }
 
 .page-content {
@@ -17,19 +17,19 @@
 /* 按钮样式 - 极简风格 */
 .btn {
   display: inline-flex;
+  gap: var(--space-sm);
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
   font-size: var(--text-base);
   font-weight: var(--font-medium);
   color: var(--color-black);
+  cursor: pointer;
+  user-select: none;
   background: var(--color-white);
   border: 1px solid var(--color-gray-300);
   border-radius: var(--radius-md);
-  cursor: pointer;
   transition: all var(--transition-fast);
-  user-select: none;
 }
 
 .btn:hover {
@@ -83,10 +83,10 @@
 
 /* 卡片样式 */
 .card {
+  overflow: hidden;
   background: var(--color-white);
   border: 1px solid var(--color-gray-200);
   border-radius: var(--radius-lg);
-  overflow: hidden;
   transition: all var(--transition-base);
 }
 
@@ -100,10 +100,10 @@
   padding: var(--space-sm) var(--space-md);
   font-size: var(--text-base);
   color: var(--color-black);
+  outline: none;
   background: var(--color-white);
   border: 1px solid var(--color-gray-300);
   border-radius: var(--radius-md);
-  outline: none;
   transition: border-color var(--transition-fast);
 }
 
@@ -214,8 +214,8 @@
 }
 
 .empty-state-icon {
-  font-size: 48px;
   margin-bottom: var(--space-md);
+  font-size: 48px;
 }
 
 .empty-state-text {
@@ -231,8 +231,8 @@
     var(--color-gray-100) 75%
   );
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: var(--radius-md);
+  animation: loading 1.5s infinite;
 }
 
 @keyframes loading {

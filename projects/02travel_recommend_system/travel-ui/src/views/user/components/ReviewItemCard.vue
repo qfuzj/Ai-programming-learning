@@ -238,8 +238,8 @@ const handleReply = async () => {
 
 .reviewer-info {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   margin-bottom: 12px;
 }
 
@@ -249,9 +249,9 @@ const handleReply = async () => {
 }
 
 .reviewer-name {
+  margin-bottom: 4px;
   font-weight: 700;
   color: #1a1a1a;
-  margin-bottom: 4px;
 }
 
 .review-date {
@@ -261,8 +261,8 @@ const handleReply = async () => {
 
 .review-rating {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   margin-bottom: 12px;
 }
 
@@ -274,8 +274,8 @@ const handleReply = async () => {
 .rating-dots .dot {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
   background: #e0e0e0;
+  border-radius: 50%;
 }
 
 .rating-dots .dot.filled {
@@ -288,10 +288,10 @@ const handleReply = async () => {
 }
 
 .review-content {
+  margin-bottom: 16px;
   font-size: 15px;
   line-height: 1.6;
   color: #333;
-  margin-bottom: 16px;
   white-space: pre-wrap;
 }
 
@@ -305,8 +305,8 @@ const handleReply = async () => {
 .review-img {
   width: 100px;
   height: 100px;
-  border-radius: 8px;
   cursor: pointer;
+  border-radius: 8px;
 }
 
 .review-actions {
@@ -317,8 +317,8 @@ const handleReply = async () => {
 
 .action-btn {
   display: flex;
-  align-items: center;
   gap: 6px;
+  align-items: center;
   font-size: 14px;
   color: #666;
   cursor: pointer;
@@ -334,8 +334,8 @@ const handleReply = async () => {
 }
 
 .replies-section {
-  margin-top: 16px;
   padding: 16px;
+  margin-top: 16px;
   background-color: #f9f9f9;
   border-radius: 8px;
 }
@@ -351,17 +351,17 @@ const handleReply = async () => {
 }
 
 .reply-item {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
   font-size: 14px;
   line-height: 1.5;
-  margin-bottom: 8px;
   border-bottom: 1px dashed #ebebeb;
-  padding-bottom: 8px;
 }
 
 .reply-item:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
   padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
 }
 
 .reply-user {
@@ -375,28 +375,28 @@ const handleReply = async () => {
 }
 
 .reply-time {
+  margin-top: 4px;
   font-size: 12px;
   color: #999;
-  margin-top: 4px;
 }
 
 .no-reply {
+  padding: 8px 0;
   font-size: 13px;
   color: #999;
   text-align: center;
-  padding: 8px 0;
 }
 
 .reply-pagination {
-  text-align: center;
   margin-top: 8px;
+  text-align: center;
 }
 
 .reply-pagination-end {
-  text-align: center;
   margin-top: 8px;
-  color: #9ca3af;
   font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
 }
 
 .reply-input-box {

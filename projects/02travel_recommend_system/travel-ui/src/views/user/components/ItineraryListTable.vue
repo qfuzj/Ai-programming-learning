@@ -85,8 +85,8 @@ const emit = defineEmits<{
 
 <style scoped>
 .pagination-container {
-  margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  margin-top: 20px;
 }
 </style>

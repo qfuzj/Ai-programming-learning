@@ -48,9 +48,9 @@ const emit = defineEmits<{
 }
 
 .recommend-experiences h2 {
+  margin: 0 0 24px 0;
   font-size: 22px;
   font-weight: 800;
-  margin: 0 0 24px 0;
 }
 
 .experience-grid {
@@ -60,68 +60,68 @@ const emit = defineEmits<{
 }
 
 .exp-card {
-  border: 1px solid #eaeaea;
-  border-radius: 8px;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   cursor: pointer;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
   transition:
     transform 0.2s,
     box-shadow 0.2s;
 }
 
 .exp-card:hover {
-  transform: translateY(-4px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
 }
 
 .exp-image {
   height: 140px;
-  background-size: cover;
   background-position: center;
+  background-size: cover;
 }
 
 .exp-content {
-  padding: 16px;
   display: flex;
-  flex-direction: column;
   flex: 1;
+  flex-direction: column;
+  padding: 16px;
 }
 
 .exp-content h4 {
+  flex: 1;
   margin: 0 0 12px 0;
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
-  flex: 1;
 }
 
 .exp-meta {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-bottom: 16px;
   font-size: 13px;
   color: #666;
-  margin-bottom: 16px;
 }
 
 .exp-reason {
   display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   color: #888;
+  -webkit-box-orient: vertical;
 }
 
 .book-btn {
   width: 100%;
   font-weight: 700;
+  color: #fff;
   background-color: #34e0a1;
   border-color: #34e0a1;
-  color: #fff;
 }
 
 @media (max-width: 992px) {

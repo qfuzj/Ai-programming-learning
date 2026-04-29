@@ -186,23 +186,23 @@ onMounted(() => {
 /* Hero */
 .hero {
   position: relative;
-  background: linear-gradient(180deg, #fafffe 0%, #ffffff 100%);
   padding: 100px 24px 80px;
-  text-align: center;
   overflow: hidden;
+  text-align: center;
+  background: linear-gradient(180deg, #fafffe 0%, #ffffff 100%);
 }
 
 .hero-bg {
   position: absolute;
   top: -50%;
   left: -10%;
+  z-index: 0;
   width: 120%;
   height: 200%;
+  pointer-events: none;
   background:
     radial-gradient(ellipse at 30% 20%, rgba(0, 230, 118, 0.08) 0%, transparent 60%),
     radial-gradient(ellipse at 70% 80%, rgba(0, 230, 118, 0.05) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
 }
 
 .hero-inner {
@@ -213,19 +213,19 @@ onMounted(() => {
 }
 
 .hero-title {
+  margin: 0 0 16px 0;
   font-size: 56px;
   font-weight: 800;
-  color: #000000;
-  margin: 0 0 16px 0;
-  letter-spacing: -1.5px;
   line-height: 1.1;
+  color: #000000;
+  letter-spacing: -1.5px;
   animation: fadeInUp 0.6s ease-out both;
 }
 
 .hero-subtitle {
+  margin: 0 0 48px 0;
   font-size: 18px;
   color: #666666;
-  margin: 0 0 48px 0;
   animation: fadeInUp 0.6s ease-out 0.1s both;
 }
 
@@ -237,12 +237,12 @@ onMounted(() => {
 
 .search-bar {
   display: flex;
-  align-items: center;
   gap: 0;
+  align-items: center;
+  padding: 6px 6px 6px 20px;
   background: #ffffff;
   border: 1.5px solid #e0e0e0;
   border-radius: 999px;
-  padding: 6px 6px 6px 20px;
   transition:
     border-color 0.3s,
     box-shadow 0.3s;
@@ -254,10 +254,10 @@ onMounted(() => {
 }
 
 .search-icon {
+  flex-shrink: 0;
   width: 20px;
   height: 20px;
   color: #999999;
-  flex-shrink: 0;
 }
 
 .search-input {
@@ -265,9 +265,9 @@ onMounted(() => {
   padding: 12px 16px;
   font-size: 16px;
   color: #000000;
-  border: none;
   outline: none;
   background: transparent;
+  border: none;
 }
 
 .search-input::placeholder {
@@ -279,14 +279,14 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: #000000;
+  white-space: nowrap;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 999px;
-  cursor: pointer;
   transition:
     background 0.2s,
     transform 0.1s;
-  white-space: nowrap;
 }
 
 .search-btn:hover {
@@ -300,8 +300,8 @@ onMounted(() => {
 /* Page content */
 .page-content {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 60px 24px;
+  margin: 0 auto;
 }
 
 /* Section */
@@ -315,17 +315,17 @@ onMounted(() => {
 }
 
 .section-title {
+  margin: 0 0 12px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 12px 0;
   letter-spacing: -0.5px;
 }
 
 .section-desc {
+  margin: 0;
   font-size: 16px;
   color: #999999;
-  margin: 0;
 }
 
 /* Hot grid */
@@ -355,21 +355,21 @@ onMounted(() => {
 }
 
 .card {
+  overflow: hidden;
   cursor: pointer;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
   transition:
     transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   animation: fadeInUp 0.6s ease-out both;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #ffffff;
-  border: 1px solid #f0f0f0;
 }
 
 .card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
   border-color: transparent;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  transform: translateY(-8px);
 }
 
 .card:active {
@@ -396,44 +396,44 @@ onMounted(() => {
 }
 
 .card-img::after {
-  content: "";
   position: absolute;
+  right: 0;
   bottom: 0;
   left: 0;
-  right: 0;
   height: 60%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
   pointer-events: none;
+  content: "";
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
 }
 
 .card-rank {
   position: absolute;
   top: 12px;
   left: 12px;
+  z-index: 2;
   padding: 6px 10px;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.5px;
   color: #ffffff;
+  letter-spacing: 0.5px;
   background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.4) 100%);
   border-radius: 8px;
-  z-index: 2;
-  backdrop-filter: blur(8px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
 }
 
 .card-hot-badge {
   position: absolute;
   top: 12px;
   right: 12px;
+  z-index: 2;
   padding: 5px 12px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.3px;
   color: #ffffff;
+  letter-spacing: 0.3px;
   background: linear-gradient(135deg, #ff5252 0%, #ff1744 100%);
   border-radius: 999px;
-  z-index: 2;
   box-shadow: 0 2px 8px rgba(255, 82, 82, 0.3);
 }
 
@@ -443,22 +443,22 @@ onMounted(() => {
 
 .card-title-row {
   display: flex;
+  gap: 8px;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
   margin-bottom: 6px;
 }
 
 .card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #000000;
+  flex: 1;
+  min-width: 0;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
 }
 
 .card-category-tag {
@@ -472,15 +472,15 @@ onMounted(() => {
 }
 
 .card-location {
+  margin: 0 0 8px 0;
   font-size: 13px;
   color: #999999;
-  margin: 0 0 8px 0;
 }
 
 .card-meta {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
 }
 
 .score {
@@ -503,22 +503,22 @@ onMounted(() => {
 
 .tag-card {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   padding: 16px;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: fadeInUp 0.5s ease-out both;
 }
 
 .tag-card:hover {
-  border-color: #00e676;
   background: #f9fff9;
-  transform: translateY(-2px);
+  border-color: #00e676;
   box-shadow: 0 4px 12px rgba(0, 230, 118, 0.1);
+  transform: translateY(-2px);
 }
 
 .tag-card:active {
@@ -526,14 +526,14 @@ onMounted(() => {
 }
 
 .tag-icon-wrapper {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
   width: 44px;
   height: 44px;
-  border-radius: 10px;
   overflow: hidden;
-  flex-shrink: 0;
   background: #00e676;
-  display: grid;
-  place-items: center;
+  border-radius: 10px;
   transition: transform 0.2s;
 }
 
@@ -561,13 +561,13 @@ onMounted(() => {
 }
 
 .tag-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 14px;
   font-weight: 500;
   color: #000000;
-  transition: color 0.2s;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.2s;
 }
 
 .tag-card:hover .tag-name {
@@ -605,8 +605,8 @@ onMounted(() => {
 }
 
 .skeleton-card {
-  border-radius: 12px;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .skeleton-img {
@@ -614,8 +614,8 @@ onMounted(() => {
   height: 200px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 12px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line {
@@ -623,8 +623,8 @@ onMounted(() => {
   margin-top: 12px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line.short {
@@ -635,8 +635,8 @@ onMounted(() => {
   height: 72px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 12px;
+  animation: loading 1.5s infinite;
 }
 
 @keyframes loading {
@@ -661,8 +661,8 @@ onMounted(() => {
 
 .empty {
   padding: 40px;
-  text-align: center;
-  color: #999999;
   font-size: 15px;
+  color: #999999;
+  text-align: center;
 }
 </style>

@@ -98,8 +98,8 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 900px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .header {
@@ -110,10 +110,10 @@ onMounted(() => {
 }
 
 .title {
+  margin: 0;
   font-size: 28px;
   font-weight: 700;
   color: #000000;
-  margin: 0;
 }
 
 .btn-new {
@@ -121,10 +121,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -144,16 +144,16 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .list-item:hover {
-  border-color: #00e676;
   background: #f9fff9;
+  border-color: #00e676;
 }
 
 .item-info {
@@ -162,22 +162,22 @@ onMounted(() => {
 }
 
 .item-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #000000;
   margin: 0 0 6px 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
   white-space: nowrap;
 }
 
 .item-meta {
-  font-size: 13px;
-  color: #999999;
-  margin: 0;
   display: flex;
   gap: 8px;
   align-items: center;
+  margin: 0;
+  font-size: 13px;
+  color: #999999;
 }
 
 .dot {
@@ -185,22 +185,22 @@ onMounted(() => {
 }
 
 .item-time {
-  font-size: 13px;
-  color: #999999;
   flex-shrink: 0;
   margin-left: 16px;
+  font-size: 13px;
+  color: #999999;
 }
 
 /* Empty */
 .empty {
-  text-align: center;
   padding: 80px 20px;
   color: #999999;
+  text-align: center;
 }
 
 .empty p {
-  font-size: 16px;
   margin: 0 0 16px 0;
+  font-size: 16px;
 }
 
 .btn-link {
@@ -208,10 +208,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
 }
 
 .btn-link:hover {
@@ -236,8 +236,8 @@ onMounted(() => {
   margin-bottom: 10px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line.short {

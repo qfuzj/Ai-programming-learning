@@ -21,29 +21,29 @@ function goHome(): void {
   display: grid;
   place-items: center;
   min-height: 100vh;
-  text-align: center;
   padding: 24px;
+  text-align: center;
 }
 
 .error-code {
+  margin-bottom: 16px;
   font-size: 120px;
   font-weight: 800;
-  color: #00e676;
   line-height: 1;
-  margin-bottom: 16px;
+  color: #00e676;
 }
 
 .error-title {
+  margin: 0 0 12px 0;
   font-size: 28px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 12px 0;
 }
 
 .error-desc {
+  margin: 0 0 32px 0;
   font-size: 16px;
   color: #999999;
-  margin: 0 0 32px 0;
 }
 
 .btn-home {
@@ -51,10 +51,10 @@ function goHome(): void {
   font-size: 15px;
   font-weight: 600;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 

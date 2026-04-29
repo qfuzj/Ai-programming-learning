@@ -105,8 +105,8 @@ function isRejected(status: number | undefined): boolean {
 <style scoped>
 .reviews-list-section {
   display: flex;
-  flex-direction: column;
   flex: 1;
+  flex-direction: column;
   height: 100%;
 }
 
@@ -131,8 +131,8 @@ function isRejected(status: number | undefined): boolean {
 
 .review-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
 
@@ -140,8 +140,8 @@ function isRejected(status: number | undefined): boolean {
   margin: 0 0 10px 0;
   font-size: 18px;
   font-weight: 700;
-  cursor: pointer;
   color: #1a1a1a;
+  cursor: pointer;
 }
 
 .review-item.compact .scenic-info h4 {
@@ -150,42 +150,42 @@ function isRejected(status: number | undefined): boolean {
 }
 
 .scenic-info h4:hover {
-  text-decoration: underline;
   color: #000;
+  text-decoration: underline;
 }
 
 .review-meta {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
   gap: 8px;
+  align-items: flex-end;
 }
 
 .status-tag {
   padding: 4px 10px;
-  border-radius: 4px;
   font-size: 13px;
   font-weight: 600;
+  border-radius: 4px;
 }
 
 .status-pending {
-  background-color: #fff8e6;
   color: #f59e0b;
+  background-color: #fff8e6;
 }
 
 .status-approved {
-  background-color: #ecfdf5;
   color: #10b981;
+  background-color: #ecfdf5;
 }
 
 .status-rejected {
-  background-color: #fef2f2;
   color: #ef4444;
+  background-color: #fef2f2;
 }
 
 .status-hidden {
-  background-color: #f3f4f6;
   color: #6b7280;
+  background-color: #f3f4f6;
 }
 
 .time {
@@ -196,28 +196,28 @@ function isRejected(status: number | undefined): boolean {
 .reject-reason {
   max-width: 320px;
   font-size: 12px;
-  color: #ef4444;
   line-height: 1.4;
+  color: #ef4444;
   text-align: right;
   word-break: break-word;
 }
 
 .review-content {
-  font-size: 14px;
-  color: #374151;
-  line-height: 1.5;
-  margin-bottom: 12px;
   display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  margin-bottom: 12px;
   overflow: hidden;
+  -webkit-line-clamp: 2;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
   word-break: break-word;
+  -webkit-box-orient: vertical;
 }
 
 .review-item.compact .review-content {
+  margin-bottom: 8px;
   font-size: 13px;
   line-height: 1.4;
-  margin-bottom: 8px;
 }
 
 .review-actions {
@@ -226,9 +226,9 @@ function isRejected(status: number | undefined): boolean {
 }
 
 .pagination-wrapper {
-  margin-top: auto;
-  padding-top: 24px;
   display: flex;
   justify-content: flex-end;
+  padding-top: 24px;
+  margin-top: auto;
 }
 </style>

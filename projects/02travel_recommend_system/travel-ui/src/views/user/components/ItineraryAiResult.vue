@@ -287,8 +287,8 @@ function formatStatus(status?: number): string {
 
 .item-meta {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 12px;
   font-size: 12px;
   color: #6b7280;
 }

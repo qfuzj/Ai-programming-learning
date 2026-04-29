@@ -196,19 +196,19 @@ onMounted(() => {
   position: sticky;
   top: 64px;
   z-index: 50;
+  padding: 16px 0;
   background: #ffffff;
   border-bottom: 1px solid #f0f0f0;
-  padding: 16px 0;
 }
 
 .filter-inner {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: center;
   max-width: 1200px;
-  margin: 0 auto;
   padding: 0 24px;
-  flex-wrap: wrap;
+  margin: 0 auto;
 }
 
 .filter-search {
@@ -217,10 +217,10 @@ onMounted(() => {
   padding: 10px 16px;
   font-size: 14px;
   color: #000000;
+  outline: none;
   background: #f5f5f5;
   border: 1px solid transparent;
   border-radius: 8px;
-  outline: none;
   transition: all 0.2s;
 }
 
@@ -230,15 +230,15 @@ onMounted(() => {
 }
 
 .filter-select {
+  min-width: 120px;
   padding: 10px 12px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
+  outline: none;
   background: #f5f5f5;
   border: 1px solid transparent;
   border-radius: 8px;
-  outline: none;
-  cursor: pointer;
-  min-width: 120px;
 }
 
 .filter-select:focus {
@@ -250,10 +250,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #999999;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -265,8 +265,8 @@ onMounted(() => {
 /* Content */
 .content {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .content-header {
@@ -277,10 +277,10 @@ onMounted(() => {
 }
 
 .title {
+  margin: 0;
   font-size: 28px;
   font-weight: 700;
   color: #000000;
-  margin: 0;
 }
 
 .count {
@@ -328,9 +328,9 @@ onMounted(() => {
   position: relative;
   width: 100%;
   height: 200px;
-  border-radius: 10px;
   overflow: hidden;
   background: #f5f5f5;
+  border-radius: 10px;
 }
 
 .card-img img {
@@ -356,12 +356,12 @@ onMounted(() => {
 }
 
 .card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #000000;
   margin: 0 0 8px 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 16px;
+  font-weight: 600;
+  color: #000000;
   white-space: nowrap;
 }
 
@@ -369,9 +369,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin: 0 0 6px 0;
   font-size: 13px;
   color: #999999;
-  margin: 0 0 6px 0;
 }
 
 .score {
@@ -380,24 +380,24 @@ onMounted(() => {
 }
 
 .card-category {
+  margin: 0 0 6px 0;
   font-size: 13px;
   color: #999999;
-  margin: 0 0 6px 0;
 }
 
 .card-price {
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: #000000;
-  margin: 0;
 }
 
 /* Pagination */
 .pagination {
   display: flex;
+  gap: 16px;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   margin-top: 40px;
 }
 
@@ -406,21 +406,21 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .page-btn:hover:not(:disabled) {
-  border-color: #00e676;
   background: #f9fff9;
+  border-color: #00e676;
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .page-info {
@@ -432,24 +432,24 @@ onMounted(() => {
   padding: 10px 12px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
   background: #f5f5f5;
   border: 1px solid transparent;
   border-radius: 8px;
-  cursor: pointer;
 }
 
 /* Empty */
 .empty {
   padding: 80px 20px;
-  text-align: center;
-  color: #999999;
   font-size: 15px;
+  color: #999999;
+  text-align: center;
 }
 
 /* Skeleton */
 .skeleton-card {
-  border-radius: 10px;
   overflow: hidden;
+  border-radius: 10px;
 }
 
 .skeleton-img {
@@ -465,8 +465,8 @@ onMounted(() => {
   margin-top: 12px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line.short {

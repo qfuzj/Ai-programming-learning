@@ -119,61 +119,61 @@ onMounted(() => {
 
 <style scoped>
 .page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px;
-  height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
+  max-width: 900px;
+  height: calc(100vh - 64px);
+  padding: 24px;
+  margin: 0 auto;
 }
 
 .header {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
   flex-shrink: 0;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .btn-back {
   padding: 6px 12px;
   font-size: 14px;
   color: #666666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-back:hover {
-  border-color: #000000;
   color: #000000;
+  border-color: #000000;
 }
 
 .title {
+  margin: 0;
   font-size: 20px;
   font-weight: 600;
   color: #000000;
-  margin: 0;
 }
 
 .chat-box {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
+  overflow: hidden;
   background: #f9f9f9;
   border-radius: 16px;
-  overflow: hidden;
 }
 
 .message-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 16px;
+  padding: 24px;
+  overflow-y: auto;
 }
 
 .message {
@@ -187,24 +187,24 @@ onMounted(() => {
 }
 
 .avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
   width: 32px;
   height: 32px;
-  display: grid;
-  place-items: center;
   font-size: 12px;
   font-weight: 600;
   border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .message.user .avatar {
-  background: #00e676;
   color: #000000;
+  background: #00e676;
 }
 
 .message.assistant .avatar {
-  background: #e0e0e0;
   color: #000000;
+  background: #e0e0e0;
 }
 
 .bubble {
@@ -212,20 +212,20 @@ onMounted(() => {
   padding: 12px 16px;
   font-size: 14px;
   line-height: 1.6;
-  border-radius: 12px;
-  white-space: pre-wrap;
   word-break: break-word;
+  white-space: pre-wrap;
+  border-radius: 12px;
 }
 
 .message.user .bubble {
-  background: #00e676;
   color: #000000;
+  background: #00e676;
   border-bottom-right-radius: 4px;
 }
 
 .message.assistant .bubble {
-  background: #ffffff;
   color: #000000;
+  background: #ffffff;
   border: 1px solid #f0f0f0;
   border-bottom-left-radius: 4px;
 }
@@ -233,23 +233,23 @@ onMounted(() => {
 .input-bar {
   display: flex;
   gap: 12px;
+  align-items: flex-end;
   padding: 16px;
   background: #ffffff;
   border-top: 1px solid #f0f0f0;
-  align-items: flex-end;
 }
 
 .input {
   flex: 1;
   padding: 10px 14px;
+  font-family: inherit;
   font-size: 14px;
   color: #000000;
+  resize: none;
+  outline: none;
   background: #f5f5f5;
   border: 1px solid transparent;
   border-radius: 12px;
-  outline: none;
-  resize: none;
-  font-family: inherit;
   transition: all 0.2s;
 }
 
@@ -263,10 +263,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 12px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -275,16 +275,16 @@ onMounted(() => {
 }
 
 .btn-send:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .loading,
 .empty {
-  flex: 1;
   display: grid;
+  flex: 1;
   place-items: center;
-  color: #999999;
   font-size: 14px;
+  color: #999999;
 }
 </style>

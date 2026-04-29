@@ -115,20 +115,20 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 .title {
+  margin: 0 0 32px 0;
   font-size: 28px;
   font-weight: 700;
   color: #000;
-  margin: 0 0 32px 0;
 }
 .filter-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
 }
 .filter-input {
   flex: 1;
@@ -136,10 +136,10 @@ onMounted(() => {
   padding: 10px 14px;
   font-size: 14px;
   color: #000;
+  outline: none;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
 }
 .filter-input:focus {
   border-color: #00e676;
@@ -148,47 +148,47 @@ onMounted(() => {
   padding: 10px 12px;
   font-size: 14px;
   color: #000;
+  cursor: pointer;
+  outline: none;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
-  cursor: pointer;
 }
 .btn-search {
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 500;
   color: #000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
 }
 .btn-reset {
   padding: 10px 20px;
   font-size: 14px;
   color: #666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
 }
 .table-wrap {
+  overflow: hidden;
   background: #fff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  overflow: hidden;
 }
 .table {
   width: 100%;
   border-collapse: collapse;
 }
 .table th {
-  text-align: left;
   padding: 14px 16px;
   font-size: 13px;
   font-weight: 600;
   color: #666;
+  text-align: left;
   background: #f9f9f9;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -207,12 +207,12 @@ onMounted(() => {
   border-radius: 999px;
 }
 .badge.on {
-  background: #e8f5e9;
   color: #000;
+  background: #e8f5e9;
 }
 .badge.off {
-  background: #f5f5f5;
   color: #999;
+  background: #f5f5f5;
 }
 .link {
   font-size: 13px;
@@ -224,9 +224,9 @@ onMounted(() => {
 }
 .loading,
 .empty {
-  text-align: center;
   padding: 60px 20px;
-  color: #999;
   font-size: 14px;
+  color: #999;
+  text-align: center;
 }
 </style>

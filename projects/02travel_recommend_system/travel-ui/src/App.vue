@@ -4,8 +4,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useUserStore } from '@/store';
+import { onMounted } from "vue";
+import { useUserStore } from "@/store";
 
 const userStore = useUserStore();
 

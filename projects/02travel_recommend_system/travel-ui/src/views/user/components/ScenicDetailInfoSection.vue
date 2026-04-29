@@ -56,39 +56,39 @@ const emit = defineEmits<{
 }
 
 .info-section h2 {
+  margin: 0 0 16px 0;
   font-size: 24px;
   font-weight: 800;
   color: #1a1a1a;
-  margin: 0 0 16px 0;
 }
 
 .scenic-intro {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 4;
   font-size: 15px;
   line-height: 1.6;
   color: #333;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
   white-space: pre-wrap;
+  -webkit-box-orient: vertical;
 }
 
 .scenic-intro.expanded {
-  -webkit-line-clamp: unset;
   display: block;
+  -webkit-line-clamp: unset;
 }
 
 .read-more-link {
   display: inline-flex;
-  align-items: center;
   gap: 4px;
-  color: #1a1a1a;
-  font-weight: 700;
-  text-decoration: underline;
+  align-items: center;
   margin-top: 10px;
-  cursor: pointer;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-decoration: underline;
   text-underline-offset: 2px;
+  cursor: pointer;
 }
 </style>

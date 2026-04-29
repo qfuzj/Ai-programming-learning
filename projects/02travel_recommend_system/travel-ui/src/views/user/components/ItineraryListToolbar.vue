@@ -94,8 +94,8 @@ const emit = defineEmits<{
 <style scoped>
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   font-weight: bold;
 }
 

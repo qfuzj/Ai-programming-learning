@@ -72,14 +72,14 @@ const emit = defineEmits<{
 
 <style scoped>
 .scenic-card {
-  border: 1px solid #eaeaea;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 12px;
+  transition: all 0.3s ease;
 }
 
 .scenic-card:hover {
@@ -109,15 +109,15 @@ const emit = defineEmits<{
   position: absolute;
   bottom: 0;
   left: 0;
-  background: rgba(255, 255, 255, 0.9);
-  color: #000;
-  font-size: 24px;
-  font-weight: 800;
-  width: 50px;
-  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #000;
+  background: rgba(255, 255, 255, 0.9);
   border-top-right-radius: 12px;
   backdrop-filter: blur(4px);
 }
@@ -126,22 +126,22 @@ const emit = defineEmits<{
   position: absolute;
   top: 16px;
   right: 16px;
-  width: 36px;
-  height: 36px;
-  background: #fff;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
   color: #1a1a1a;
   cursor: pointer;
+  background: #fff;
+  border-radius: 50%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
 }
 
 .favorite-btn:hover {
-  transform: scale(1.1);
   color: #ff4d4f;
+  transform: scale(1.1);
 }
 
 .favorite-btn.active {
@@ -150,35 +150,35 @@ const emit = defineEmits<{
 }
 
 .card-content {
-  padding: 16px 20px;
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
+  padding: 16px 20px;
 }
 
 .card-location {
+  margin-bottom: 6px;
   font-size: 13px;
   color: #666;
-  margin-bottom: 6px;
 }
 
 .card-title {
+  display: -webkit-box;
+  margin: 0 0 10px 0;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
-  margin: 0 0 10px 0;
   line-height: 1.4;
-  display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
+  color: #1a1a1a;
   -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .card-rating {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   margin-bottom: 12px;
 }
 
@@ -190,9 +190,9 @@ const emit = defineEmits<{
 .dot {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
-  border: 1px solid #34e0a1;
   background: #fff;
+  border: 1px solid #34e0a1;
+  border-radius: 50%;
 }
 
 .dot.filled {
@@ -201,32 +201,32 @@ const emit = defineEmits<{
 
 .review-count {
   font-size: 13px;
-  color: #666;
   font-weight: 500;
+  color: #666;
 }
 
 .card-meta {
-  flex: 1;
   display: flex;
-  justify-content: space-between;
+  flex: 1;
   align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
   font-size: 14px;
   color: #666;
-  margin-bottom: 16px;
 }
 
 .card-footer {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
+  justify-content: space-between;
   padding-top: 16px;
   border-top: 1px solid #f0f0f0;
 }
 
 .price {
   display: flex;
-  align-items: baseline;
   gap: 4px;
+  align-items: baseline;
 }
 
 .price-prefix {

@@ -236,21 +236,21 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 800px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .title {
+  margin: 0 0 8px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 8px 0;
 }
 
 .subtitle {
+  margin: 0 0 40px 0;
   font-size: 15px;
   color: #999999;
-  margin: 0 0 40px 0;
 }
 
 .form {
@@ -285,14 +285,14 @@ onMounted(() => {
 
 .input {
   padding: 12px 16px;
+  font-family: inherit;
   font-size: 15px;
   color: #000000;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
   transition: border-color 0.2s;
-  font-family: inherit;
 }
 
 .input:focus {
@@ -309,10 +309,10 @@ onMounted(() => {
   padding: 6px 14px;
   font-size: 13px;
   color: #666666;
+  cursor: pointer;
   background: #f5f5f5;
   border: 1px solid transparent;
   border-radius: 999px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -340,16 +340,16 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 500;
   color: #666666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-reset:hover {
-  border-color: #000000;
   color: #000000;
+  border-color: #000000;
 }
 
 .btn-submit {
@@ -357,10 +357,10 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -368,8 +368,8 @@ onMounted(() => {
   background: #00c665;
 }
 .btn-submit:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Result */
@@ -378,24 +378,24 @@ onMounted(() => {
 }
 
 .result-title {
+  margin: 0 0 24px 0;
   font-size: 24px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 24px 0;
 }
 
 .day-card {
-  background: #f9f9f9;
-  border-radius: 12px;
   padding: 24px;
   margin-bottom: 20px;
+  background: #f9f9f9;
+  border-radius: 12px;
 }
 
 .day-title {
+  margin: 0 0 16px 0;
   font-size: 18px;
   font-weight: 600;
   color: #000000;
-  margin: 0 0 16px 0;
 }
 
 .day-item {
@@ -410,10 +410,10 @@ onMounted(() => {
 }
 
 .item-time {
-  font-size: 13px;
-  color: #999999;
   flex-shrink: 0;
   min-width: 50px;
+  font-size: 13px;
+  color: #999999;
 }
 
 .item-content strong {
@@ -423,10 +423,10 @@ onMounted(() => {
 }
 
 .item-content p {
-  font-size: 14px;
-  color: #666666;
   margin: 4px 0;
+  font-size: 14px;
   line-height: 1.6;
+  color: #666666;
 }
 
 .item-location {
@@ -443,10 +443,10 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -454,20 +454,20 @@ onMounted(() => {
   background: #00c665;
 }
 .btn-save:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .loading {
-  text-align: center;
   padding: 60px 20px;
-  color: #999999;
   font-size: 15px;
+  color: #999999;
+  text-align: center;
 }
 
 .error {
-  margin-top: 24px;
   padding: 12px 16px;
+  margin-top: 24px;
   font-size: 14px;
   color: #ff5252;
   background: #fff5f5;

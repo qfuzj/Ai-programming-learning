@@ -51,11 +51,11 @@ const displayName = computed(() => props.profile.nickname || props.profile.usern
 
 <style scoped>
 .profile-header {
+  margin-top: 20px;
+  overflow: hidden;
   background: #fff;
   border-bottom: 1px solid #e0e0e0;
-  margin-top: 20px;
   border-radius: 12px 12px 0 0;
-  overflow: hidden;
 }
 
 .profile-header-bg {
@@ -64,26 +64,26 @@ const displayName = computed(() => props.profile.nickname || props.profile.usern
 }
 
 .header-content {
-  padding: 0 40px 20px;
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 40px 20px;
 }
 
 .user-info-section {
   display: flex;
-  align-items: flex-end;
   gap: 24px;
+  align-items: flex-end;
 }
 
 .profile-avatar {
+  z-index: 10;
   margin-top: -60px;
+  font-size: 40px;
+  color: #fff !important;
+  background-color: #34e0a1 !important;
   border: 4px solid #fff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  background-color: #34e0a1 !important;
-  color: #fff !important;
-  font-size: 40px;
-  z-index: 10;
 }
 
 .user-text {
@@ -91,32 +91,32 @@ const displayName = computed(() => props.profile.nickname || props.profile.usern
 }
 
 .user-text .nickname {
+  margin: 0 0 4px;
   font-size: 32px;
   font-weight: 700;
-  margin: 0 0 4px;
   color: #000;
 }
 
 .user-text .username {
-  color: #666;
   margin: 0;
   font-size: 16px;
+  color: #666;
 }
 
 .profile-tabs {
   display: flex;
-  padding: 0 40px;
   gap: 32px;
+  padding: 0 40px;
 }
 
 .tab-item {
   padding: 16px 0;
+  font-size: 15px;
   font-weight: 600;
   color: #666;
   cursor: pointer;
   border-bottom: 3px solid transparent;
   transition: all 0.2s;
-  font-size: 15px;
 }
 
 .tab-item:hover {
@@ -131,9 +131,9 @@ const displayName = computed(() => props.profile.nickname || props.profile.usern
 @media (max-width: 768px) {
   .header-content {
     flex-direction: column;
+    gap: 20px;
     align-items: flex-start;
     padding: 24px;
-    gap: 20px;
   }
 
   .header-actions {
@@ -145,9 +145,9 @@ const displayName = computed(() => props.profile.nickname || props.profile.usern
   }
 
   .profile-tabs {
+    gap: 20px;
     padding: 0 24px;
     overflow-x: auto;
-    gap: 20px;
   }
 }
 </style>

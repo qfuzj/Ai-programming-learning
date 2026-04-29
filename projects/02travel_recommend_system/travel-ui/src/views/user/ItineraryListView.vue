@@ -108,8 +108,8 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 900px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .header {
@@ -120,10 +120,10 @@ onMounted(() => {
 }
 
 .title {
+  margin: 0;
   font-size: 28px;
   font-weight: 700;
   color: #000000;
-  margin: 0;
 }
 
 .header-actions {
@@ -136,10 +136,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -152,10 +152,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -175,10 +175,10 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 20px;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -193,30 +193,30 @@ onMounted(() => {
 }
 
 .item-title {
+  margin: 0 0 8px 0;
   font-size: 17px;
   font-weight: 600;
   color: #000000;
-  margin: 0 0 8px 0;
 }
 
 .item-meta {
-  font-size: 13px;
-  color: #999999;
-  margin: 0 0 4px 0;
   display: flex;
   gap: 12px;
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: #999999;
 }
 
 .item-time {
+  margin: 0;
   font-size: 12px;
   color: #bbbbbb;
-  margin: 0;
 }
 
 .item-actions {
   display: flex;
-  gap: 8px;
   flex-shrink: 0;
+  gap: 8px;
   margin-left: 16px;
 }
 
@@ -225,10 +225,10 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 6px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -241,10 +241,10 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 500;
   color: #999999;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -256,9 +256,9 @@ onMounted(() => {
 /* Pagination */
 .pagination {
   display: flex;
+  gap: 16px;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   margin-top: 40px;
 }
 
@@ -266,21 +266,21 @@ onMounted(() => {
   padding: 8px 16px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .page-btn:hover:not(:disabled) {
-  border-color: #00e676;
   background: #f9fff9;
+  border-color: #00e676;
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .page-info {
@@ -290,14 +290,14 @@ onMounted(() => {
 
 /* Empty */
 .empty {
-  text-align: center;
   padding: 80px 20px;
   color: #999999;
+  text-align: center;
 }
 
 .empty p {
-  font-size: 16px;
   margin: 0 0 16px 0;
+  font-size: 16px;
 }
 
 .btn-link {
@@ -305,10 +305,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
 }
 
 .btn-link:hover {
@@ -332,8 +332,8 @@ onMounted(() => {
   margin-bottom: 12px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line.short {

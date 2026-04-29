@@ -45,49 +45,49 @@ defineProps<Props>();
 }
 
 .ticket-card {
-  border-radius: 12px;
   border: 1px solid #eaeaea;
+  border-radius: 12px;
 }
 
 .ticket-card h3 {
+  margin: 0 0 8px 0;
   font-size: 18px;
   font-weight: 800;
-  margin: 0 0 8px 0;
 }
 
 .ticket-card p {
+  margin: 0 0 16px 0;
   font-size: 14px;
   color: #666;
-  margin: 0 0 16px 0;
 }
 
 .full-btn {
   width: 100%;
   height: 48px;
-  border-radius: 999px;
   font-size: 16px;
   font-weight: 700;
+  color: #fff;
   background-color: #1a1a1a;
   border-color: #1a1a1a;
-  color: #fff;
+  border-radius: 999px;
 }
 
 .hours-card {
-  border-radius: 12px;
   border: 1px solid #eaeaea;
+  border-radius: 12px;
 }
 
 .hours-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
 
 .hours-header h3 {
+  margin: 0;
   font-size: 18px;
   font-weight: 800;
-  margin: 0;
 }
 
 .hours-status {
@@ -95,16 +95,16 @@ defineProps<Props>();
 }
 
 .open-status {
-  color: #2eac6d;
-  font-weight: 700;
   font-size: 15px;
+  font-weight: 700;
+  color: #2eac6d;
 }
 
 .hours-detail {
   display: flex;
   justify-content: space-between;
+  margin-top: 8px;
   font-size: 15px;
   color: #333;
-  margin-top: 8px;
 }
 </style>

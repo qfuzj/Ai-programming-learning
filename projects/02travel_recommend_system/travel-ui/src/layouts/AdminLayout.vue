@@ -97,16 +97,16 @@ async function onLogout(): Promise<void> {
 }
 
 .sidebar {
-  width: 240px;
-  background: #ffffff;
-  border-right: 1px solid #f0f0f0;
-  display: flex;
-  flex-direction: column;
   position: fixed;
   top: 0;
-  left: 0;
   bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: 240px;
   overflow-y: auto;
+  background: #ffffff;
+  border-right: 1px solid #f0f0f0;
 }
 
 .brand {
@@ -118,18 +118,18 @@ async function onLogout(): Promise<void> {
 }
 
 .nav {
-  padding: 16px 12px;
   flex: 1;
+  padding: 16px 12px;
 }
 
 .nav-item {
   display: block;
   padding: 10px 16px;
+  margin-bottom: 4px;
   font-size: 14px;
   font-weight: 500;
   color: #999999;
   border-radius: 8px;
-  margin-bottom: 4px;
   transition: all 0.2s;
 }
 
@@ -139,9 +139,9 @@ async function onLogout(): Promise<void> {
 }
 
 .nav-item.active {
+  font-weight: 600;
   color: #000000;
   background: #e8f5e9;
-  font-weight: 600;
 }
 
 .nav-group {
@@ -158,23 +158,23 @@ async function onLogout(): Promise<void> {
 }
 
 .content-area {
-  margin-left: 240px;
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
+  margin-left: 240px;
 }
 
 .header {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  background: #ffffff;
-  border-bottom: 1px solid #f0f0f0;
   position: sticky;
   top: 0;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .header-title {
@@ -188,16 +188,16 @@ async function onLogout(): Promise<void> {
   font-size: 14px;
   font-weight: 500;
   color: #ff5252;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #ff5252;
   border-radius: 999px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-logout:hover {
-  background: #ff5252;
   color: #ffffff;
+  background: #ff5252;
 }
 
 .main {

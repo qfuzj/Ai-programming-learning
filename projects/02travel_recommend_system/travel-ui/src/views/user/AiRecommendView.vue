@@ -105,8 +105,8 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .header {
@@ -114,16 +114,16 @@ onMounted(() => {
 }
 
 .title {
+  margin: 0 0 8px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 8px 0;
 }
 
 .subtitle {
+  margin: 0 0 20px 0;
   font-size: 15px;
   color: #999999;
-  margin: 0 0 20px 0;
 }
 
 .btn-refresh {
@@ -131,10 +131,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -143,8 +143,8 @@ onMounted(() => {
 }
 
 .btn-refresh:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Grid */
@@ -180,9 +180,9 @@ onMounted(() => {
 .card-img {
   width: 100%;
   height: 200px;
-  border-radius: 12px;
   overflow: hidden;
   background: #f5f5f5;
+  border-radius: 12px;
 }
 
 .card-img img {
@@ -196,31 +196,31 @@ onMounted(() => {
 }
 
 .card-title {
+  margin: 0 0 8px 0;
   font-size: 18px;
   font-weight: 600;
   color: #000000;
-  margin: 0 0 8px 0;
 }
 
 .card-reason {
-  font-size: 14px;
-  color: #666666;
-  line-height: 1.6;
   margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666666;
 }
 
 .card-meta {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
 }
 
 .score {
+  padding: 2px 8px;
   font-size: 14px;
   font-weight: 600;
   color: #000000;
   background: #f0f0f0;
-  padding: 2px 8px;
   border-radius: 4px;
 }
 
@@ -232,9 +232,9 @@ onMounted(() => {
 /* Pagination */
 .pagination {
   display: flex;
+  gap: 16px;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   margin-top: 40px;
 }
 
@@ -242,21 +242,21 @@ onMounted(() => {
   padding: 10px 20px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .page-btn:hover:not(:disabled) {
-  border-color: #00e676;
   background: #f9fff9;
+  border-color: #00e676;
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .page-info {
@@ -267,15 +267,15 @@ onMounted(() => {
 /* Empty */
 .empty {
   padding: 80px 20px;
-  text-align: center;
-  color: #999999;
   font-size: 15px;
+  color: #999999;
+  text-align: center;
 }
 
 /* Skeleton */
 .skeleton-card {
-  border-radius: 12px;
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .skeleton-img {
@@ -291,8 +291,8 @@ onMounted(() => {
   margin-top: 12px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line.short {

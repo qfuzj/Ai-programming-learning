@@ -72,8 +72,8 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 900px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .header {
@@ -82,34 +82,34 @@ onMounted(() => {
 
 .btn-back {
   padding: 6px 12px;
+  margin-bottom: 16px;
   font-size: 14px;
   color: #666666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 16px;
 }
 
 .btn-back:hover {
-  border-color: #000000;
   color: #000000;
+  border-color: #000000;
 }
 
 .title {
+  margin: 0 0 12px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 12px 0;
 }
 
 .meta {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   font-size: 14px;
   color: #999999;
-  flex-wrap: wrap;
 }
 
 /* Days */
@@ -120,16 +120,16 @@ onMounted(() => {
 }
 
 .day-card {
+  padding: 24px;
   background: #f9f9f9;
   border-radius: 12px;
-  padding: 24px;
 }
 
 .day-title {
+  margin: 0 0 20px 0;
   font-size: 20px;
   font-weight: 600;
   color: #000000;
-  margin: 0 0 20px 0;
 }
 
 .item-list {
@@ -146,16 +146,16 @@ onMounted(() => {
 }
 
 .item:last-child {
-  border-bottom: none;
   padding-bottom: 0;
+  border-bottom: none;
 }
 
 .item-time {
-  font-size: 13px;
-  color: #999999;
   flex-shrink: 0;
   min-width: 50px;
   padding-top: 2px;
+  font-size: 13px;
+  color: #999999;
 }
 
 .item-content strong {
@@ -165,32 +165,32 @@ onMounted(() => {
 }
 
 .item-content p {
-  font-size: 14px;
-  color: #666666;
   margin: 6px 0 0 0;
+  font-size: 14px;
   line-height: 1.6;
+  color: #666666;
 }
 
 .item-loc {
-  font-size: 12px;
-  color: #999999;
   display: block;
   margin-top: 6px;
+  font-size: 12px;
+  color: #999999;
 }
 
 .day-empty {
+  padding: 20px 0;
   font-size: 14px;
   color: #999999;
-  padding: 20px 0;
   text-align: center;
 }
 
 .loading,
 .empty,
 .empty-page {
-  text-align: center;
   padding: 80px 20px;
-  color: #999999;
   font-size: 15px;
+  color: #999999;
+  text-align: center;
 }
 </style>

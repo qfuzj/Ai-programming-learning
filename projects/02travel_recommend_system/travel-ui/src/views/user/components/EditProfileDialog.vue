@@ -233,32 +233,32 @@ function handleSubmit(): void {
 }
 
 .upload-avatar {
-  background-color: #34e0a1;
   color: #fff;
+  background-color: #34e0a1;
 }
 
 .avatar-upload-wrapper {
   position: relative;
   width: 80px;
   height: 80px;
+  overflow: hidden;
   cursor: pointer;
   border-radius: 50%;
-  overflow: hidden;
 }
 
 .avatar-upload-mask {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
+  gap: 4px;
   align-items: center;
   justify-content: center;
+  font-size: 12px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
   opacity: 0;
   transition: opacity 0.2s;
-  color: #fff;
-  font-size: 12px;
-  gap: 4px;
 }
 
 .avatar-upload-wrapper:hover .avatar-upload-mask {

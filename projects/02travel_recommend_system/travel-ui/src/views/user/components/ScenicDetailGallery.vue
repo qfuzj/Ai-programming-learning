@@ -28,44 +28,44 @@ defineProps<Props>();
   display: flex;
   gap: 4px;
   height: 440px;
-  border-radius: 8px;
-  overflow: hidden;
   margin-bottom: 40px;
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 .main-photo {
   flex: 2;
-  background-size: cover;
   background-position: center;
+  background-size: cover;
 }
 
 .side-photos {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 4px;
 }
 
 .side-photo {
-  flex: 1;
-  background-size: cover;
-  background-position: center;
   position: relative;
+  flex: 1;
+  background-position: center;
+  background-size: cover;
 }
 
 .photo-overlay {
   position: absolute;
   right: 16px;
   bottom: 16px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  border-radius: 4px;
-  padding: 6px 12px;
   display: flex;
-  align-items: center;
   gap: 8px;
-  font-weight: 600;
+  align-items: center;
+  padding: 6px 12px;
   font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
 }
 
 @media (max-width: 768px) {

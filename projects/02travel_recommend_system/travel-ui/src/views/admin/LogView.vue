@@ -58,31 +58,31 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 .title {
+  margin: 0 0 32px 0;
   font-size: 28px;
   font-weight: 700;
   color: #000;
-  margin: 0 0 32px 0;
 }
 .table-wrap {
+  overflow: hidden;
   background: #fff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  overflow: hidden;
 }
 .table {
   width: 100%;
   border-collapse: collapse;
 }
 .table th {
-  text-align: left;
   padding: 14px 16px;
   font-size: 13px;
   font-weight: 600;
   color: #666;
+  text-align: left;
   background: #f9f9f9;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -98,15 +98,15 @@ onMounted(() => {
 .badge {
   padding: 4px 10px;
   font-size: 12px;
-  background: #f0f0f0;
   color: #000;
+  background: #f0f0f0;
   border-radius: 999px;
 }
 .loading,
 .empty {
-  text-align: center;
   padding: 60px 20px;
-  color: #999;
   font-size: 14px;
+  color: #999;
+  text-align: center;
 }
 </style>

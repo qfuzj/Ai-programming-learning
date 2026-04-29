@@ -75,8 +75,8 @@ const emit = defineEmits<{
 }
 
 .breadcrumb-container :deep(.el-breadcrumb__inner) {
-  color: #666;
   font-weight: 400;
+  color: #666;
 }
 
 .breadcrumb-container :deep(.el-breadcrumb__inner:hover) {
@@ -86,8 +86,8 @@ const emit = defineEmits<{
 
 .header-section {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
+  justify-content: space-between;
   margin-bottom: 24px;
 }
 
@@ -96,18 +96,18 @@ const emit = defineEmits<{
 }
 
 .scenic-title {
+  margin: 0 0 12px 0;
   font-size: 36px;
   font-weight: 800;
-  color: #1a1a1a;
-  margin: 0 0 12px 0;
   line-height: 1.2;
+  color: #1a1a1a;
 }
 
 .scenic-rating {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+  align-items: center;
   font-size: 14px;
   color: #333;
 }
@@ -120,9 +120,9 @@ const emit = defineEmits<{
 .dot {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
-  border: 1px solid #34e0a1;
   background: #fff;
+  border: 1px solid #34e0a1;
+  border-radius: 50%;
 }
 
 .dot.filled {
@@ -135,9 +135,9 @@ const emit = defineEmits<{
 }
 
 .review-count {
+  color: #1a1a1a;
   text-decoration: underline;
   cursor: pointer;
-  color: #1a1a1a;
 }
 
 .rank-text {
@@ -146,9 +146,9 @@ const emit = defineEmits<{
 
 .metric-item {
   display: flex;
+  gap: 4px;
   align-items: center;
   color: #666;
-  gap: 4px;
 }
 
 .header-right {
@@ -158,11 +158,11 @@ const emit = defineEmits<{
 }
 
 .action-btn {
-  border: 1px solid #1a1a1a;
-  color: #1a1a1a;
-  font-weight: 700;
   height: 40px;
   padding: 0 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  border: 1px solid #1a1a1a;
 }
 
 .red-star {

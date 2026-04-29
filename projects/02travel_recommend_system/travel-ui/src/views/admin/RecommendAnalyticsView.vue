@@ -64,14 +64,14 @@ onMounted(async () => {
 <style scoped>
 .page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 .title {
+  margin: 0 0 32px 0;
   font-size: 28px;
   font-weight: 700;
   color: #000;
-  margin: 0 0 32px 0;
 }
 .stat-grid {
   display: grid;
@@ -79,11 +79,11 @@ onMounted(async () => {
   gap: 16px;
 }
 .stat-card {
+  padding: 24px;
+  text-align: center;
   background: #fff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  padding: 24px;
-  text-align: center;
   transition: all 0.2s;
 }
 .stat-card:hover {
@@ -91,20 +91,20 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0, 230, 118, 0.1);
 }
 .stat-value {
+  margin-bottom: 8px;
   font-size: 32px;
   font-weight: 700;
   color: #000;
-  margin-bottom: 8px;
 }
 .stat-label {
   font-size: 14px;
   color: #999;
 }
 .loading {
-  text-align: center;
   padding: 60px 20px;
-  color: #999;
   font-size: 14px;
+  color: #999;
+  text-align: center;
 }
 @media (max-width: 768px) {
   .stat-grid {

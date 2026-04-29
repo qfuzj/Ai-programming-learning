@@ -88,8 +88,8 @@ const emit = defineEmits<{
 
 .day-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 .timeline-card {
@@ -98,15 +98,15 @@ const emit = defineEmits<{
 
 .item-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 8px;
 }
 
 .item-actions {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
 }
 
 .item-header h4 {
@@ -115,16 +115,16 @@ const emit = defineEmits<{
 }
 
 .item-desc {
-  color: #606266;
-  font-size: 14px;
   margin: 4px 0;
+  font-size: 14px;
+  color: #606266;
 }
 
 .item-spot,
 .item-loc,
 .item-notes {
-  color: #909399;
-  font-size: 13px;
   margin: 2px 0;
+  font-size: 13px;
+  color: #909399;
 }
 </style>

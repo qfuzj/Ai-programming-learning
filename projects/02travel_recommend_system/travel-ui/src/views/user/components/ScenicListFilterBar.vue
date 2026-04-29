@@ -209,16 +209,16 @@ const minScoreModel = computed({
 <style scoped>
 .toolbar-section {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 16px 20px 0;
+  margin: 0 auto;
 }
 
 .toolbar-container {
-  background: #ffffff;
-  border-radius: 12px;
   padding: 24px 24px 4px 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
   border: 1px solid #f0f2f5;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
 }
 
@@ -242,8 +242,8 @@ const minScoreModel = computed({
 
 .form-item :deep(.el-input__wrapper),
 .form-item :deep(.el-select__wrapper) {
-  box-shadow: 0 0 0 1px #e4e7ed inset;
   border-radius: 8px;
+  box-shadow: 0 0 0 1px #e4e7ed inset;
   transition: all 0.2s;
 }
 
@@ -271,11 +271,11 @@ const minScoreModel = computed({
 
 .search-btn,
 .reset-btn {
-  padding: 0 24px;
   height: 32px;
-  border-radius: 8px;
+  padding: 0 24px;
   font-weight: 500;
   letter-spacing: 1px;
+  border-radius: 8px;
 }
 
 .search-btn {
@@ -288,14 +288,14 @@ const minScoreModel = computed({
 }
 
 .reset-btn {
-  border-color: #dcdfe6;
   color: #606266;
+  border-color: #dcdfe6;
 }
 
 .reset-btn:hover {
   color: var(--el-color-primary);
-  border-color: var(--el-color-primary-light-7);
   background-color: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-7);
 }
 
 @media (max-width: 768px) {
@@ -309,8 +309,8 @@ const minScoreModel = computed({
     justify-content: center;
   }
   .action-buttons {
-    width: 100%;
     justify-content: space-between;
+    width: 100%;
   }
   .search-btn,
   .reset-btn {

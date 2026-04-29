@@ -147,14 +147,14 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 1200px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 .title {
+  margin: 0 0 32px 0;
   font-size: 28px;
   font-weight: 700;
   color: #000;
-  margin: 0 0 32px 0;
 }
 .header {
   display: flex;
@@ -167,19 +167,19 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
 }
 .btn-new:hover {
   background: #00c665;
 }
 .tree {
+  padding: 16px;
   background: #fff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  padding: 16px;
 }
 .tree-item {
   border-bottom: 1px solid #f0f0f0;
@@ -189,8 +189,8 @@ onMounted(() => {
 }
 .tree-row {
   display: flex;
-  align-items: center;
   gap: 16px;
+  align-items: center;
   padding: 12px;
 }
 .tree-row.child {
@@ -199,14 +199,14 @@ onMounted(() => {
 .name {
   flex: 1;
   font-size: 15px;
-  color: #000;
   font-weight: 500;
+  color: #000;
 }
 .level {
+  padding: 4px 10px;
   font-size: 12px;
   color: #999;
   background: #f5f5f5;
-  padding: 4px 10px;
   border-radius: 999px;
 }
 .actions {
@@ -226,37 +226,37 @@ onMounted(() => {
 }
 .loading,
 .empty {
-  text-align: center;
   padding: 60px 20px;
-  color: #999;
   font-size: 14px;
+  color: #999;
+  text-align: center;
 }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
   display: grid;
   place-items: center;
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.3);
 }
 .modal {
-  background: #fff;
-  border-radius: 16px;
-  padding: 32px;
   width: 100%;
   max-width: 500px;
+  padding: 32px;
+  background: #fff;
+  border-radius: 16px;
 }
 .modal-title {
+  margin: 0 0 24px 0;
   font-size: 22px;
   font-weight: 700;
   color: #000;
-  margin: 0 0 24px 0;
 }
 .form-group {
-  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 20px;
 }
 .label {
   font-size: 14px;
@@ -267,10 +267,10 @@ onMounted(() => {
   padding: 10px 14px;
   font-size: 14px;
   color: #000;
+  outline: none;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
 }
 .input:focus {
   border-color: #00e676;
@@ -278,26 +278,26 @@ onMounted(() => {
 .form-actions {
   display: flex;
   gap: 12px;
-  margin-top: 16px;
   justify-content: flex-end;
+  margin-top: 16px;
 }
 .btn-cancel {
   padding: 10px 20px;
   font-size: 14px;
   color: #666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
 }
 .btn-submit {
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
   color: #000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
 }
 </style>

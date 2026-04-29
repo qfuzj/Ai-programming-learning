@@ -47,7 +47,6 @@ export function updatePreferenceTags(tagIds: number[]): Promise<void> {
   return http.put("/api/user/profile/preference-tags", { tagIds });
 }
 
-
 export function getMyPreferenceTags(): Promise<any[]> {
   return http.get("/api/user/profile/preference-tags");
 }

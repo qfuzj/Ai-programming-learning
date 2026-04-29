@@ -83,25 +83,25 @@ function formatDate(time: string | null): string {
 }
 
 .card-image {
+  flex-shrink: 0;
   width: 80px;
   height: 80px;
   border-radius: 8px;
-  flex-shrink: 0;
 }
 
 .card-info {
-  flex: 1;
-  min-width: 0;
   display: flex;
+  flex: 1;
   flex-direction: column;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .card-title {
   margin: 0;
-  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 15px;
   white-space: nowrap;
 }
 
@@ -112,14 +112,14 @@ function formatDate(time: string | null): string {
 }
 
 .scenic-card {
-  cursor: pointer;
   margin-bottom: 16px;
+  cursor: pointer;
 }
 
 .empty-state {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   height: 100%;
 }
 </style>

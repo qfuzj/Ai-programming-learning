@@ -9,7 +9,7 @@
           class="selectable-tag"
           :effect="selectedIds.includes(tag.id) ? 'dark' : 'plain'"
           round
-          style="cursor: pointer; margin: 4px"
+          style="margin: 4px; cursor: pointer"
           @click="toggleTag(tag.id)"
         >
           {{ tag.name }}
@@ -105,11 +105,11 @@ function toggleTag(id: number): void {
 }
 
 .tag-group-title {
+  padding-bottom: 6px;
+  margin-bottom: 10px;
   font-size: 14px;
   font-weight: 600;
   color: #606266;
-  margin-bottom: 10px;
-  padding-bottom: 6px;
   border-bottom: 1px solid #f0f0f0;
 }
 

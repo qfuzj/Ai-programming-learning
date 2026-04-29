@@ -151,25 +151,25 @@ onMounted(() => {
 }
 
 .brand {
+  margin-bottom: 32px;
   font-size: 28px;
   font-weight: 800;
   color: #00e676;
-  margin-bottom: 32px;
   text-align: center;
   letter-spacing: -0.5px;
 }
 
 .title {
+  margin: 0 0 8px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 8px 0;
 }
 
 .subtitle {
+  margin: 0 0 40px 0;
   font-size: 15px;
   color: #999999;
-  margin: 0 0 40px 0;
 }
 
 .form-group {
@@ -178,10 +178,10 @@ onMounted(() => {
 
 .form-label {
   display: block;
+  margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
   color: #000000;
-  margin-bottom: 8px;
 }
 
 .form-input {
@@ -189,10 +189,10 @@ onMounted(() => {
   padding: 12px 16px;
   font-size: 15px;
   color: #000000;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
   transition: border-color 0.2s;
 }
 
@@ -218,22 +218,22 @@ onMounted(() => {
   width: 120px;
   height: 44px;
   cursor: pointer;
-  border-radius: 8px;
   object-fit: cover;
+  border-radius: 8px;
 }
 
 .submit-btn {
   width: 100%;
   padding: 14px;
+  margin-top: 8px;
   font-size: 16px;
   font-weight: 600;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
-  margin-top: 8px;
 }
 
 .submit-btn:hover {
@@ -241,22 +241,22 @@ onMounted(() => {
 }
 
 .submit-btn:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .auth-footer {
   display: flex;
-  justify-content: center;
   gap: 16px;
+  justify-content: center;
   margin-top: 24px;
   font-size: 14px;
 }
 
 .link {
+  font-weight: 500;
   color: #000000;
   cursor: pointer;
-  font-weight: 500;
 }
 
 .link:hover {
@@ -268,12 +268,12 @@ onMounted(() => {
 }
 
 .success-msg {
-  margin-top: 16px;
   padding: 12px 16px;
+  margin-top: 16px;
   font-size: 14px;
   color: #000000;
+  text-align: center;
   background: #e8f5e9;
   border-radius: 8px;
-  text-align: center;
 }
 </style>

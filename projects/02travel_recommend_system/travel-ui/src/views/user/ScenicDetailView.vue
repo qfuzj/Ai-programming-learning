@@ -341,26 +341,26 @@ watch(
 
 /* Header */
 .header {
+  padding: 40px 0;
   background: #ffffff;
   border-bottom: 1px solid #f0f0f0;
-  padding: 40px 0;
 }
 
 .header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 24px;
   display: flex;
   gap: 40px;
+  max-width: 1200px;
+  padding: 0 24px;
+  margin: 0 auto;
 }
 
 .cover {
+  flex-shrink: 0;
   width: 480px;
   height: 320px;
-  border-radius: 12px;
   overflow: hidden;
-  flex-shrink: 0;
   background: #f5f5f5;
+  border-radius: 12px;
 }
 
 .cover img {
@@ -389,22 +389,22 @@ watch(
 }
 
 .title {
+  margin: 0 0 12px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 12px 0;
 }
 
 .location {
+  margin: 0 0 16px 0;
   font-size: 15px;
   color: #999999;
-  margin: 0 0 16px 0;
 }
 
 .meta {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   margin-bottom: 24px;
 }
 
@@ -429,8 +429,8 @@ watch(
   padding: 10px 24px;
   font-size: 14px;
   font-weight: 500;
-  border-radius: 8px;
   cursor: pointer;
+  border-radius: 8px;
   transition: all 0.2s;
 }
 
@@ -460,11 +460,11 @@ watch(
 
 /* Content */
 .content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 24px;
   display: flex;
   gap: 40px;
+  max-width: 1200px;
+  padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .main {
@@ -473,28 +473,28 @@ watch(
 }
 
 .sidebar {
-  width: 320px;
   flex-shrink: 0;
+  width: 320px;
 }
 
 .side-card {
+  padding: 24px;
   background: #f9f9f9;
   border-radius: 12px;
-  padding: 24px;
 }
 
 .side-card .label {
   display: block;
+  margin-bottom: 4px;
   font-size: 13px;
   color: #999999;
-  margin-bottom: 4px;
 }
 
 .side-card .value {
   display: block;
+  margin-bottom: 20px;
   font-size: 15px;
   color: #000000;
-  margin-bottom: 20px;
 }
 
 .side-card .price .value {
@@ -509,10 +509,10 @@ watch(
 }
 
 .section-title {
+  margin: 0 0 20px 0;
   font-size: 22px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 20px 0;
 }
 
 /* Gallery */
@@ -525,9 +525,9 @@ watch(
 .gallery-img {
   width: 100%;
   height: 160px;
+  cursor: pointer;
   object-fit: cover;
   border-radius: 8px;
-  cursor: pointer;
   transition: transform 0.2s;
 }
 
@@ -537,16 +537,16 @@ watch(
 
 /* Description */
 .description {
-  font-size: 15px;
-  color: #333333;
-  line-height: 1.8;
   margin: 0 0 16px 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #333333;
 }
 
 .detail-content {
   font-size: 15px;
-  color: #333333;
   line-height: 1.8;
+  color: #333333;
 }
 
 /* Info grid */
@@ -587,14 +587,14 @@ watch(
 /* Review */
 .btn-write {
   padding: 8px 20px;
+  margin-bottom: 20px;
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 20px;
 }
 
 .btn-write:hover {
@@ -602,16 +602,16 @@ watch(
 }
 
 .review-form {
-  background: #f9f9f9;
-  border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
+  background: #f9f9f9;
+  border-radius: 12px;
 }
 
 .rating-select {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   margin-bottom: 16px;
 }
 
@@ -624,23 +624,23 @@ watch(
   padding: 8px 12px;
   font-size: 14px;
   color: #000000;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
 }
 
 .textarea {
   width: 100%;
   padding: 12px;
+  font-family: inherit;
   font-size: 14px;
   color: #000000;
+  resize: vertical;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
 }
 
 .textarea:focus {
@@ -658,10 +658,10 @@ watch(
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
 }
 
 .btn-cancel {
@@ -669,10 +669,10 @@ watch(
   font-size: 14px;
   font-weight: 500;
   color: #666666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
 }
 
 .review-list {
@@ -688,22 +688,22 @@ watch(
 
 .review-header {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   margin-bottom: 12px;
 }
 
 .review-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
   width: 36px;
   height: 36px;
-  display: grid;
-  place-items: center;
-  background: #00e676;
-  color: #000000;
-  font-weight: 600;
   font-size: 14px;
+  font-weight: 600;
+  color: #000000;
+  background: #00e676;
   border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .review-user {
@@ -724,10 +724,10 @@ watch(
 }
 
 .review-content {
-  font-size: 14px;
-  color: #333333;
-  line-height: 1.6;
   margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333333;
 }
 
 /* Similar */
@@ -738,10 +738,10 @@ watch(
 }
 
 .similar-card {
-  cursor: pointer;
-  border-radius: 10px;
   overflow: hidden;
+  cursor: pointer;
   border: 1px solid #f0f0f0;
+  border-radius: 10px;
   transition: all 0.2s;
 }
 
@@ -760,24 +760,24 @@ watch(
 }
 
 .similar-body h3 {
+  margin: 0 0 6px 0;
   font-size: 15px;
   font-weight: 600;
   color: #000000;
-  margin: 0 0 6px 0;
 }
 
 .reason {
+  margin: 0;
   font-size: 13px;
   color: #999999;
-  margin: 0;
 }
 
 /* Pagination */
 .pagination {
   display: flex;
+  gap: 16px;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   margin-top: 24px;
 }
 
@@ -785,10 +785,10 @@ watch(
   padding: 8px 16px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
 }
 
 .page-btn:hover:not(:disabled) {
@@ -796,8 +796,8 @@ watch(
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .page-info {
@@ -809,16 +809,16 @@ watch(
 .loading,
 .empty {
   padding: 40px;
-  text-align: center;
-  color: #999999;
   font-size: 14px;
+  color: #999999;
+  text-align: center;
 }
 
 .empty-page {
   padding: 80px 20px;
-  text-align: center;
-  color: #999999;
   font-size: 15px;
+  color: #999999;
+  text-align: center;
 }
 
 @media (max-width: 992px) {

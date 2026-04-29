@@ -36,7 +36,7 @@ export function useScenicList() {
     level: undefined,
     tagId: undefined,
     tagIds: undefined,
-sortBy: "hot",
+    sortBy: "hot",
     sortOrder: undefined,
   });
 
@@ -60,7 +60,6 @@ sortBy: "hot",
       !!query.level ||
       !!query.tagId ||
       !!query.tagIds?.length ||
-      
       query.sortBy !== "hot"
     );
   });
@@ -185,7 +184,7 @@ sortBy: "hot",
         level: query.level || undefined,
         tagId: query.tagId,
         tagIds: query.tagIds,
-sortBy: query.sortBy,
+        sortBy: query.sortBy,
         sortOrder: query.sortOrder,
       });
       scenicList.value = result.records;
@@ -222,7 +221,7 @@ sortBy: query.sortBy,
     query.tagId = undefined;
     query.tagIds = undefined;
     selectedTagPaths.value = [];
-query.sortBy = "hot";
+    query.sortBy = "hot";
     query.pageNum = 1;
   }
 

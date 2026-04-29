@@ -86,24 +86,24 @@ const hasBioContent = computed(() =>
 
 .section-title {
   margin-top: 0;
+  margin-bottom: 16px;
   font-size: 18px;
   font-weight: 700;
-  margin-bottom: 16px;
   color: #000;
 }
 
 .bio-card {
-  background: #fff;
   padding: 24px;
-  border-radius: 12px;
+  background: #fff;
   border: 1px solid #e0e0e0;
+  border-radius: 12px;
 }
 
 .signature {
+  margin-bottom: 20px;
   font-size: 15px;
   line-height: 1.6;
   color: #333;
-  margin-bottom: 20px;
   white-space: pre-wrap;
 }
 
@@ -115,10 +115,10 @@ const hasBioContent = computed(() =>
 
 .info-item {
   display: flex;
-  align-items: center;
   gap: 10px;
-  color: #666;
+  align-items: center;
   font-size: 14px;
+  color: #666;
 }
 
 .section-title-row {
@@ -133,18 +133,18 @@ const hasBioContent = computed(() =>
 }
 
 .text-muted {
-  color: #909399;
   font-size: 14px;
+  color: #909399;
 }
 
 .tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  background: #fff;
   padding: 20px;
-  border-radius: 12px;
+  background: #fff;
   border: 1px solid #e0e0e0;
+  border-radius: 12px;
 }
 
 .pref-tag {

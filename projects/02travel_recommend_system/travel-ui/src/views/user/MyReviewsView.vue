@@ -193,8 +193,8 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 900px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .header {
@@ -205,10 +205,10 @@ onMounted(() => {
 }
 
 .title {
+  margin: 0;
   font-size: 28px;
   font-weight: 700;
   color: #000000;
-  margin: 0;
 }
 
 .btn-write {
@@ -216,10 +216,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -232,23 +232,23 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #666666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-back:hover {
-  border-color: #000000;
   color: #000000;
+  border-color: #000000;
 }
 
 /* Form */
 .review-form {
+  padding: 24px;
   background: #f9f9f9;
   border-radius: 12px;
-  padding: 24px;
 }
 
 .form-group {
@@ -257,10 +257,10 @@ onMounted(() => {
 
 .label {
   display: block;
+  margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
   color: #000000;
-  margin-bottom: 8px;
 }
 
 .select {
@@ -268,11 +268,11 @@ onMounted(() => {
   padding: 10px 14px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
-  cursor: pointer;
 }
 
 .select:focus {
@@ -282,14 +282,14 @@ onMounted(() => {
 .textarea {
   width: 100%;
   padding: 12px;
+  font-family: inherit;
   font-size: 14px;
   color: #000000;
+  resize: vertical;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
 }
 
 .textarea:focus {
@@ -306,10 +306,10 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 500;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -318,8 +318,8 @@ onMounted(() => {
 }
 
 .btn-submit:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* List */
@@ -350,8 +350,8 @@ onMounted(() => {
 
 .item-info {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
 }
 
 .scenic-name {
@@ -366,11 +366,11 @@ onMounted(() => {
 }
 
 .score {
+  padding: 2px 8px;
   font-size: 14px;
   font-weight: 600;
   color: #000000;
   background: #f0f0f0;
-  padding: 2px 8px;
   border-radius: 4px;
 }
 
@@ -380,10 +380,10 @@ onMounted(() => {
 }
 
 .content {
-  font-size: 14px;
-  color: #333333;
-  line-height: 1.6;
   margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333333;
 }
 
 .item-actions {
@@ -401,10 +401,10 @@ onMounted(() => {
   padding: 6px 14px;
   font-size: 13px;
   color: #999999;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -416,9 +416,9 @@ onMounted(() => {
 /* Pagination */
 .pagination {
   display: flex;
+  gap: 16px;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   margin-top: 40px;
 }
 
@@ -426,10 +426,10 @@ onMounted(() => {
   padding: 8px 16px;
   font-size: 14px;
   color: #000000;
+  cursor: pointer;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
@@ -438,8 +438,8 @@ onMounted(() => {
 }
 
 .page-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .page-info {
@@ -450,9 +450,9 @@ onMounted(() => {
 /* Empty */
 .empty {
   padding: 80px 20px;
-  text-align: center;
-  color: #999999;
   font-size: 15px;
+  color: #999999;
+  text-align: center;
 }
 
 /* Skeleton */
@@ -469,18 +469,18 @@ onMounted(() => {
 }
 
 .skeleton-avatar {
+  flex-shrink: 0;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
+  border-radius: 50%;
   animation: loading 1.5s infinite;
-  flex-shrink: 0;
 }
 
 .skeleton-lines {
-  flex: 1;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 8px;
   justify-content: center;
@@ -490,8 +490,8 @@ onMounted(() => {
   height: 16px;
   background: linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%);
   background-size: 200% 100%;
-  animation: loading 1.5s infinite;
   border-radius: 4px;
+  animation: loading 1.5s infinite;
 }
 
 .skeleton-line.short {

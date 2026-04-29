@@ -52,7 +52,8 @@ export function useItineraryDetail() {
       if (timeCompare !== 0) {
         return timeCompare;
       }
-      const sortOrderCompare = (left.sortOrder ?? Number.MAX_SAFE_INTEGER) - (right.sortOrder ?? Number.MAX_SAFE_INTEGER);
+      const sortOrderCompare =
+        (left.sortOrder ?? Number.MAX_SAFE_INTEGER) - (right.sortOrder ?? Number.MAX_SAFE_INTEGER);
       if (sortOrderCompare !== 0) {
         return sortOrderCompare;
       }

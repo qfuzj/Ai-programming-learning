@@ -148,21 +148,21 @@ onMounted(() => {
 <style scoped>
 .page {
   max-width: 700px;
-  margin: 0 auto;
   padding: 40px 24px;
+  margin: 0 auto;
 }
 
 .title {
+  margin: 0 0 8px 0;
   font-size: 32px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 8px 0;
 }
 
 .subtitle {
+  margin: 0 0 40px 0;
   font-size: 15px;
   color: #999999;
-  margin: 0 0 40px 0;
 }
 
 .form {
@@ -197,14 +197,14 @@ onMounted(() => {
 
 .input {
   padding: 12px 16px;
+  font-family: inherit;
   font-size: 15px;
   color: #000000;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
   transition: border-color 0.2s;
-  font-family: inherit;
 }
 
 .input:focus {
@@ -213,14 +213,14 @@ onMounted(() => {
 
 .textarea {
   padding: 12px 16px;
+  font-family: inherit;
   font-size: 15px;
   color: #000000;
+  resize: vertical;
+  outline: none;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
   transition: border-color 0.2s;
 }
 
@@ -239,16 +239,16 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 500;
   color: #666666;
+  cursor: pointer;
   background: transparent;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-cancel:hover {
-  border-color: #000000;
   color: #000000;
+  border-color: #000000;
 }
 
 .btn-submit {
@@ -256,10 +256,10 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 600;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
@@ -267,7 +267,7 @@ onMounted(() => {
   background: #00c665;
 }
 .btn-submit:disabled {
-  opacity: 0.6;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 </style>

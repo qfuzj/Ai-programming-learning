@@ -134,12 +134,12 @@ onUnmounted(() => {
 }
 
 .nav-link {
+  position: relative;
+  padding: 4px 0;
   font-size: 15px;
   font-weight: 500;
   color: #999999;
   transition: color 0.2s;
-  padding: 4px 0;
-  position: relative;
 }
 
 .nav-link:hover {
@@ -151,26 +151,26 @@ onUnmounted(() => {
 }
 
 .nav-link.active::after {
-  content: "";
   position: absolute;
+  right: 0;
   bottom: -20px;
   left: 0;
-  right: 0;
   height: 2px;
+  content: "";
   background: #00e676;
 }
 
 .header-right {
-  margin-left: auto;
   position: relative;
+  margin-left: auto;
 }
 
 .user-menu {
   display: flex;
-  align-items: center;
   gap: 10px;
-  cursor: pointer;
+  align-items: center;
   padding: 6px 12px;
+  cursor: pointer;
   border-radius: 999px;
   transition: background 0.2s;
 }
@@ -180,24 +180,24 @@ onUnmounted(() => {
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
   display: grid;
   place-items: center;
-  background: #00e676;
-  color: #000000;
-  font-weight: 700;
+  width: 32px;
+  height: 32px;
   font-size: 14px;
+  font-weight: 700;
+  color: #000000;
+  background: #00e676;
   border-radius: 50%;
 }
 
 .username {
-  font-size: 14px;
-  font-weight: 500;
-  color: #000000;
   max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
   white-space: nowrap;
 }
 
@@ -206,10 +206,10 @@ onUnmounted(() => {
   top: 52px;
   right: 0;
   min-width: 180px;
+  padding: 8px;
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 12px;
-  padding: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
@@ -232,8 +232,8 @@ onUnmounted(() => {
 
 .dropdown-divider {
   height: 1px;
-  background: #f0f0f0;
   margin: 4px 0;
+  background: #f0f0f0;
 }
 
 .btn-login {
@@ -241,10 +241,10 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 600;
   color: #000000;
+  cursor: pointer;
   background: #00e676;
   border: none;
   border-radius: 999px;
-  cursor: pointer;
   transition: background 0.2s;
 }
 
