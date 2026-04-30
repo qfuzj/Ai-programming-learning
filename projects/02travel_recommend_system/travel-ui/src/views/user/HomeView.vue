@@ -71,7 +71,27 @@
               </div>
               <p class="card-location">{{ item.regionName || "未知" }}</p>
               <div class="card-meta">
-                <span class="score">{{ item.score ? item.score.toFixed(1) : "5.0" }}</span>
+                <div class="rating-wrapper">
+                  <div class="star-rating">
+                    <div class="stars-bg">
+                      <svg v-for="i in 5" :key="'bg-' + i" class="star-svg" viewBox="0 0 24 24">
+                        <path
+                          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                          fill="#E8E8E8"
+                        />
+                      </svg>
+                    </div>
+                    <div class="stars-fg" :style="{ width: ((item.score || 5) / 5) * 100 + '%' }">
+                      <svg v-for="i in 5" :key="'fg-' + i" class="star-svg" viewBox="0 0 24 24">
+                        <path
+                          d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                          fill="#00E676"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <span class="score-text">{{ (item.score || 5).toFixed(1) }}</span>
+                </div>
                 <span
                   v-if="item.ticketPrice !== undefined && item.ticketPrice !== null"
                   class="price"
@@ -378,19 +398,23 @@ onMounted(() => {
   border: 1px solid #f0f0f0;
   border-radius: 12px;
   transition:
-    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.35s;
   animation: fadeInUp 0.6s ease-out both;
 }
 
 .card:hover {
   border-color: transparent;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-  transform: translateY(-8px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.04),
+    0 16px 36px rgba(0, 0, 0, 0.08);
+  transform: translateY(-6px);
 }
 
 .card:active {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
+  transition-duration: 0.1s;
 }
 
 .card-img {
@@ -420,7 +444,12 @@ onMounted(() => {
   height: 60%;
   pointer-events: none;
   content: "";
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.3) 0%, transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.15) 40%,
+    transparent 100%
+  );
 }
 
 .card-rank {
@@ -473,8 +502,10 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  line-height: 1.3;
   color: #000000;
+  letter-spacing: -0.3px;
   white-space: nowrap;
 }
 
@@ -491,16 +522,56 @@ onMounted(() => {
 .card-location {
   margin: 0 0 8px 0;
   font-size: 13px;
-  color: #999999;
+  font-weight: 500;
+  color: #888888;
+  letter-spacing: 0.2px;
 }
 
 .card-meta {
   display: flex;
   gap: 12px;
   align-items: center;
+  justify-content: space-between;
 }
 
-.score {
+.rating-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.star-rating {
+  position: relative;
+  display: inline-flex;
+  height: 16px;
+}
+
+.stars-bg,
+.stars-fg {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.stars-fg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.star-svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover .stars-fg .star-svg {
+  filter: drop-shadow(0 0 4px rgba(0, 230, 118, 0.5));
+}
+
+.score-text {
   font-size: 14px;
   font-weight: 600;
   color: #000000;
@@ -508,7 +579,8 @@ onMounted(() => {
 
 .price {
   font-size: 14px;
-  color: #666666;
+  font-weight: 500;
+  color: #000000;
 }
 
 /* Tag grid */
