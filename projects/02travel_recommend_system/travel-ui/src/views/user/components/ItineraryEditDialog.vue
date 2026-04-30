@@ -35,6 +35,40 @@
         <el-input-number v-model="form.totalDays" :min="1" :max="90" />
       </el-form-item>
 
+      <el-form-item label="目的地区域">
+        <el-input-number
+          v-model="form.destinationRegionId"
+          :min="1"
+          :step="1"
+          placeholder="可选，填写区域 ID"
+          style="width: 100%"
+        />
+      </el-form-item>
+
+      <el-form-item label="预计预算">
+        <el-input-number
+          v-model="form.estimatedBudget"
+          :min="0"
+          :step="100"
+          placeholder="可选，单位元"
+          style="width: 100%"
+        />
+      </el-form-item>
+
+      <el-form-item label="旅行同伴">
+        <el-select
+          v-model="form.travelCompanion"
+          placeholder="请选择"
+          clearable
+          style="width: 100%"
+        >
+          <el-option label="独自旅行" value="solo" />
+          <el-option label="情侣出游" value="couple" />
+          <el-option label="家庭旅行" value="family" />
+          <el-option label="朋友同行" value="friends" />
+        </el-select>
+      </el-form-item>
+
       <el-form-item label="状态" prop="status">
         <el-radio-group v-model="form.status">
           <el-radio v-for="item in statusOptions" :key="item.code" :label="item.code">

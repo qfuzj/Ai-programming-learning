@@ -1,14 +1,17 @@
 import { onMounted, reactive, ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   addItineraryItem,
+  deleteItinerary,
   deleteItineraryItem,
   getItineraryDetail,
+  updateItinerary,
   updateItineraryItem,
   type ItineraryDayItem,
   type ItineraryItem,
 } from "@/api/itinerary";
+import { createDefaultItineraryForm, type ItineraryFormModel } from "@/types/itinerary-list";
 import {
   createDefaultItineraryDayForm,
   type ItineraryItemDialogMode,
@@ -17,11 +20,15 @@ import {
 
 export function useItineraryDetail() {
   const route = useRoute();
+  const router = useRouter();
   const planId = Number(route.params.id);
 
   const loading = ref(false);
   const detail = ref<ItineraryItem | null>(null);
   const activeDay = ref("1");
+  const planDialogVisible = ref(false);
+  const planSubmitLoading = ref(false);
+  const planForm = reactive<ItineraryFormModel>(createDefaultItineraryForm());
 
   const itemDialogVisible = ref(false);
   const itemDialogMode = ref<ItineraryItemDialogMode>("create");
@@ -78,6 +85,59 @@ export function useItineraryDetail() {
     itemDialogMode.value = "create";
     Object.assign(itemForm, createDefaultItineraryDayForm(day));
     itemDialogVisible.value = true;
+  }
+
+  function openEditPlan(): void {
+    if (!detail.value) return;
+    Object.assign(planForm, {
+      title: detail.value.title,
+      coverImage: detail.value.coverImage,
+      startDate: detail.value.startDate,
+      endDate: detail.value.endDate,
+      totalDays: detail.value.totalDays || 1,
+      destinationRegionId: detail.value.destinationRegionId,
+      description: detail.value.description,
+      estimatedBudget: detail.value.estimatedBudget,
+      travelCompanion: detail.value.travelCompanion,
+      isPublic: detail.value.isPublic,
+      status: detail.value.status,
+    });
+    planDialogVisible.value = true;
+  }
+
+  async function submitPlanForm(): Promise<void> {
+    if (!planId) return;
+    planSubmitLoading.value = true;
+    try {
+      await updateItinerary(planId, planForm);
+      ElMessage.success("行程已更新");
+      planDialogVisible.value = false;
+      await fetchDetail();
+    } catch {
+      // axios 拦截器已弹错误提示
+    } finally {
+      planSubmitLoading.value = false;
+    }
+  }
+
+  async function handleDeletePlan(): Promise<void> {
+    if (!planId) return;
+    try {
+      await ElMessageBox.confirm(
+        "确定删除该行程吗？行程项也会一并删除，此操作不可恢复。",
+        "删除行程",
+        {
+          confirmButtonText: "删除",
+          cancelButtonText: "取消",
+          type: "warning",
+        }
+      );
+      await deleteItinerary(planId);
+      ElMessage.success("行程已删除");
+      void router.push("/itinerary");
+    } catch {
+      // 用户取消或接口失败，失败提示由拦截器处理
+    }
   }
 
   function openEditItem(item: ItineraryDayItem["items"][number]): void {
@@ -160,11 +220,17 @@ export function useItineraryDetail() {
     loading,
     detail,
     activeDay,
+    planDialogVisible,
+    planSubmitLoading,
+    planForm,
     itemDialogVisible,
     itemDialogMode,
     submitLoading,
     itemForm,
     getDayItems,
+    openEditPlan,
+    submitPlanForm,
+    handleDeletePlan,
     openAddItem,
     openEditItem,
     submitItem,

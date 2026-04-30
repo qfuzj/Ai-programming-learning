@@ -82,9 +82,13 @@ export function useItineraryList() {
     currentEditId.value = row.id;
     Object.assign(form, {
       title: row.title,
+      coverImage: row.coverImage,
       startDate: row.startDate,
       endDate: row.endDate,
       totalDays: row.totalDays || 1,
+      destinationRegionId: row.destinationRegionId,
+      estimatedBudget: row.estimatedBudget,
+      travelCompanion: row.travelCompanion,
       status: row.status,
       isPublic: row.isPublic,
       description: row.description,
