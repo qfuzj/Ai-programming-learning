@@ -26,6 +26,7 @@ import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.mapper.FileResourceMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.service.ReviewService;
+import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.review.ReviewReplyVO;
@@ -198,6 +199,7 @@ public class ReviewServiceImpl implements ReviewService {
         List<Long> userIds = reviews.stream().map(UserReview::getUserId).distinct().toList();
         Map<Long, User> userMap = userMapper.selectBatchIds(userIds).stream()
                 .collect(Collectors.toMap(User::getId, item -> item));
+        Map<Long, String> avatarUrlMap = loadAvatarUrlMap(userMap.values().stream().toList());
 
         Long currentUserId = SecurityUtils.getCurrentUserId();
         List<Long> likedReviewIds = Collections.emptyList();
@@ -230,6 +232,7 @@ public class ReviewServiceImpl implements ReviewService {
             vo.setUserId(item.getUserId());
             User user = userMap.get(item.getUserId());
             vo.setUsername(user == null ? "" : user.getUsername());
+            vo.setAvatar(user == null ? "" : resolveAvatarUrl(user.getAvatar(), avatarUrlMap));
             vo.setScenicId(item.getScenicSpotId());
             ScenicSpot scenicSpot = scenicMap.get(item.getScenicSpotId());
             vo.setScenicName(scenicSpot == null ? "" : scenicSpot.getName());
@@ -250,6 +253,30 @@ public class ReviewServiceImpl implements ReviewService {
             vo.setCreatedAt(item.getCreateTime());
             return vo;
         }).toList();
+    }
+
+    private Map<Long, String> loadAvatarUrlMap(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Long> fileIds = users.stream()
+                .map(User::getAvatar)
+                .map(FileResourceIds::tryParseId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        return fileService.resolveUrls(fileIds);
+    }
+
+    private String resolveAvatarUrl(String avatar, Map<Long, String> avatarUrlMap) {
+        if (avatar == null || avatar.isBlank()) {
+            return "";
+        }
+        Long fileId = FileResourceIds.tryParseId(avatar);
+        if (fileId == null) {
+            return avatar.trim();
+        }
+        return avatarUrlMap.getOrDefault(fileId, "");
     }
 
     /**

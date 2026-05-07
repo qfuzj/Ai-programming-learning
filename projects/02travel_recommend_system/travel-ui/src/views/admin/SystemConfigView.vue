@@ -1,328 +1,288 @@
-<!-- 极简风格系统配置页 -->
 <template>
-  <div class="page">
-    <h1 class="title">系统配置</h1>
-
-    <div class="filter-bar">
-      <input
-        v-model="query.keyword"
-        class="filter-input"
-        placeholder="搜索配置键..."
-        @keyup.enter="loadData"
-      />
-      <select v-model="query.configGroup" class="filter-select" @change="loadData">
-        <option :value="undefined">全部分组</option>
-        <option value="llm">LLM</option>
-        <option value="system">系统</option>
-        <option value="recommend">推荐</option>
-      </select>
-      <button class="btn-search" @click="loadData">查询</button>
-      <button class="btn-reset" @click="resetQuery">重置</button>
-    </div>
-
-    <div v-if="loading" class="loading">加载中...</div>
-    <div v-else-if="list.length === 0" class="empty">暂无配置数据</div>
-
-    <div v-else class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>配置键</th>
-            <th>值</th>
-            <th>分组</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in list" :key="item.configKey">
-            <td>{{ item.configKey }}</td>
-            <td class="mono">{{ item.configValue }}</td>
-            <td>
-              <span class="badge">{{ item.configGroup || "-" }}</span>
-            </td>
-            <td><span class="link" @click="editItem(item)">编辑</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-if="showDialog" class="modal-overlay" @click.self="closeDialog">
-      <div class="modal">
-        <h2 class="modal-title">编辑配置</h2>
-        <div class="form-group">
-          <label class="label">配置键</label>
-          <input v-model="form.configKey" class="input" disabled />
-        </div>
-        <div class="form-group">
-          <label class="label">值</label>
-          <input v-model="form.configValue" class="input" placeholder="配置值" />
-        </div>
-        <div class="form-actions">
-          <button class="btn-cancel" @click="closeDialog">取消</button>
-          <button class="btn-submit" :disabled="saving" @click="save">
-            {{ saving ? "保存中..." : "保存" }}
-          </button>
-        </div>
+  <div class="admin-page">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">SYSTEM SETTINGS</p>
+        <h1>系统配置</h1>
       </div>
     </div>
+
+    <el-form :model="query" class="filter-panel" inline>
+      <el-form-item label="关键词">
+        <el-input
+          v-model="query.keyword"
+          clearable
+          placeholder="配置键 / 说明"
+          @keyup.enter="search"
+        />
+      </el-form-item>
+      <el-form-item label="配置分组">
+        <el-select v-model="query.configGroup" clearable placeholder="全部分组">
+          <el-option
+            v-for="item in configGroupOptions"
+            :key="item.code"
+            :label="item.desc"
+            :value="String(item.code)"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="search">查询</el-button>
+        <el-button @click="resetQuery">重置</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table v-loading="loading" :data="list" border stripe>
+      <el-table-column prop="configKey" label="配置键" min-width="220" show-overflow-tooltip />
+      <el-table-column prop="configValue" label="配置值" min-width="240" show-overflow-tooltip />
+      <el-table-column label="类型" width="110">
+        <template #default="{ row }">{{ dictText(configTypeOptions, row.configType) }}</template>
+      </el-table-column>
+      <el-table-column label="分组" width="140">
+        <template #default="{ row }">{{ dictText(configGroupOptions, row.configGroup) }}</template>
+      </el-table-column>
+      <el-table-column label="前端可见" width="110">
+        <template #default="{ row }">
+          <el-tag :type="row.isPublic === 1 ? 'success' : 'info'">
+            {{ dictText(yesNoOptions, row.isPublic) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="description" label="说明" min-width="220" show-overflow-tooltip />
+      <el-table-column prop="updateTime" label="更新时间" min-width="170" />
+      <el-table-column fixed="right" label="操作" width="100">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <div class="pager">
+      <el-pagination
+        v-model:current-page="query.pageNum"
+        v-model:page-size="query.pageSize"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        :page-sizes="[10, 20, 50, 100]"
+        @current-change="loadData"
+        @size-change="search"
+      />
+    </div>
+
+    <el-dialog v-model="dialogVisible" title="编辑配置" width="680px">
+      <el-form :model="form" label-width="96px">
+        <el-form-item label="配置键">
+          <el-input v-model="form.configKey" disabled />
+        </el-form-item>
+        <el-form-item label="配置值" required>
+          <el-input
+            v-if="form.configType === 'json'"
+            v-model="form.configValue"
+            type="textarea"
+            :rows="8"
+            placeholder="JSON 配置"
+          />
+          <el-input v-else v-model="form.configValue" placeholder="配置值" />
+        </el-form-item>
+        <el-form-item label="值类型" required>
+          <el-select v-model="form.configType">
+            <el-option
+              v-for="item in configTypeOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="String(item.code)"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="配置分组" required>
+          <el-select v-model="form.configGroup">
+            <el-option
+              v-for="item in configGroupOptions"
+              :key="item.code"
+              :label="item.desc"
+              :value="String(item.code)"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="配置说明">
+          <el-input v-model="form.description" type="textarea" :rows="3" />
+        </el-form-item>
+        <el-form-item label="前端可见" required>
+          <el-radio-group v-model="form.isPublic">
+            <el-radio-button
+              v-for="item in yesNoOptions"
+              :key="item.code"
+              :value="Number(item.code)"
+            >
+              {{ item.desc }}
+            </el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { onMounted, reactive, ref } from "vue";
+import { ElMessage } from "element-plus";
+import { getConfigGroupDict, getConfigTypeDict, getYesNoFlagDict, type DictItem } from "@/api/dict";
 import {
-  getSystemConfigList as getSystemConfigPage,
+  getSystemConfigByKey,
+  getSystemConfigList,
   updateSystemConfig,
+  type SystemConfigItem,
+  type SystemConfigQuery,
+  type SystemConfigUpdatePayload,
 } from "@/api/system-config";
+import { findDictDesc } from "@/composables/useDictOptions";
 
 const loading = ref(false);
 const saving = ref(false);
-const list = ref<any[]>([]);
-const showDialog = ref(false);
-const editingItem = ref<any>(null);
+const dialogVisible = ref(false);
+const list = ref<SystemConfigItem[]>([]);
+const total = ref(0);
+const configGroupOptions = ref<DictItem[]>([]);
+const configTypeOptions = ref<DictItem[]>([]);
+const yesNoOptions = ref<DictItem[]>([]);
 
-const query = reactive({ keyword: "", configGroup: undefined as string | undefined });
+const query = reactive<SystemConfigQuery>({
+  pageNum: 1,
+  pageSize: 10,
+  keyword: "",
+  configGroup: undefined,
+});
+const form = reactive<SystemConfigUpdatePayload & { configKey: string }>({
+  configKey: "",
+  configValue: "",
+  configType: "string",
+  configGroup: "default",
+  description: "",
+  isPublic: 0,
+});
+
+function dictText(options: DictItem[], code: unknown): string {
+  return findDictDesc(options, code, "-");
+}
+
+async function loadDictionaries(): Promise<void> {
+  [configGroupOptions.value, configTypeOptions.value, yesNoOptions.value] = await Promise.all([
+    getConfigGroupDict(),
+    getConfigTypeDict(),
+    getYesNoFlagDict(),
+  ]);
+}
 
 async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    const res = await getSystemConfigPage({
-      pageNum: 1,
-      pageSize: 50,
-      keyword: query.keyword || undefined,
+    const res = await getSystemConfigList({
+      ...query,
+      keyword: query.keyword?.trim() || undefined,
     });
     list.value = res.records || [];
-  } catch {
-    alert("加载失败");
+    total.value = res.total || 0;
   } finally {
     loading.value = false;
   }
 }
 
+function search(): void {
+  query.pageNum = 1;
+  void loadData();
+}
+
 function resetQuery(): void {
+  query.pageNum = 1;
   query.keyword = "";
   query.configGroup = undefined;
-  loadData();
+  void loadData();
 }
 
-const form = reactive({ configKey: "", configValue: "" });
-
-function editItem(item: any): void {
-  editingItem.value = item;
-  form.configKey = item.configKey;
-  form.configValue = item.configValue || "";
-  showDialog.value = true;
+async function openEdit(item: SystemConfigItem): Promise<void> {
+  const detail = await getSystemConfigByKey(item.configKey);
+  Object.assign(form, {
+    configKey: detail.configKey,
+    configValue: detail.configValue || "",
+    configType: detail.configType || "string",
+    configGroup: detail.configGroup || "default",
+    description: detail.description || "",
+    isPublic: detail.isPublic ?? 0,
+  });
+  dialogVisible.value = true;
 }
+
 async function save(): Promise<void> {
+  if (!form.configValue.trim()) {
+    ElMessage.warning("请输入配置值");
+    return;
+  }
+  if (form.configType === "json") {
+    try {
+      JSON.parse(form.configValue);
+    } catch {
+      ElMessage.warning("JSON 配置值格式不正确");
+      return;
+    }
+  }
   saving.value = true;
   try {
     await updateSystemConfig(form.configKey, {
       configValue: form.configValue,
-      configType: editingItem.value?.configType || "",
-      configGroup: editingItem.value?.configGroup || "",
-      isPublic: editingItem.value?.isPublic ?? 1,
+      configType: form.configType,
+      configGroup: form.configGroup,
+      description: form.description || undefined,
+      isPublic: form.isPublic,
     });
-    closeDialog();
-    loadData();
-  } catch {
-    alert("保存失败");
+    ElMessage.success("保存成功");
+    dialogVisible.value = false;
+    await loadData();
   } finally {
     saving.value = false;
   }
 }
-function closeDialog(): void {
-  showDialog.value = false;
-  editingItem.value = null;
-}
 
-onMounted(() => {
-  loadData();
+onMounted(async () => {
+  await loadDictionaries();
+  await loadData();
 });
 </script>
 
 <style scoped>
-.page {
-  max-width: 1200px;
-  padding: 40px 24px;
-  margin: 0 auto;
-}
-.title {
-  margin: 0 0 32px 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #000;
-}
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.filter-input {
-  flex: 1;
-  min-width: 200px;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: #000;
-  outline: none;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-.filter-input:focus {
-  border-color: #00e676;
-}
-.filter-select {
-  padding: 10px 12px;
-  font-size: 14px;
-  color: #000;
-  cursor: pointer;
-  outline: none;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-.btn-search {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #000;
-  cursor: pointer;
-  background: #00e676;
-  border: none;
-  border-radius: 8px;
-}
-.btn-reset {
-  padding: 10px 20px;
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-.table-wrap {
-  overflow: hidden;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 12px;
-}
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.table th {
-  padding: 14px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #666;
-  text-align: left;
-  background: #f9f9f9;
-  border-bottom: 1px solid #f0f0f0;
-}
-.table td {
-  padding: 14px 16px;
-  font-size: 14px;
-  color: #000;
-  border-bottom: 1px solid #f0f0f0;
-}
-.table tr:hover {
-  background: #f9fff9;
-}
-.mono {
-  font-family: monospace;
-  font-size: 13px;
-}
-.badge {
-  padding: 4px 10px;
-  font-size: 12px;
-  color: #000;
-  background: #f0f0f0;
-  border-radius: 999px;
-}
-.link {
-  font-size: 13px;
-  color: #000;
-  cursor: pointer;
-}
-.link:hover {
-  color: #00c665;
-}
-.loading,
-.empty {
-  padding: 60px 20px;
-  font-size: 14px;
-  color: #999;
-  text-align: center;
-}
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.3);
-}
-.modal {
-  width: 100%;
-  max-width: 500px;
-  padding: 32px;
-  background: #fff;
-  border-radius: 16px;
-}
-.modal-title {
-  margin: 0 0 24px 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #000;
-}
-.form-group {
+.admin-page {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 18px;
 }
-.label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #000;
+
+.page-head h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #101828;
 }
-.input {
-  padding: 10px 14px;
-  font-family: inherit;
-  font-size: 14px;
-  color: #000;
-  outline: none;
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f7cff;
+  letter-spacing: 0.08em;
+}
+
+.filter-panel {
+  padding: 16px 16px 0;
   background: #fff;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e7eaf0;
   border-radius: 8px;
 }
-.input:focus {
-  border-color: #00e676;
-}
-.form-actions {
+
+.pager {
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
-  margin-top: 16px;
-}
-.btn-cancel {
-  padding: 10px 20px;
-  font-size: 14px;
-  color: #666;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-.btn-submit {
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #000;
-  cursor: pointer;
-  background: #00e676;
-  border: none;
-  border-radius: 8px;
 }
 </style>

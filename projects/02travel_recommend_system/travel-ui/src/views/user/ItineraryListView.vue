@@ -7,7 +7,7 @@
         <p class="hero-desc">管理已创建的旅行计划，支持查看详情、编辑基础信息和删除行程。</p>
       </div>
       <div class="hero-actions">
-        <button class="btn btn-ghost" @click="handleAiGenerate">AI 生成</button>
+        <button class="btn ai-generate-btn" @click="handleAiGenerate">✨ AI 生成</button>
         <button class="btn btn-primary" @click="handleCreate">新建行程</button>
       </div>
     </section>
@@ -165,7 +165,7 @@ function companionText(value: string): string {
 <style scoped>
 .itinerary-page {
   max-width: 1040px;
-  padding: 40px 24px 64px;
+  padding: 20px 24px 64px;
   margin: 0 auto;
 }
 
@@ -222,6 +222,21 @@ function companionText(value: string): string {
   gap: 10px;
 }
 
+.ai-generate-btn {
+  color: #111827;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, #00e676, #3b82f6, #a855f7) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.12);
+}
+
+.ai-generate-btn:hover {
+  background:
+    linear-gradient(135deg, rgba(0, 230, 118, 0.18), rgba(59, 130, 246, 0.16)) padding-box,
+    linear-gradient(135deg, #00e676, #3b82f6, #a855f7) border-box;
+}
+
 .filter-card {
   display: flex;
   gap: 14px;
@@ -271,6 +286,7 @@ function companionText(value: string): string {
 }
 
 .trip-main {
+  flex: 1;
   min-width: 0;
 }
 
@@ -286,7 +302,7 @@ function companionText(value: string): string {
 
 .trip-desc {
   display: -webkit-box;
-  margin: 10px 0 12px;
+  margin: 10px 10px 12px;
   overflow: hidden;
   -webkit-line-clamp: 2;
   color: var(--color-gray-600);
@@ -298,6 +314,13 @@ function companionText(value: string): string {
   gap: 12px;
   font-size: 13px;
   color: var(--color-gray-500);
+}
+
+.trip-actions {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-width: 176px;
 }
 
 .pill {
@@ -314,13 +337,22 @@ function companionText(value: string): string {
 }
 
 .link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   font: inherit;
   font-size: 14px;
   color: var(--color-gray-800);
+  white-space: nowrap;
   cursor: pointer;
   background: transparent;
   border: 0;
+  writing-mode: horizontal-tb;
+}
+
+.trip-actions .link-btn {
+  min-width: 34px;
 }
 
 .link-btn:hover {

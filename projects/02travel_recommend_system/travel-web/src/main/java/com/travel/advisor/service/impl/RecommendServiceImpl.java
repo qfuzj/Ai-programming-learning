@@ -21,6 +21,7 @@ import com.travel.advisor.recommend.RecommendRankService;
 import com.travel.advisor.recommend.RecommendReasonLlmService;
 import com.travel.advisor.recommend.RecommendReasonResult;
 import com.travel.advisor.recommend.RecommendReasonBuilder;
+import com.travel.advisor.llm.LlmProperties;
 import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.utils.RedisUtils;
 import com.travel.advisor.utils.SecurityUtils;
@@ -49,6 +50,7 @@ public class RecommendServiceImpl implements RecommendService {
     private final RecommendResultItemMapper recommendResultItemMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
     private final RedisUtils redisUtils;
+    private final LlmProperties llmProperties;
 
     /**
      * 首页推荐接口，基于用户画像和历史行为等信息，结合多种召回策略进行推荐，并对结果进行排序和分页展示。
@@ -206,6 +208,7 @@ public class RecommendServiceImpl implements RecommendService {
         payload.setTotal(total);
         payload.setTotalPage(totalPage);
         redisUtils.set(cacheKey, JsonUtils.toJson(payload), SIMILAR_CACHE_TTL);
+        asyncEnrichSimilarReasons(userId, pageRecords, ranked, pageQuery, cacheKey, total, totalPage);
         return pageResult;
     }
 
@@ -228,8 +231,13 @@ public class RecommendServiceImpl implements RecommendService {
 
         // 截取当前页的推荐结果列表，供后续构建返回结果和记录推荐结果使用
         List<RankedRecommend> pageItems = ranked.subList(fromIndex, toIndex);
-        RecommendReasonResult llmReasonResult = recommendReasonLlmService
-                .generateReasons(userId, scene, pageItems);
+        RecommendReasonResult llmReasonResult = shouldUseLlmReasons(recommendType)
+                ? recommendReasonLlmService.generateReasons(userId, scene, pageItems)
+                : RecommendReasonResult.builder()
+                        .reasons(Collections.emptyMap())
+                        .llmUsed(false)
+                        .llmCallLogId(null)
+                        .build();
         Map<Long, String> llmReasons = llmReasonResult.getReasons() == null
                 ? Collections.emptyMap()
                 : llmReasonResult.getReasons();
@@ -283,6 +291,57 @@ public class RecommendServiceImpl implements RecommendService {
             vos.add(vo);
         }
         return vos;
+    }
+
+    private boolean shouldUseLlmReasons(RecommendType recommendType) {
+        return recommendType != RecommendType.SIMILAR;
+    }
+
+    private void asyncEnrichSimilarReasons(Long userId,
+            List<RecommendItemVO> pageRecords,
+            List<RankedRecommend> ranked,
+            PageQuery pageQuery,
+            String cacheKey,
+            long total,
+            long totalPage) {
+        if (pageRecords == null || pageRecords.isEmpty()) {
+            return;
+        }
+        if (Boolean.FALSE.equals(llmProperties.getEnabled()) || llmProperties.getApiKey() == null
+                || llmProperties.getApiKey().isBlank()) {
+            return;
+        }
+        long offset = (long) (pageQuery.getPageNum() - 1) * pageQuery.getPageSize();
+        int fromIndex = (int) Math.min(offset, ranked.size());
+        int toIndex = Math.min(fromIndex + pageQuery.getPageSize(), ranked.size());
+        if (fromIndex >= toIndex) {
+            return;
+        }
+        List<RankedRecommend> pageItems = new ArrayList<>(ranked.subList(fromIndex, toIndex));
+        List<RecommendItemVO> cachedRecords = new ArrayList<>(pageRecords);
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            RecommendReasonResult result = recommendReasonLlmService
+                    .generateReasons(userId, "scenic-similar", pageItems);
+            if (result.getReasons() == null || result.getReasons().isEmpty()) {
+                return;
+            }
+            for (RecommendItemVO vo : cachedRecords) {
+                String reason = result.getReasons().get(vo.getScenicId());
+                if (reason == null || reason.isBlank()) {
+                    continue;
+                }
+                vo.setReason(reason);
+                RecommendResultItem update = new RecommendResultItem();
+                update.setId(vo.getResultItemId());
+                update.setReason(reason);
+                recommendResultItemMapper.updateById(update);
+            }
+            RecommendCachePayload refreshedPayload = new RecommendCachePayload();
+            refreshedPayload.setRecords(cachedRecords);
+            refreshedPayload.setTotal(total);
+            refreshedPayload.setTotalPage(totalPage);
+            redisUtils.set(cacheKey, JsonUtils.toJson(refreshedPayload), SIMILAR_CACHE_TTL);
+        });
     }
 
     /**

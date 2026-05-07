@@ -51,6 +51,14 @@
         >
           Day {{ day }}
         </button>
+        <button
+          class="day-add-btn"
+          :disabled="planSubmitLoading"
+          title="新增一天"
+          @click="handleAddDay"
+        >
+          +
+        </button>
       </aside>
 
       <div class="day-panel">
@@ -159,6 +167,7 @@ const {
   getDayItems,
   openEditPlan,
   submitPlanForm,
+  handleAddDay,
   handleDeletePlan,
   openAddItem,
   openEditItem,
@@ -232,6 +241,13 @@ function formatDateRange(start?: string, end?: string): string {
 .hero-actions,
 .item-actions {
   flex-shrink: 0;
+  flex-wrap: nowrap;
+  gap: 24px;
+}
+
+.hero-actions .btn {
+  min-width: 118px;
+  white-space: nowrap;
 }
 
 .eyebrow {
@@ -310,6 +326,35 @@ h1 {
   background: transparent;
   border: 0;
   border-radius: 12px;
+}
+
+.day-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  cursor: pointer;
+  background: var(--color-white);
+  border: 1px dashed var(--color-primary);
+  border-radius: 12px;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.day-add-btn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.day-add-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .day-nav-btn.active,
@@ -402,6 +447,15 @@ h1 {
   color: var(--color-danger);
 }
 
+.link-btn,
+.item-actions .link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+}
+
 .link-btn:disabled {
   color: var(--color-gray-400);
   cursor: not-allowed;
@@ -428,6 +482,11 @@ h1 {
     overflow-x: auto;
     border-right: 0;
     border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .day-add-btn {
+    flex: 0 0 52px;
+    margin-top: 0;
   }
 
   .timeline-item {

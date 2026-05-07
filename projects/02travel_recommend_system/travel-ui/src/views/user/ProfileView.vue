@@ -1,7 +1,7 @@
 <!--
   个人中心页 - 精致有机极简主义风格
   设计方向：有机极简 + 精致排版 + 微妙动效
-  字体：Playfair Display (标题) + Noto Sans SC (正文)
+  字体：本地系统字体栈
 -->
 <template>
   <div v-if="profile" class="profile-page">
@@ -968,11 +968,8 @@ onMounted(async () => {
   padding: 0 24px 60px;
   margin: 0 auto;
   font-family:
-    "Noto Sans SC",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
 }
 
 /* ========== Hero Header ========== */

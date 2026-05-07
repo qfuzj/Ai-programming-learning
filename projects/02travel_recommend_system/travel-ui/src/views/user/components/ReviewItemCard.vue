@@ -1,7 +1,7 @@
 <template>
   <div class="review-item">
     <div class="reviewer-info">
-      <el-avatar :size="40">
+      <el-avatar :size="40" :src="avatarSrc">
         {{ displayName.charAt(0).toUpperCase() }}
       </el-avatar>
       <div class="reviewer-meta">
@@ -127,6 +127,7 @@ const submittingReply = ref(false);
 const displayName = computed(() =>
   props.review.isAnonymous === 1 ? "匿名用户" : props.review.username || "匿名用户"
 );
+const avatarSrc = computed(() => (props.review.isAnonymous === 1 ? "" : props.review.avatar || ""));
 
 const reviewScore = computed(() => props.review.score ?? 0);
 

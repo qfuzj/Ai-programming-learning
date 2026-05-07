@@ -3,6 +3,7 @@
  */
 import type { RouteRecordRaw } from "vue-router";
 import UserLayout from "@/layouts/UserLayout.vue";
+import ScenicDetailView from "@/views/user/ScenicDetailView.vue";
 
 export const userRoutes: RouteRecordRaw[] = [
   {
@@ -25,7 +26,7 @@ export const userRoutes: RouteRecordRaw[] = [
       {
         path: "scenic/:id",
         name: "ScenicDetail",
-        component: () => import("@/views/user/ScenicDetailView.vue"),
+        component: ScenicDetailView,
         meta: { title: "景点详情", requiresAuth: false },
       },
       {

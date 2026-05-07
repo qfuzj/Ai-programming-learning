@@ -18,6 +18,8 @@ public class ReviewVO {
 
     private String username;
 
+    private String avatar;
+
     private Long scenicId;
 
     private String scenicName;

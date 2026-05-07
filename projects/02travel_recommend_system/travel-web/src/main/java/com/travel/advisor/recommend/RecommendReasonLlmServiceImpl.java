@@ -9,9 +9,13 @@ import com.travel.advisor.llm.LlmProperties;
 import com.travel.advisor.mapper.RegionMapper;
 import com.travel.advisor.service.LlmCallLogService;
 import com.travel.advisor.utils.JsonUtils;
+import com.travel.advisor.utils.RedisUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -25,6 +29,7 @@ import java.util.Set;
 public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService {
 
     private static final String CALL_TYPE = "recommend";
+    private static final Duration REASON_CACHE_TTL = Duration.ofHours(24);
     private static final String SYSTEM_PROMPT = """
             你是旅游推荐理由生成助手。
             你会根据候选景点信息生成简洁、自然、面向当前用户的中文推荐理由。
@@ -38,6 +43,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
     private final LlmProperties llmProperties;
     private final LlmCallLogService llmCallLogService;
     private final RegionMapper regionMapper;
+    private final RedisUtils redisUtils;
 
     /** 生成推荐理由：构建 prompt → 调用 LLM → 解析结果 → 记录日志 */
     @Override
@@ -45,8 +51,24 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
         if (pageItems == null || pageItems.isEmpty()) {
             return emptyResult();
         }
+        if (!isLlmAvailable()) {
+            return emptyResult();
+        }
 
         List<RecommendReasonPromptCandidate> candidates = buildCandidates(pageItems);
+        String cacheKey = buildReasonCacheKey(scene, candidates);
+        String cachedValue = redisUtils.get(cacheKey);
+        if (cachedValue != null && !cachedValue.isBlank()) {
+            RecommendReasonCachePayload payload = JsonUtils.fromJson(cachedValue, RecommendReasonCachePayload.class);
+            if (payload != null && payload.getReasons() != null && !payload.getReasons().isEmpty()) {
+                return RecommendReasonResult.builder()
+                        .reasons(payload.getReasons())
+                        .llmUsed(true)
+                        .llmCallLogId(null)
+                        .build();
+            }
+        }
+
         String userPrompt = buildUserPrompt(scene, candidates);
         LlmRequest request = LlmRequest.builder()
                 .userId(userId)
@@ -86,6 +108,7 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
                         .llmCallLogId(callLogId)
                         .build();
             }
+            cacheReasons(cacheKey, reasons);
             // 记录成功日志
             Long callLogId = llmCallLogService.saveCallLog(
                     userId,
@@ -118,6 +141,27 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
                     .llmCallLogId(callLogId)
                     .build();
         }
+    }
+
+    private String buildReasonCacheKey(String scene, List<RecommendReasonPromptCandidate> candidates) {
+        List<Long> scenicIds = candidates.stream()
+                .map(RecommendReasonPromptCandidate::getScenicId)
+                .toList();
+        String raw = scene + ":" + JsonUtils.toJson(scenicIds);
+        String digest = DigestUtils.md5DigestAsHex(raw.getBytes(StandardCharsets.UTF_8));
+        return "recommend:reason:" + digest;
+    }
+
+    private boolean isLlmAvailable() {
+        return !Boolean.FALSE.equals(llmProperties.getEnabled())
+                && llmProperties.getApiKey() != null
+                && !llmProperties.getApiKey().isBlank();
+    }
+
+    private void cacheReasons(String cacheKey, Map<Long, String> reasons) {
+        RecommendReasonCachePayload payload = new RecommendReasonCachePayload();
+        payload.setReasons(reasons);
+        redisUtils.set(cacheKey, JsonUtils.toJson(payload), REASON_CACHE_TTL);
     }
 
     /**
@@ -228,5 +272,11 @@ public class RecommendReasonLlmServiceImpl implements RecommendReasonLlmService 
                 .llmUsed(false)
                 .llmCallLogId(null)
                 .build();
+    }
+
+    @lombok.Data
+    private static class RecommendReasonCachePayload {
+
+        private Map<Long, String> reasons;
     }
 }

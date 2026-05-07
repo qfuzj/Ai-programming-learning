@@ -11,6 +11,7 @@ export interface ReviewItem {
   id: number;
   userId?: number;
   username?: string;
+  avatar?: string;
   scenicId?: number;
   scenicName?: string;
   score?: number;
@@ -237,7 +238,7 @@ export async function getAdminAuditPage(query: AuditQuery): Promise<PageResult<A
     params: {
       pageNum: query.pageNum,
       pageSize: query.pageSize,
-      contentType: query.contentType ?? "review",
+      contentType: query.contentType,
       auditStatus: query.auditStatus,
       submitUserId: query.submitUserId,
       contentId: query.contentId,
@@ -255,8 +256,8 @@ export async function getAdminAuditDetail(id: number): Promise<AuditItem> {
 /**
  * 批准审核
  */
-export function approveAdminAudit(id: number): Promise<void> {
-  return http.post(`/api/admin/audits/${id}/approve`, {});
+export function approveAdminAudit(id: number, reason?: string): Promise<void> {
+  return http.post(`/api/admin/audits/${id}/approve`, reason ? { reason } : {});
 }
 
 /**
@@ -269,8 +270,8 @@ export function rejectAdminAudit(id: number, reason: string): Promise<void> {
 /**
  * 隐藏审核
  */
-export function hideAdminAudit(id: number): Promise<void> {
-  return http.post(`/api/admin/audits/${id}/hide`, {});
+export function hideAdminAudit(id: number, reason?: string): Promise<void> {
+  return http.post(`/api/admin/audits/${id}/hide`, reason ? { reason } : {});
 }
 
 /**

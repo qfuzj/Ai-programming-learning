@@ -13,11 +13,11 @@ import "element-plus/theme-chalk/src/message-box.scss";
 import "element-plus/theme-chalk/src/notification.scss";
 import "element-plus/theme-chalk/src/loading.scss";
 
-async function bootstrap() {
+function bootstrap() {
   const app = createApp(App);
   setupStore(app);
-  await setupRouter(app);
+  setupRouter(app);
   app.mount("#app");
 }
 
-void bootstrap();
+bootstrap();

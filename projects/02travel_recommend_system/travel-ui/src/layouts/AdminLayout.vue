@@ -91,8 +91,8 @@ async function onLogout(): Promise<void> {
 
 <style scoped>
 .layout {
-  display: flex;
   min-height: 100vh;
+  overflow-x: hidden;
   background: #f5f5f5;
 }
 
@@ -159,9 +159,11 @@ async function onLogout(): Promise<void> {
 
 .content-area {
   display: flex;
-  flex: 1;
   flex-direction: column;
+  width: calc(100% - 240px);
+  min-width: 0;
   margin-left: 240px;
+  overflow-x: hidden;
 }
 
 .header {
@@ -173,6 +175,7 @@ async function onLogout(): Promise<void> {
   justify-content: space-between;
   height: 64px;
   padding: 0 32px;
+  box-sizing: border-box;
   background: #ffffff;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -202,7 +205,11 @@ async function onLogout(): Promise<void> {
 
 .main {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   padding: 32px;
+  overflow-x: hidden;
+  box-sizing: border-box;
   background: #f5f5f5;
 }
 </style>

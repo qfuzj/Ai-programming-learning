@@ -120,6 +120,42 @@ export function useItineraryDetail() {
     }
   }
 
+  async function handleAddDay(): Promise<void> {
+    if (!planId || !detail.value) return;
+    const nextTotalDays = (detail.value.totalDays || 1) + 1;
+    planSubmitLoading.value = true;
+    try {
+      await updateItinerary(planId, {
+        title: detail.value.title,
+        coverImage: detail.value.coverImage,
+        startDate: detail.value.startDate,
+        endDate: getNextEndDate(detail.value.endDate),
+        totalDays: nextTotalDays,
+        destinationRegionId: detail.value.destinationRegionId,
+        description: detail.value.description,
+        estimatedBudget: detail.value.estimatedBudget,
+        travelCompanion: detail.value.travelCompanion,
+        isPublic: detail.value.isPublic,
+        status: detail.value.status,
+      });
+      ElMessage.success(`已新增 Day ${nextTotalDays}`);
+      await fetchDetail();
+      activeDay.value = String(nextTotalDays);
+    } catch {
+      // axios 拦截器已弹错误提示
+    } finally {
+      planSubmitLoading.value = false;
+    }
+  }
+
+  function getNextEndDate(endDate?: string): string | undefined {
+    if (!endDate) return undefined;
+    const date = new Date(`${endDate}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return endDate;
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().slice(0, 10);
+  }
+
   async function handleDeletePlan(): Promise<void> {
     if (!planId) return;
     try {
@@ -230,6 +266,7 @@ export function useItineraryDetail() {
     getDayItems,
     openEditPlan,
     submitPlanForm,
+    handleAddDay,
     handleDeletePlan,
     openAddItem,
     openEditItem,

@@ -6,7 +6,16 @@ import type { PageQuery, PageResult } from "@/types/api";
 
 export interface CommonRegionNode {
   id: number;
+  parentId?: number;
   name: string;
+  shortName?: string;
+  level?: number;
+  code?: string;
+  pinyin?: string;
+  longitude?: number;
+  latitude?: number;
+  sortOrder?: number;
+  isHot?: number;
   children?: CommonRegionNode[];
 }
 

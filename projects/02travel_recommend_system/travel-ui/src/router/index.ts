@@ -30,10 +30,9 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0, left: 0 }),
 });
 
-export async function setupRouter(app: App<Element>): Promise<void> {
+export function setupRouter(app: App<Element>): void {
   setupAuthGuard(router);
   app.use(router);
-  await router.isReady();
 }
 
 export default router;
