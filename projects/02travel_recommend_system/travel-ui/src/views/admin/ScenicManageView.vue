@@ -26,12 +26,16 @@
         />
       </el-form-item>
       <el-form-item label="地区">
-        <el-button class="region-picker-btn" @click="openRegionPicker('filter')">
+        <el-button
+          class="region-picker-btn"
+          style="width: 90px"
+          @click="openRegionPicker('filter')"
+        >
           {{ filterRegionText || "选择地区" }}
         </el-button>
       </el-form-item>
       <el-form-item label="分类">
-        <el-select v-model="query.category" clearable placeholder="全部分类">
+        <el-select v-model="query.category" clearable placeholder="全部分类" style="width: 100px">
           <el-option
             v-for="item in scenicCategoryOptions"
             :key="item.code"
@@ -41,7 +45,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="等级">
-        <el-select v-model="query.level" clearable placeholder="全部等级">
+        <el-select v-model="query.level" clearable placeholder="全部等级" style="width: 100px">
           <el-option
             v-for="item in scenicLevelOptions"
             :key="item.code"
@@ -51,12 +55,12 @@
         </el-select>
       </el-form-item>
       <el-form-item label="标签">
-        <el-button class="tag-picker-btn" @click="openTagPicker('filter')">
+        <el-button class="tag-picker-btn" style="width: 90px" @click="openTagPicker('filter')">
           {{ queryTagIds.length > 0 ? `已选 ${queryTagIds.length} 个标签` : "选择标签" }}
         </el-button>
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="query.status" clearable placeholder="全部状态">
+        <el-select v-model="query.status" clearable placeholder="全部状态" style="width: 100px">
           <el-option
             v-for="item in commonStatusOptions"
             :key="item.code"
@@ -66,12 +70,18 @@
         </el-select>
       </el-form-item>
       <el-form-item label="排序">
-        <el-select v-model="query.sortBy" clearable placeholder="排序字段">
+        <el-select v-model="query.sortBy" clearable placeholder="排序字段" style="width: 100px">
           <el-option label="热度" value="hot" />
           <el-option label="评分" value="score" />
           <el-option label="创建时间" value="createdAt" />
         </el-select>
-        <el-select v-model="query.sortOrder" clearable placeholder="顺序" class="sort-order">
+        <el-select
+          v-model="query.sortOrder"
+          clearable
+          placeholder="顺序"
+          class="sort-order"
+          style="width: 80px"
+        >
           <el-option label="升序" value="ASC" />
           <el-option label="降序" value="DESC" />
         </el-select>
@@ -93,32 +103,48 @@
         @selection-change="onSelectionChange"
       >
         <el-table-column type="selection" width="48" />
-        <el-table-column prop="id" label="ID" width="90" />
-        <el-table-column label="景点" min-width="220">
+        <el-table-column prop="id" label="ID" width="40" />
+        <el-table-column label="景点" min-width="200">
           <template #default="{ row }">
             <div class="spot-cell">
               <el-image v-if="row.coverImage" class="cover" :src="row.coverImage" fit="cover" />
-              <div>
-                <div class="spot-name">{{ row.name }}</div>
-                <div class="spot-sub">{{ row.address || "-" }}</div>
+              <div class="spot-meta">
+                <el-tooltip
+                  :content="row.name"
+                  placement="top"
+                  :disabled="!(row.name && row.name.length > 10)"
+                >
+                  <div class="spot-name ellipsis">{{ row.name }}</div>
+                </el-tooltip>
               </div>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="regionName" label="地区" min-width="120" />
-        <el-table-column prop="category" label="分类" min-width="120" />
-        <el-table-column prop="level" label="等级" width="90" />
-        <el-table-column prop="score" label="评分" width="90">
+        <el-table-column prop="address" label="详细地址" min-width="240">
+          <template #default="{ row }">
+            <el-tooltip
+              :content="row.address || '-'"
+              placement="top"
+              :disabled="!(row.address && row.address.length > 10)"
+            >
+              <div class="ellipsis">{{ row.address || "-" }}</div>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column prop="category" label="分类" min-width="90" />
+        <el-table-column prop="level" label="等级" width="60" />
+        <el-table-column prop="score" label="评分" width="60">
           <template #default="{ row }">{{ Number(row.score || 0).toFixed(1) }}</template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="70">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'">
               {{ dictText(commonStatusOptions, row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="标签" min-width="180">
+        <el-table-column label="标签" min-width="120">
           <template #default="{ row }">
             <el-tag v-for="tag in row.tagList || []" :key="tag" class="tag-item" size="small">
               {{ tag }}
@@ -126,7 +152,7 @@
             <span v-if="!row.tagList?.length">-</span>
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="250">
+        <el-table-column fixed="right" label="操作" width="180">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row.id)">编辑</el-button>
             <el-button
@@ -178,7 +204,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="地址" required>
+            <el-form-item label="详细地址" required>
               <el-input v-model="form.address" />
             </el-form-item>
           </el-col>
@@ -204,7 +230,29 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="封面图">
-              <el-input v-model="form.coverImage" placeholder="图片 URL" />
+              <div v-if="form.coverImage" class="cover-image-preview">
+                <el-image
+                  class="cover-preview"
+                  :src="form.coverImage"
+                  fit="cover"
+                  :preview-src-list="[form.coverImage]"
+                />
+                <div class="cover-actions">
+                  <el-button link type="danger" @click="form.coverImage = ''">删除封面图</el-button>
+                </div>
+              </div>
+              <div v-else>
+                <el-button :loading="uploadingCover" @click="triggerCoverUpload">
+                  上传封面图
+                </el-button>
+                <input
+                  ref="coverInputRef"
+                  class="hidden-input"
+                  type="file"
+                  accept="image/*"
+                  @change="onCoverSelected"
+                />
+              </div>
             </el-form-item>
           </el-col>
           <el-col :xs="24" :md="12">
@@ -499,6 +547,7 @@ const drawerVisible = ref(false);
 const tagPickerVisible = ref(false);
 const regionPickerVisible = ref(false);
 const uploadingImage = ref(false);
+const uploadingCover = ref(false);
 const list = ref<ScenicItem[]>([]);
 const total = ref(0);
 const selectedIds = ref<number[]>([]);
@@ -518,6 +567,7 @@ const tagPickerTarget = ref<TagPickerTarget>("filter");
 const regionPickerTarget = ref<RegionPickerTarget>("filter");
 const scenicImages = ref<ScenicImageItem[]>([]);
 const imageInputRef = ref<HTMLInputElement | null>(null);
+const coverInputRef = ref<HTMLInputElement | null>(null);
 
 const query = reactive<ScenicQuery>({
   pageNum: 1,
@@ -866,6 +916,65 @@ function triggerImageUpload(): void {
   imageInputRef.value?.click();
 }
 
+function triggerCoverUpload(): void {
+  if (uploadingCover.value) return;
+  coverInputRef.value?.click();
+}
+
+async function onCoverSelected(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    ElMessage.warning("请选择图片文件");
+    input.value = "";
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning("图片大小不能超过 5MB");
+    input.value = "";
+    return;
+  }
+  uploadingCover.value = true;
+  try {
+    const token = await getUploadToken({
+      bizType: "scenic_cover",
+      fileName: file.name,
+      fileSize: file.size,
+      bizId: editingId.value || undefined,
+    });
+    const uploadUrl = String(token.uploadUrl || "");
+    const bucketName = String(token.bucketName || "");
+    const objectKey = String(token.objectKey || "");
+    if (!uploadUrl || !bucketName || !objectKey) {
+      throw new Error("上传凭证不完整");
+    }
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!uploadResponse.ok) {
+      throw new Error("文件上传失败");
+    }
+    const fileId = await uploadCallback({
+      bucketName,
+      objectKey,
+      originalName: file.name,
+      bizType: "scenic_cover",
+      bizId: editingId.value || undefined,
+    });
+    const fileResource = await getFileResource(fileId);
+    form.coverImage = fileResource.url || "";
+    ElMessage.success("封面图上传成功");
+  } catch {
+    ElMessage.error("封面图上传失败，请重试");
+  } finally {
+    uploadingCover.value = false;
+    input.value = "";
+  }
+}
+
 async function onImageSelected(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -1087,14 +1196,13 @@ onMounted(async () => {
 .table-shell {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
   background: #fff;
   border: 1px solid #e7eaf0;
   border-radius: 8px;
 }
 
 .scenic-table {
-  min-width: 1300px;
+  width: 100%;
 }
 
 :deep(.scenic-drawer) {
@@ -1115,10 +1223,45 @@ onMounted(async () => {
   width: 100%;
 }
 
+.cover-image-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+  padding: 8px;
+  border: 1px solid #e7eaf0;
+  border-radius: 8px;
+}
+
+.cover-preview {
+  width: 160px;
+  height: 104px;
+  border-radius: 4px;
+}
+
+.cover-actions {
+  display: flex;
+  justify-content: center;
+}
+
 .spot-cell {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.spot-meta {
+  min-width: 120px;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cover {
@@ -1152,8 +1295,10 @@ onMounted(async () => {
   gap: 6px;
   align-items: center;
   width: 100%;
-  min-height: 40px;
-  padding: 5px 10px;
+  min-height: 32px;
+  padding: 4px 11px;
+  box-sizing: border-box;
+  font-size: 14px;
   cursor: pointer;
   border: 1px solid #dcdfe6;
   border-radius: 4px;
@@ -1162,6 +1307,7 @@ onMounted(async () => {
 .selected-region-field {
   flex-wrap: nowrap;
   overflow: hidden;
+  height: 32px;
 }
 
 .selected-region-field span {
