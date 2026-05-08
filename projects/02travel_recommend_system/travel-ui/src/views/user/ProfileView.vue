@@ -642,11 +642,11 @@
         class="review-detail-images"
       >
         <el-image
-          v-for="(img, i) in currentReview.images"
+          v-for="(img, i) of currentReview.images"
           :key="i"
           :src="img"
           :preview-src-list="currentReview.images"
-          :initial-index="+i"
+          :initial-index="Number(i)"
           fit="cover"
           class="detail-img"
         />

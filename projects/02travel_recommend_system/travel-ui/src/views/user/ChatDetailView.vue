@@ -212,7 +212,7 @@ onMounted(() => {
   padding: 12px 16px;
   font-size: 14px;
   line-height: 1.6;
-  word-break: break-word;
+  word-break: break-all;
   white-space: pre-wrap;
   border-radius: 12px;
 }

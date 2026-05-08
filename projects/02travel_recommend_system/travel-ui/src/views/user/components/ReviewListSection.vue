@@ -199,7 +199,7 @@ function isRejected(status: number | undefined): boolean {
   line-height: 1.4;
   color: #ef4444;
   text-align: right;
-  word-break: break-word;
+  word-break: break-all;
 }
 
 .review-content {
@@ -210,7 +210,7 @@ function isRejected(status: number | undefined): boolean {
   font-size: 14px;
   line-height: 1.5;
   color: #374151;
-  word-break: break-word;
+  word-break: break-all;
   -webkit-box-orient: vertical;
 }
 

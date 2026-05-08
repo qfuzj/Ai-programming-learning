@@ -2,7 +2,12 @@
   <div class="admin-page">
     <el-form :model="query" class="filter-panel" inline>
       <el-form-item label="内容类型">
-        <el-select v-model="query.contentType" clearable placeholder="全部类型">
+        <el-select
+          v-model="query.contentType"
+          clearable
+          placeholder="全部类型"
+          style="width: 100px"
+        >
           <el-option label="点评" value="review" />
           <el-option label="图片" value="image" />
           <el-option label="景点" value="scenic" />
@@ -10,7 +15,12 @@
         </el-select>
       </el-form-item>
       <el-form-item label="审核状态">
-        <el-select v-model="query.auditStatus" clearable placeholder="全部状态">
+        <el-select
+          v-model="query.auditStatus"
+          clearable
+          placeholder="全部状态"
+          style="width: 100px"
+        >
           <el-option
             v-for="item in auditStatusOptions"
             :key="item.code"
@@ -19,10 +29,10 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="内容ID">
+      <el-form-item label="内容ID" style="width: 150px">
         <el-input-number v-model="query.contentId" :min="1" controls-position="right" />
       </el-form-item>
-      <el-form-item label="提交用户ID">
+      <el-form-item label="提交用户ID" style="width: 180px">
         <el-input-number v-model="query.submitUserId" :min="1" controls-position="right" />
       </el-form-item>
       <el-form-item class="form-actions">
@@ -32,16 +42,15 @@
     </el-form>
 
     <el-table v-loading="loading" :data="list" border stripe>
-      <el-table-column prop="id" label="审核ID" width="100" />
-      <el-table-column label="类型" width="100">
+      <el-table-column prop="id" label="审核ID" width="70" />
+      <el-table-column label="类型" width="70">
         <template #default="{ row }">{{ contentTypeText(row.contentType) }}</template>
       </el-table-column>
-      <el-table-column prop="contentId" label="内容ID" width="110" />
-      <el-table-column prop="submitUserId" label="提交用户" width="110" />
+      <el-table-column prop="contentId" label="内容ID" width="80" />
+      <el-table-column prop="submitUserId" label="提交用户" width="90" />
       <el-table-column label="摘要" min-width="300" show-overflow-tooltip>
         <template #default="{ row }">{{ snapshotSummary(row.snapshot) }}</template>
       </el-table-column>
-      <el-table-column prop="autoAuditScore" label="自动评分" width="110" />
       <el-table-column label="状态" width="110">
         <template #default="{ row }">
           <el-tag :type="auditTagType(row.auditStatus)">
@@ -49,8 +58,11 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="auditRemark" label="备注" min-width="160" show-overflow-tooltip />
-      <el-table-column prop="createTime" label="提交时间" min-width="170" />
+      <el-table-column prop="auditRemark" label="备注" min-width="110" show-overflow-tooltip />
+      <el-table-column prop="autoAuditScore" label="自动评分" width="90" />
+      <el-table-column label="提交时间" min-width="170">
+        <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
+      </el-table-column>
       <el-table-column fixed="right" label="操作" width="260">
         <template #default="{ row }">
           <el-button link type="primary" @click="openDetail(row.id)">详情</el-button>
@@ -103,12 +115,117 @@
         <el-descriptions-item label="审核备注">
           {{ detail.auditRemark || "-" }}
         </el-descriptions-item>
-        <el-descriptions-item label="审核时间">{{ detail.auditTime || "-" }}</el-descriptions-item>
+        <el-descriptions-item label="审核时间">
+          {{ formatTime(detail.auditTime) || "-" }}
+        </el-descriptions-item>
         <el-descriptions-item label="违规类型">
           <pre class="json-box">{{ formatJson(detail.violationType) }}</pre>
         </el-descriptions-item>
-        <el-descriptions-item label="快照">
-          <pre class="json-box">{{ formatJson(detail.snapshot) }}</pre>
+        <el-descriptions-item label="内容快照">
+          <div v-if="parsedSnapshot">
+            <div v-if="detail.contentType === 'review'" class="review-snapshot-card">
+              <div class="review-userInfo">
+                <span class="review-uname">{{ parsedSnapshot.username || "匿名用户" }}</span>
+                <el-tag v-if="parsedSnapshot.isAnonymous" size="small" type="info" class="meta-tag">
+                  匿名点评
+                </el-tag>
+                <el-tag
+                  v-if="parsedSnapshot.travelType"
+                  size="small"
+                  type="success"
+                  class="meta-tag"
+                >
+                  {{ parsedSnapshot.travelType }}
+                </el-tag>
+                <span v-if="parsedSnapshot.visitDate" class="review-time">
+                  出游时间: {{ parsedSnapshot.visitDate }}
+                </span>
+              </div>
+
+              <div v-if="parsedSnapshot.scenicName" class="review-scenic">
+                🔗 关联景点：
+                <b>{{ parsedSnapshot.scenicName }}</b>
+              </div>
+
+              <div v-if="parsedSnapshot.rating || parsedSnapshot.score" class="review-rating">
+                <span style="margin-right: 8px; font-size: 14px; color: #666">综合评分:</span>
+                <el-rate
+                  :model-value="Number(parsedSnapshot.rating || parsedSnapshot.score)"
+                  disabled
+                  show-score
+                />
+              </div>
+
+              <div v-if="parsedSnapshot.content" class="review-text">
+                {{ parsedSnapshot.content }}
+              </div>
+
+              <div
+                v-if="
+                  Array.isArray(parsedSnapshot.images) &&
+                  parsedSnapshot.images.length > 0 &&
+                  typeof parsedSnapshot.images[0] === 'string'
+                "
+                class="snapshot-images"
+              >
+                <el-image
+                  v-for="(img, idx) in parsedSnapshot.images"
+                  :key="idx"
+                  :src="img"
+                  :preview-src-list="parsedSnapshot.images"
+                  :initial-index="idx"
+                  fit="cover"
+                  class="snapshot-img"
+                />
+              </div>
+            </div>
+
+            <div v-else class="generic-snapshot-grid">
+              <div v-for="(val, key) in parsedSnapshot" :key="key" class="generic-field">
+                <div class="generic-label">{{ key }}</div>
+                <div class="generic-value">
+                  <template
+                    v-if="
+                      Array.isArray(val) &&
+                      val.length > 0 &&
+                      typeof val[0] === 'string' &&
+                      (val[0].startsWith('http') || val[0].startsWith('/'))
+                    "
+                  >
+                    <div class="snapshot-images">
+                      <el-image
+                        v-for="(img, idx) in val"
+                        :key="idx"
+                        :src="img"
+                        :preview-src-list="val"
+                        :initial-index="idx"
+                        fit="cover"
+                        class="snapshot-img"
+                      />
+                    </div>
+                  </template>
+                  <template
+                    v-else-if="
+                      typeof val === 'string' &&
+                      (val.startsWith('http://') || val.startsWith('https://')) &&
+                      (val.includes('.jpg') || val.includes('.png') || val.includes('.jpeg'))
+                    "
+                  >
+                    <el-image
+                      :src="val"
+                      :preview-src-list="[val]"
+                      fit="cover"
+                      class="snapshot-img"
+                    />
+                  </template>
+                  <template v-else>
+                    {{ val }}
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+          <pre v-else class="json-box">{{ formatJson(detail.snapshot) }}</pre>
         </el-descriptions-item>
         <el-descriptions-item label="自动审核结果">
           <pre class="json-box">{{ formatJson(detail.autoAuditResult) }}</pre>
@@ -119,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, computed } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   approveAdminAudit,
@@ -136,6 +253,12 @@ import { findDictDesc } from "@/composables/useDictOptions";
 
 const loading = ref(false);
 const detailVisible = ref(false);
+
+const parsedSnapshot = computed(() => {
+  if (!detail.value || !detail.value.snapshot) return null;
+  return detail.value.snapshot;
+});
+
 const list = ref<AuditItem[]>([]);
 const detail = ref<AuditItem | null>(null);
 const total = ref(0);
@@ -163,6 +286,11 @@ function auditTagType(status?: number): "success" | "warning" | "danger" | "info
   if (status === 2) return "danger";
   if (status === 3) return "info";
   return "warning";
+}
+
+function formatTime(timeStr?: string): string {
+  if (!timeStr) return "-";
+  return timeStr.replace("T", " ").substring(0, 16);
 }
 
 function snapshotSummary(snapshot?: AuditSnapshot): string {
@@ -313,5 +441,109 @@ onMounted(async () => {
 
 .filter-panel {
   position: relative;
+}
+
+.snapshot-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.snapshot-field {
+  display: flex;
+  flex-direction: column;
+}
+.snapshot-label {
+  margin-bottom: 4px;
+  font-weight: bold;
+  color: #606266;
+}
+.snapshot-value {
+  color: #333;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+.snapshot-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.snapshot-img {
+  width: 100px;
+  height: 100px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+
+.review-snapshot-card {
+  padding: 16px;
+  background: #f8f9fa;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+}
+.review-userInfo {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.review-uname {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+.meta-tag {
+  margin-left: 4px;
+}
+.review-time {
+  margin-left: auto;
+  font-size: 13px;
+  color: #909399;
+}
+.review-scenic {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #409eff;
+  background: #ecf5ff;
+  border-radius: 4px;
+}
+.review-rating {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.review-text {
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  background: #fff;
+  border: 1px dashed #dcdfe6;
+  border-radius: 6px;
+}
+.generic-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.generic-field {
+  padding: 10px;
+  background: #fafafa;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+}
+.generic-label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #909399;
+  text-transform: uppercase;
+}
+.generic-value {
+  font-size: 14px;
+  color: #303133;
+  word-break: break-all;
 }
 </style>
