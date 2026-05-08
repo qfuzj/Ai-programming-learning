@@ -385,6 +385,7 @@ watch(
   padding-right: 32px;
   font-size: 14px;
   color: #000000;
+  appearance: none;
   cursor: pointer;
   outline: none;
   background: #f7f7f7
@@ -393,7 +394,6 @@ watch(
   border: 1.5px solid #eeeeee;
   border-radius: 10px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  appearance: none;
 }
 
 .filter-select:focus {
@@ -524,9 +524,9 @@ watch(
 }
 
 .modal-body {
+  max-height: 50vh;
   padding: 20px 24px;
   overflow-y: auto;
-  max-height: 50vh;
 }
 
 .modal-body::-webkit-scrollbar {
@@ -548,26 +548,26 @@ watch(
 
 .modal-tag-group-title {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   height: 16px;
   margin-bottom: 12px;
   font-size: 11px;
   font-weight: 600;
   line-height: 16px;
   color: #999999;
-  letter-spacing: 0.5px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .modal-tag-group-title::before {
-  content: "";
   display: block;
+  flex-shrink: 0;
   width: 3px;
   height: 12px;
+  content: "";
   background: #00e676;
   border-radius: 2px;
-  flex-shrink: 0;
 }
 
 .modal-tag-list {
@@ -599,8 +599,8 @@ watch(
 }
 
 .modal-tag-chip.active {
-  color: #000000;
   font-weight: 600;
+  color: #000000;
   background: #e8f5e9;
   border-color: #00e676;
   box-shadow: 0 2px 8px rgba(0, 230, 118, 0.15);

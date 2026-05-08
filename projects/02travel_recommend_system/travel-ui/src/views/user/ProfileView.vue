@@ -316,19 +316,38 @@
                 v-for="(item, idx) in reviewList"
                 :key="item.id"
                 class="content-card review-card"
-                :style="{ animationDelay: `${idx * 0.04}s` }"
+                :style="{ animationDelay: `${idx * 0.04}s`, cursor: 'pointer' }"
+                @click="openReviewDetail(item)"
               >
                 <div class="card-info">
                   <div class="review-header">
-                    <h4 class="card-title" @click="router.push(`/scenic/${item.scenicId}`)">
+                    <h4 class="card-title" @click.stop="router.push(`/scenic/${item.scenicId}`)">
                       {{ item.scenicName }}
                     </h4>
-                    <span class="score-badge">{{ item.score }}分</span>
+                    <span v-if="item.status === 0" class="status-badge pending">审核中</span>
+                    <span v-else-if="item.status === 1" class="status-badge approved">已通过</span>
+                    <span v-else-if="item.status === 2" class="status-badge rejected">已驳回</span>
+                    <span v-else-if="item.status === 3" class="status-badge hidden">已隐藏</span>
+                    <span class="score-badge" style="margin-left: auto">{{ item.score }}分</span>
                   </div>
                   <p class="review-content">{{ item.content }}</p>
-                  <p class="card-meta">{{ formatTime(item.createdAt) }}</p>
+                  <p class="card-meta">
+                    {{ formatTime(item.createdAt) }}
+                    <span v-if="item.images && item.images.length > 0" style="margin-left: 12px">
+                      图片数：{{ item.images.length }}
+                    </span>
+                    <span v-if="item.likeCount && item.likeCount > 0" style="margin-left: 12px">
+                      点赞数：{{ item.likeCount }}
+                    </span>
+                    <span v-if="item.replyCount && item.replyCount > 0" style="margin-left: 12px">
+                      回复数：{{ item.replyCount }}
+                    </span>
+                  </p>
+                  <p v-if="item.status === 2 && item.rejectReason" class="reject-reason">
+                    驳回原因: {{ item.rejectReason }}
+                  </p>
                 </div>
-                <button class="btn-remove-mini" @click="removeReview(item.id)">
+                <button class="btn-remove-mini" @click.stop="removeReview(item.id)">
                   <svg
                     width="14"
                     height="14"
@@ -585,6 +604,60 @@
     <div class="loading-pulse"></div>
     <p>加载中...</p>
   </div>
+
+  <!-- Review Detail Dialog -->
+  <el-dialog
+    v-model="reviewDetailVisible"
+    title="点评详情"
+    width="600px"
+    custom-class="review-detail-modal"
+  >
+    <div v-if="currentReview" class="review-detail-content">
+      <div class="review-detail-header">
+        <h3>{{ currentReview.scenicName }}</h3>
+        <span class="score-badge">{{ currentReview.score }}分</span>
+      </div>
+
+      <div class="review-detail-status">
+        <span v-if="currentReview.status === 0" class="status-badge pending">审核中</span>
+        <span v-else-if="currentReview.status === 1" class="status-badge approved">已通过</span>
+        <span v-else-if="currentReview.status === 2" class="status-badge rejected">已驳回</span>
+        <span v-else-if="currentReview.status === 3" class="status-badge hidden">已隐藏</span>
+        <span class="meta-time">{{ formatTime(currentReview.createdAt) }}</span>
+      </div>
+
+      <div
+        v-if="currentReview.status === 2 && currentReview.rejectReason"
+        class="review-detail-reject"
+      >
+        驳回原因：{{ currentReview.rejectReason }}
+      </div>
+
+      <div class="review-detail-body">
+        <p>{{ currentReview.content }}</p>
+      </div>
+
+      <div
+        v-if="currentReview.images && currentReview.images.length > 0"
+        class="review-detail-images"
+      >
+        <el-image
+          v-for="(img, i) in currentReview.images"
+          :key="i"
+          :src="img"
+          :preview-src-list="currentReview.images"
+          :initial-index="+i"
+          fit="cover"
+          class="detail-img"
+        />
+      </div>
+
+      <div class="review-detail-footer">
+        <span>点赞数: {{ currentReview.likeCount || 0 }}</span>
+        <span>回复数: {{ currentReview.replyCount || 0 }}</span>
+      </div>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -617,6 +690,15 @@ const saveLoading = ref(false);
 const tagLoading = ref(false);
 const tagSaving = ref(false);
 const avatarInputRef = ref<HTMLInputElement | null>(null);
+
+// 点评详情弹窗状态
+const reviewDetailVisible = ref(false);
+const currentReview = ref<any>(null);
+
+function openReviewDetail(item: any) {
+  currentReview.value = item;
+  reviewDetailVisible.value = true;
+}
 
 const editForm = reactive({
   nickname: "",
@@ -2014,5 +2096,105 @@ onMounted(async () => {
     padding: 10px 14px;
     font-size: 14px;
   }
+}
+
+.status-badge {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+.status-badge.pending {
+  color: #e6a23c;
+  background: #fdf6ec;
+  border: 1px solid #f5dab1;
+}
+.status-badge.approved {
+  color: #67c23a;
+  background: #f0f9eb;
+  border: 1px solid #c2e7b0;
+}
+.status-badge.rejected {
+  color: #f56c6c;
+  background: #fef0f0;
+  border: 1px solid #fbc4c4;
+}
+.status-badge.hidden {
+  color: #909399;
+  background: #f4f4f5;
+  border: 1px solid #d3d4d6;
+}
+
+.reject-reason {
+  padding: 6px 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #f56c6c;
+  background: #fef0f0;
+  border-radius: 4px;
+}
+
+.review-detail-modal .el-dialog__body {
+  padding-top: 10px;
+}
+.review-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+.review-detail-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+.review-detail-status {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.meta-time {
+  font-size: 13px;
+  color: #999;
+}
+.review-detail-reject {
+  padding: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #f56c6c;
+  background: #fef0f0;
+  border-radius: 6px;
+}
+.review-detail-body {
+  margin-bottom: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #444;
+  white-space: pre-wrap;
+}
+.review-detail-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.detail-img {
+  width: 100px;
+  height: 100px;
+  cursor: pointer;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+.review-detail-footer {
+  display: flex;
+  gap: 20px;
+  padding-top: 16px;
+  font-size: 14px;
+  color: #666;
+  border-top: 1px solid #eee;
 }
 </style>

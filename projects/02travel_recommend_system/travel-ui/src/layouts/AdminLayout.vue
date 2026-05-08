@@ -170,12 +170,12 @@ async function onLogout(): Promise<void> {
   position: sticky;
   top: 0;
   z-index: 10;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 64px;
   padding: 0 32px;
-  box-sizing: border-box;
   background: #ffffff;
   border-bottom: 1px solid #f0f0f0;
 }
@@ -204,12 +204,12 @@ async function onLogout(): Promise<void> {
 }
 
 .main {
+  box-sizing: border-box;
   flex: 1;
   min-width: 0;
   max-width: 100%;
   padding: 32px;
   overflow-x: hidden;
-  box-sizing: border-box;
   background: #f5f5f5;
 }
 </style>

@@ -561,9 +561,9 @@ onMounted(() => {
 }
 
 .star-svg {
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
-  flex-shrink: 0;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

@@ -601,8 +601,8 @@ watch(
 .breadcrumb-line span:last-child {
   max-width: 360px;
   overflow: hidden;
-  color: var(--muted);
   text-overflow: ellipsis;
+  color: var(--muted);
   white-space: nowrap;
 }
 
@@ -723,13 +723,14 @@ h1 {
 
 .hero-side {
   display: flex;
+  flex-direction: column;
   gap: 16px;
   align-items: flex-end;
-  flex-direction: column;
 }
 
 .stat-strip {
   display: grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
   width: auto;
   padding: 0;
   margin: 0;
@@ -737,7 +738,6 @@ h1 {
   background: #ffffff;
   border: 0;
   border-radius: 0;
-  grid-template-columns: repeat(2, minmax(96px, 1fr));
 }
 
 .stat-strip div {
@@ -759,10 +759,10 @@ h1 {
 .stat-strip dd {
   margin: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 17px;
   font-weight: 800;
   color: var(--pine-deep);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -802,8 +802,8 @@ h1 {
 
 .photo-grid {
   display: grid;
-  grid-template-columns: 1.95fr 1fr;
   grid-template-rows: repeat(2, 150px);
+  grid-template-columns: 1.95fr 1fr;
   gap: 4px;
   padding: 0;
   overflow: hidden;
@@ -921,9 +921,9 @@ h1 {
 
 .section {
   position: relative;
-  scroll-margin-top: 150px;
   padding: 0 0 42px;
   margin-bottom: 38px;
+  scroll-margin-top: 150px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1283,8 +1283,8 @@ h1 {
 }
 
 .similar-section {
-  scroll-margin-top: 150px;
   padding: 44px 0 64px;
+  scroll-margin-top: 150px;
   background: #ffffff;
   border-top: 1px solid var(--line);
 }
@@ -1327,13 +1327,13 @@ h1 {
 
 .similar-card {
   display: flex;
+  flex-direction: column;
   min-height: 100%;
   overflow: hidden;
   cursor: pointer;
   background: #fffefa;
   border: 1px solid var(--line);
   border-radius: 10px;
-  flex-direction: column;
   transition:
     transform 0.2s,
     border-color 0.2s,
@@ -1357,8 +1357,8 @@ h1 {
 .similar-body {
   display: flex;
   flex: 1;
-  padding: 17px;
   flex-direction: column;
+  padding: 17px;
 }
 
 .similar-body h3 {
@@ -1382,11 +1382,11 @@ h1 {
   display: -webkit-box;
   margin: 0 0 18px;
   overflow: hidden;
+  -webkit-line-clamp: 3;
   font-size: 14px;
   line-height: 1.6;
   color: var(--muted);
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
 }
 
 .card-btn {
@@ -1459,11 +1459,11 @@ h1 {
 
 .skeleton-stats {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .skeleton-stats span {
@@ -1473,8 +1473,8 @@ h1 {
 
 .skeleton-gallery {
   display: grid;
-  grid-template-columns: 1.72fr 1fr;
   grid-template-rows: repeat(2, 180px);
+  grid-template-columns: 1.72fr 1fr;
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--line);
@@ -1536,8 +1536,8 @@ h1 {
 
   .hero-actions,
   .form-actions {
-    align-items: stretch;
     flex-direction: column;
+    align-items: stretch;
   }
 
   .stat-strip {
@@ -1550,14 +1550,14 @@ h1 {
   }
 
   .photo-grid {
-    grid-template-columns: 1fr;
     grid-template-rows: none;
+    grid-template-columns: 1fr;
     padding: 8px;
   }
 
   .skeleton-gallery {
-    grid-template-columns: 1fr;
     grid-template-rows: repeat(3, 220px);
+    grid-template-columns: 1fr;
     padding: 8px;
   }
 
@@ -1606,8 +1606,8 @@ h1 {
   }
 
   .section-heading {
-    align-items: flex-start;
     flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>

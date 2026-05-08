@@ -133,6 +133,7 @@ public class RegionServiceImpl implements RegionService {
 
     @Override
     public Long create(RegionCreateDTO dto) {
+        checkNameDuplicate(dto.getLevel(), dto.getName(), dto.getParentId(), null);
         Region region = BeanCopyUtils.copy(dto, Region.class);
         regionMapper.insert(region);
         evictTreeCache();
@@ -145,6 +146,13 @@ public class RegionServiceImpl implements RegionService {
         if (existing == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "地区不存在");
         }
+
+        Integer targetLevel = dto.getLevel() != null ? dto.getLevel() : existing.getLevel();
+        String targetName = dto.getName() != null ? dto.getName() : existing.getName();
+        Long targetParentId = dto.getParentId() != null ? dto.getParentId() : existing.getParentId();
+
+        checkNameDuplicate(targetLevel, targetName, targetParentId, id);
+
         Region region = BeanCopyUtils.copy(dto, Region.class);
         region.setId(id);
         regionMapper.updateById(region);
@@ -166,6 +174,27 @@ public class RegionServiceImpl implements RegionService {
         }
         regionMapper.deleteById(id);
         evictTreeCache();
+    }
+
+    private void checkNameDuplicate(Integer level, String name, Long parentId, Long excludeId) {
+        if (level == null || level > 2) {
+            return;
+        }
+
+        LambdaQueryWrapper<Region> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Region::getLevel, level)
+               .eq(Region::getName, name)
+               .eq(Region::getParentId, parentId);
+        if (excludeId != null) {
+            wrapper.ne(Region::getId, excludeId);
+        }
+
+        Long count = regionMapper.selectCount(wrapper);
+        if (count != null && count > 0) {
+            String levelName = level == 1 ? "省份" : "城市";
+            throw new BusinessException(ResultCode.BAD_REQUEST,
+                "该" + levelName + "名称已存在，请勿重复添加");
+        }
     }
 
     private void evictTreeCache() {

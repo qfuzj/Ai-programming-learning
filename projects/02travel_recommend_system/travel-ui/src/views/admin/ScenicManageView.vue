@@ -94,7 +94,7 @@
         @selection-change="onSelectionChange"
       >
         <el-table-column type="selection" width="48" />
-        <el-table-column prop="id" label="ID" width="40" />
+        <el-table-column prop="id" label="ID" width="45" />
         <el-table-column label="景点" min-width="200">
           <template #default="{ row }">
             <div class="spot-cell">
@@ -135,7 +135,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="标签" min-width="120">
+        <el-table-column label="标签" min-width="165">
           <template #default="{ row }">
             <el-tag v-for="tag in row.tagList || []" :key="tag" class="tag-item" size="small">
               {{ tag }}
