@@ -1,7 +1,12 @@
 <!-- 极简风格LLM分析页 -->
 <template>
-  <div class="page">
-    <h1 class="title">LLM 分析</h1>
+  <div class="admin-page">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">LLM INSIGHTS</p>
+        <h1>大模型对话分析</h1>
+      </div>
+    </div>
 
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else class="stat-grid">

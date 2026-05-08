@@ -1,12 +1,5 @@
 <template>
   <div class="admin-page">
-    <div class="page-head">
-      <div>
-        <p class="eyebrow">SYSTEM SETTINGS</p>
-        <h1>系统配置</h1>
-      </div>
-    </div>
-
     <el-form :model="query" class="filter-panel" inline>
       <el-form-item label="关键词">
         <el-input
@@ -26,7 +19,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="form-actions">
         <el-button type="primary" @click="search">查询</el-button>
         <el-button @click="resetQuery">重置</el-button>
       </el-form-item>
@@ -284,5 +277,9 @@ onMounted(async () => {
 .pager {
   display: flex;
   justify-content: flex-end;
+}
+
+.filter-panel {
+  position: relative;
 }
 </style>

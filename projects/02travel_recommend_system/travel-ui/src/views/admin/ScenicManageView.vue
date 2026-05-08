@@ -1,21 +1,5 @@
 <template>
   <div class="admin-page">
-    <div class="page-head">
-      <div>
-        <p class="eyebrow">SCENIC INVENTORY</p>
-        <h1>景点管理</h1>
-      </div>
-      <div class="head-actions">
-        <el-button :disabled="selectedIds.length === 0" @click="batchSetStatus(1)">
-          批量上架
-        </el-button>
-        <el-button :disabled="selectedIds.length === 0" @click="batchSetStatus(0)">
-          批量下架
-        </el-button>
-        <el-button type="primary" @click="openCreate">新增景点</el-button>
-      </div>
-    </div>
-
     <el-form :model="query" class="filter-panel" inline>
       <el-form-item label="关键词">
         <el-input
@@ -86,9 +70,16 @@
           <el-option label="降序" value="DESC" />
         </el-select>
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="form-actions">
         <el-button type="primary" @click="search">查询</el-button>
         <el-button @click="resetQuery">重置</el-button>
+        <el-button :disabled="selectedIds.length === 0" @click="batchSetStatus(1)">
+          批量上架
+        </el-button>
+        <el-button :disabled="selectedIds.length === 0" @click="batchSetStatus(0)">
+          批量下架
+        </el-button>
+        <el-button type="success" @click="openCreate">新增景点</el-button>
       </el-form-item>
     </el-form>
 
@@ -1128,32 +1119,6 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-.page-head {
-  display: flex;
-  gap: 16px;
-  align-items: flex-end;
-  justify-content: space-between;
-}
-
-.page-head h1 {
-  margin: 0;
-  font-size: 28px;
-  color: #101828;
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #4f7cff;
-  letter-spacing: 0.08em;
-}
-
-.head-actions {
-  display: flex;
-  gap: 8px;
-}
-
 .filter-panel {
   display: flex;
   flex-wrap: wrap;
@@ -1179,8 +1144,8 @@ onMounted(async () => {
 
 .tag-picker-btn,
 .region-picker-btn {
-  width: 220px;
   justify-content: flex-start;
+  width: 220px;
   color: #667085;
 }
 
@@ -1206,8 +1171,8 @@ onMounted(async () => {
 }
 
 :deep(.scenic-drawer) {
-  max-width: calc(100vw - 280px);
   min-width: 640px;
+  max-width: calc(100vw - 280px);
 }
 
 :deep(.scenic-drawer .el-drawer__body) {
@@ -1251,10 +1216,10 @@ onMounted(async () => {
 }
 
 .spot-meta {
-  min-width: 120px;
-  max-width: 360px;
   display: flex;
   flex-direction: column;
+  min-width: 120px;
+  max-width: 360px;
   overflow: hidden;
 }
 
@@ -1278,9 +1243,9 @@ onMounted(async () => {
 .spot-sub {
   max-width: 260px;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
   color: #667085;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1290,6 +1255,7 @@ onMounted(async () => {
 
 .selected-tags-field,
 .selected-region-field {
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -1297,7 +1263,6 @@ onMounted(async () => {
   width: 100%;
   min-height: 32px;
   padding: 4px 11px;
-  box-sizing: border-box;
   font-size: 14px;
   cursor: pointer;
   border: 1px solid #dcdfe6;
@@ -1306,8 +1271,8 @@ onMounted(async () => {
 
 .selected-region-field {
   flex-wrap: nowrap;
-  overflow: hidden;
   height: 32px;
+  overflow: hidden;
 }
 
 .selected-region-field span {
@@ -1504,8 +1469,8 @@ onMounted(async () => {
 @media (max-width: 980px) {
   :deep(.scenic-drawer) {
     width: calc(100vw - 32px) !important;
-    max-width: calc(100vw - 32px);
     min-width: 0;
+    max-width: calc(100vw - 32px);
   }
 
   .filter-panel :deep(.el-input),
@@ -1530,5 +1495,21 @@ onMounted(async () => {
   .filter-panel :deep(.el-form-item) {
     width: 100%;
   }
+}
+
+.filter-panel {
+  position: relative;
+}
+
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-panel .el-form-item {
+  margin-bottom: 16px;
+}
+.filter-panel .form-actions {
+  margin-left: auto;
 }
 </style>

@@ -1,12 +1,5 @@
 <template>
   <div class="admin-page">
-    <div class="page-head">
-      <div>
-        <p class="eyebrow">CONTENT REVIEW</p>
-        <h1>审核管理</h1>
-      </div>
-    </div>
-
     <el-form :model="query" class="filter-panel" inline>
       <el-form-item label="内容类型">
         <el-select v-model="query.contentType" clearable placeholder="全部类型">
@@ -32,7 +25,7 @@
       <el-form-item label="提交用户ID">
         <el-input-number v-model="query.submitUserId" :min="1" controls-position="right" />
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="form-actions">
         <el-button type="primary" @click="search">查询</el-button>
         <el-button @click="resetQuery">重置</el-button>
       </el-form-item>
@@ -316,5 +309,9 @@ onMounted(async () => {
   line-height: 1.6;
   background: #f6f8fb;
   border-radius: 6px;
+}
+
+.filter-panel {
+  position: relative;
 }
 </style>

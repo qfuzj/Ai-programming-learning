@@ -1,12 +1,5 @@
 <template>
   <div class="admin-page">
-    <div class="page-head">
-      <div>
-        <p class="eyebrow">AUDIT TRAIL</p>
-        <h1>操作日志</h1>
-      </div>
-    </div>
-
     <el-form :model="query" class="filter-panel" inline>
       <el-form-item label="管理员">
         <el-input
@@ -44,7 +37,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="form-actions">
         <el-button type="primary" @click="search">查询</el-button>
         <el-button @click="resetQuery">重置</el-button>
       </el-form-item>
@@ -257,5 +250,9 @@ onMounted(async () => {
   line-height: 1.6;
   background: #f6f8fb;
   border-radius: 6px;
+}
+
+.filter-panel {
+  position: relative;
 }
 </style>

@@ -1,7 +1,12 @@
 <!-- 极简风格推荐分析页 -->
 <template>
-  <div class="page">
-    <h1 class="title">推荐分析</h1>
+  <div class="admin-page">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">RECOMMEND ANALYTICS</p>
+        <h1>推荐效果分析</h1>
+      </div>
+    </div>
 
     <div v-if="loading" class="loading">加载中...</div>
     <div v-else class="stat-grid">

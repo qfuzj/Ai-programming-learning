@@ -1,13 +1,5 @@
 <template>
   <div class="admin-page">
-    <div class="page-head">
-      <div>
-        <p class="eyebrow">TAG TAXONOMY</p>
-        <h1>标签管理</h1>
-      </div>
-      <el-button type="primary" @click="openCreate">新增标签</el-button>
-    </div>
-
     <el-form :model="query" class="filter-panel" inline>
       <el-form-item label="标签名称">
         <el-input v-model="query.name" clearable placeholder="输入标签名称" @keyup.enter="search" />
@@ -48,9 +40,10 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="form-actions">
         <el-button type="primary" @click="search">查询</el-button>
         <el-button @click="resetQuery">重置</el-button>
+        <el-button type="success" @click="openCreate">新增标签</el-button>
       </el-form-item>
     </el-form>
 
@@ -325,26 +318,6 @@ onMounted(async () => {
   gap: 18px;
 }
 
-.page-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-}
-
-.page-head h1 {
-  margin: 0;
-  font-size: 28px;
-  color: #101828;
-}
-
-.eyebrow {
-  margin: 0 0 6px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #4f7cff;
-  letter-spacing: 0.08em;
-}
-
 .filter-panel {
   padding: 16px 16px 0;
   background: #fff;
@@ -355,5 +328,21 @@ onMounted(async () => {
 .pager {
   display: flex;
   justify-content: flex-end;
+}
+
+.filter-panel {
+  position: relative;
+}
+
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-panel .el-form-item {
+  margin-bottom: 16px;
+}
+.filter-panel .form-actions {
+  margin-left: auto;
 }
 </style>

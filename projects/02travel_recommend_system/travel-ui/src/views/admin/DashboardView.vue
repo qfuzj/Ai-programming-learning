@@ -1,7 +1,12 @@
 <!-- 极简风格管理后台工作台 -->
 <template>
-  <div class="page">
-    <h1 class="title">工作台</h1>
+  <div class="admin-page">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">DASHBOARD</p>
+        <h1>工作台首页</h1>
+      </div>
+    </div>
 
     <!-- 统计卡片 -->
     <div class="stat-grid">
