@@ -46,6 +46,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserMapper userMapper;
     private final UserProfileMapper userProfileMapper;
+    private final com.travel.advisor.mapper.RegionMapper regionMapper;
     private final UserPreferenceTagMapper userPreferenceTagMapper;
     private final TagMapper tagMapper;
     private final UserBrowseHistoryMapper userBrowseHistoryMapper;
@@ -71,6 +72,9 @@ public class UserProfileServiceImpl implements UserProfileService {
         return fileService.resolveUrls(List.of(fileId)).getOrDefault(fileId, "");
     }
 
+    /**
+     * 获取我的个人信息，包括基本信息和角色信息，以及解析头像 URL 和地区名称。
+     */
     @Override
     public UserProfileVO getMyProfile() {
         LoginUser loginUser = SecurityUtils.getLoginUser();
@@ -78,6 +82,15 @@ public class UserProfileServiceImpl implements UserProfileService {
         UserProfileVO vo = BeanCopyUtils.copy(user, UserProfileVO.class);
         vo.setRole("USER");
         vo.setAvatar(resolveAvatarUrl(user.getAvatar()));
+        vo.setRegionId(user.getRegionId());
+        if (user.getRegionId() != null) {
+            try {
+                var region = regionMapper.selectById(user.getRegionId());
+                vo.setRegionName(region == null ? null : region.getName());
+            } catch (Exception ignored) {
+                // ignore
+            }
+        }
         return vo;
     }
 
@@ -89,6 +102,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         user.setNickname(dto.getNickname());
         user.setAvatar(dto.getAvatar());
         user.setGender(dto.getGender());
+        user.setRegionId(dto.getRegionId());
         user.setBirthday(dto.getBirthday());
         user.setSignature(dto.getSignature());
         userMapper.updateById(user);

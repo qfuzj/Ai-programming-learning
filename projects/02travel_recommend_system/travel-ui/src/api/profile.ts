@@ -3,6 +3,7 @@
  */
 import http from "@/api/http";
 
+// 个人信息接口
 export interface ProfileInfo {
   id: number;
   username: string;
@@ -11,17 +12,22 @@ export interface ProfileInfo {
   signature?: string;
   gender?: number;
   birthday?: string;
+  regionId?: number;
+  regionName?: string;
   role?: string;
 }
 
+//个人信息更新接口
 export interface ProfileUpdatePayload {
   nickname?: string;
   avatar?: string;
   signature?: string;
   gender?: number;
   birthday?: string;
+  regionId?: number;
 }
 
+// 画像信息接口
 export interface ProfilePortraitSummary {
   travelStyle?: string;
   budgetLevel?: string;

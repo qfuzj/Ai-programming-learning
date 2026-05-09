@@ -205,7 +205,7 @@ const query = reactive({
   sortBy: "" as "" | "hot" | "score" | "createdAt",
   sortOrder: "DESC" as "ASC" | "DESC" | undefined,
   pageNum: 1,
-  pageSize: 12,
+  pageSize: 8,
 });
 
 function applyRouteQuery(): void {

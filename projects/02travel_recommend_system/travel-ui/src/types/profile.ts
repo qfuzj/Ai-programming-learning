@@ -18,4 +18,5 @@ export interface UpdateProfilePayload extends ProfileUpdatePayload {
   signature?: string;
   gender?: number;
   birthday?: string;
+  regionId?: number;
 }

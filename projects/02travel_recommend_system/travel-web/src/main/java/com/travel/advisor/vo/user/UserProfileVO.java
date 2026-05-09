@@ -16,4 +16,6 @@ public class UserProfileVO {
     private LocalDate birthday;
     private String signature;
     private String role;
+    private Long regionId;
+    private String regionName;
 }

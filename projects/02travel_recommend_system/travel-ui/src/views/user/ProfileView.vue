@@ -34,10 +34,8 @@
             </span>
             <span v-if="profile.birthday" class="meta-sep">|</span>
             <span v-if="profile.birthday" class="meta-item">{{ profile.birthday }}</span>
-            <span v-if="profile.role" class="meta-sep">|</span>
-            <span v-if="profile.role" class="meta-item role-tag">
-              {{ profile.role === "ADMIN" ? "管理员" : "普通用户" }}
-            </span>
+            <span v-if="profile.regionName" class="meta-sep">|</span>
+            <span v-if="profile.regionName" class="meta-item">{{ profile.regionName }}</span>
           </p>
         </div>
         <div class="hero-stats">
@@ -545,6 +543,32 @@
             </div>
           </div>
           <div class="form-field">
+            <label class="field-label">城市</label>
+            <div class="select-wrapper">
+              <div style="display: flex; gap: 8px">
+                <select v-model="selectedProvinceId" class="field-input field-select">
+                  <option :value="undefined">选择省/直辖市</option>
+                  <option v-for="p in provinces" :key="p.id" :value="p.id">{{ p.name }}</option>
+                </select>
+                <select v-model="selectedCityId" class="field-input field-select">
+                  <option :value="undefined">未设置</option>
+                  <option v-for="c in cityOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
+                </select>
+              </div>
+              <svg
+                class="select-arrow"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#999"
+                stroke-width="2"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+          </div>
+          <div class="form-field">
             <label class="field-label">生日</label>
             <input v-model="editForm.birthday" class="field-input" type="date" />
           </div>
@@ -705,7 +729,49 @@ const editForm = reactive({
   signature: "",
   gender: 0,
   birthday: "",
+  regionId: undefined as number | undefined,
 });
+
+import { getRegionTree, type CommonRegionNode } from "@/api/common";
+const regionTree = ref<CommonRegionNode[]>([]);
+const provinces = computed(() => regionTree.value || []);
+const selectedProvinceId = ref<number | undefined>(undefined);
+const selectedCityId = ref<number | undefined>(undefined);
+const cityOptions = computed(() => {
+  const prov = regionTree.value.find((p) => p.id === selectedProvinceId.value);
+  return prov && prov.children ? prov.children : [];
+});
+
+function setProvinceCityFromRegionId(regionId?: number | null) {
+  selectedProvinceId.value = undefined;
+  selectedCityId.value = undefined;
+  if (!regionId) return;
+  for (const p of regionTree.value) {
+    if (p.children && p.children.some((c) => c.id === regionId)) {
+      selectedProvinceId.value = p.id;
+      selectedCityId.value = regionId;
+      return;
+    }
+    if (p.id === regionId) {
+      selectedProvinceId.value = p.id;
+      selectedCityId.value = undefined;
+      return;
+    }
+  }
+}
+
+async function loadRegions(): Promise<void> {
+  try {
+    const tree = await getRegionTree();
+    regionTree.value = tree || [];
+    // if profile already loaded, sync selection
+    if (profile.value?.regionId) {
+      setProvinceCityFromRegionId(profile.value.regionId as number);
+    }
+  } catch {
+    // ignore
+  }
+}
 
 const allTags = ref<CommonTagItem[]>([]);
 const selectedTagIds = ref<number[]>([]);
@@ -812,6 +878,7 @@ async function loadProfile(): Promise<void> {
     editForm.nickname = p.nickname || "";
     editForm.signature = p.signature || "";
     editForm.gender = p.gender || 0;
+    editForm.regionId = (p as any).regionId || undefined;
   } catch {
     alert("加载个人资料失败");
   }
@@ -952,6 +1019,9 @@ function openEdit(): void {
   editForm.signature = profile.value?.signature || "";
   editForm.gender = profile.value?.gender || 0;
   editForm.birthday = profile.value?.birthday || "";
+  editForm.regionId = profile.value?.regionId || undefined;
+  // set province/city selectors based on current region
+  setProvinceCityFromRegionId(profile.value?.regionId);
   showEdit.value = true;
 }
 
@@ -963,6 +1033,7 @@ async function saveProfile(): Promise<void> {
       signature: editForm.signature || undefined,
       gender: editForm.gender || undefined,
       birthday: editForm.birthday || undefined,
+      regionId: selectedCityId.value || selectedProvinceId.value || undefined,
     });
     showEdit.value = false;
     await loadProfile();
@@ -1039,15 +1110,22 @@ function formatTime(time?: string): string {
 }
 
 onMounted(async () => {
-  await Promise.all([loadProfile(), loadPortrait(), loadMyTags(), loadCounts(), loadFav()]);
+  await Promise.all([
+    loadProfile(),
+    loadPortrait(),
+    loadMyTags(),
+    loadCounts(),
+    loadFav(),
+    loadRegions(),
+  ]);
 });
 </script>
 
 <style scoped>
 /* ========== Fonts & Base ========== */
 .profile-page {
-  max-width: 1200px;
-  padding: 0 24px 60px;
+  max-width: 1440px;
+  padding: 0 32px 56px;
   margin: 0 auto;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
@@ -1247,9 +1325,10 @@ onMounted(async () => {
 
 /* ========== Main Layout ========== */
 .main-layout {
-  display: flex;
-  gap: 32px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(280px, 300px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
 }
 
 /* ========== Sidebar ========== */
@@ -1257,10 +1336,9 @@ onMounted(async () => {
   position: sticky;
   top: 24px;
   display: flex;
-  flex-shrink: 0;
   flex-direction: column;
   gap: 16px;
-  width: 280px;
+  width: auto;
 }
 
 .sidebar-card {
@@ -1472,6 +1550,7 @@ onMounted(async () => {
 /* ========== Content Area ========== */
 .content-area {
   flex: 1;
+  max-width: 1000px;
   min-width: 0;
 }
 
@@ -1564,8 +1643,8 @@ onMounted(async () => {
 
 /* Content List */
 .content-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1580,6 +1659,10 @@ onMounted(async () => {
   border-radius: 14px;
   transition: all 0.3s ease;
   animation: fadeInUp 0.3s ease both;
+}
+
+.content-list > .content-card {
+  height: 100%;
 }
 
 .content-card:hover {
@@ -2055,6 +2138,7 @@ onMounted(async () => {
 /* ========== Responsive ========== */
 @media (max-width: 900px) {
   .main-layout {
+    display: flex;
     flex-direction: column;
   }
   .sidebar {
@@ -2076,11 +2160,15 @@ onMounted(async () => {
   .hero-name {
     font-size: 24px;
   }
+
+  .content-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 600px) {
   .profile-page {
-    padding: 0 16px 40px;
+    padding: 0 18px 40px;
   }
   .hero-header {
     margin: 16px 0 28px;
@@ -2095,6 +2183,10 @@ onMounted(async () => {
   .tab-btn {
     padding: 10px 14px;
     font-size: 14px;
+  }
+
+  .content-list {
+    grid-template-columns: 1fr;
   }
 }
 
