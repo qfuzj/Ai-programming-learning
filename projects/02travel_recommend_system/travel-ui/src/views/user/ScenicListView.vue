@@ -208,10 +208,20 @@ const query = reactive({
   pageSize: 8,
 });
 
+/**
+ * 根据路由查询参数初始化筛选条件，支持 keyword、regionId、tagId 三个参数。
+ */
 function applyRouteQuery(): void {
   const q = route.query.keyword as string | undefined;
   if (q && q.trim()) {
     query.keyword = q.trim();
+  }
+  const rid = route.query.regionId as string | undefined;
+  if (rid) {
+    const id = Number(rid);
+    if (!isNaN(id)) {
+      query.regionId = id;
+    }
   }
   const tid = route.query.tagId as string | undefined;
   if (tid) {

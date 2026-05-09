@@ -4,7 +4,11 @@
       <div class="container">
         <div class="breadcrumb-line">
           <span>景点</span>
-          <span v-if="detail.regionName">{{ detail.regionName }}</span>
+          <template v-for="region in regionChain" :key="region.id">
+            <button class="region-crumb" @click="navigateToRegion(region.id)">
+              {{ region.name }}
+            </button>
+          </template>
           <span>{{ detail.name }}</span>
         </div>
 
@@ -293,6 +297,7 @@ import { getScenicDetail } from "@/api/scenic";
 import { addFavorite, removeFavorite } from "@/api/favorite";
 import { getScenicReviews, submitReview as submitReviewApi } from "@/api/audit";
 import { fetchSimilarRecommendations as getSimilarRecommend } from "@/api/recommend";
+import { getRegionTree } from "@/api/common";
 import ReviewWriteForm from "@/views/user/components/ReviewWriteForm.vue";
 import ReviewItemCard from "@/views/user/components/ReviewItemCard.vue";
 import type {
@@ -301,6 +306,7 @@ import type {
   ScenicReviewItem,
 } from "@/types/scenic-detail";
 import type { MyReviewForm } from "@/types/my-reviews";
+import type { CommonRegionNode } from "@/api/common";
 
 const route = useRoute();
 const router = useRouter();
@@ -312,6 +318,8 @@ const reviewsLoading = ref(false);
 const similarList = ref<ScenicRecommendItem[]>([]);
 const showReviewForm = ref(false);
 const reviewSubmitLoading = ref(false);
+const regionTree = ref<CommonRegionNode[]>([]);
+const regionChain = ref<CommonRegionNode[]>([]);
 let similarTimer: number | undefined;
 
 const reviewQuery = reactive({
@@ -387,6 +395,43 @@ const infoItems = computed(() => {
   ].filter(Boolean) as Array<{ label: string; value: string; icon: unknown }>;
 });
 
+/**
+ * 递归查找从根节点到目标 regionId 的路径
+ */
+function findRegionChain(
+  nodes: CommonRegionNode[],
+  targetId: number,
+  chain: CommonRegionNode[] = []
+): CommonRegionNode[] {
+  for (const node of nodes) {
+    const newChain = [...chain, node];
+    if (node.id === targetId) {
+      return newChain;
+    }
+    if (node.children && node.children.length > 0) {
+      const result = findRegionChain(node.children, targetId, newChain);
+      if (result.length > 0) {
+        return result;
+      }
+    }
+  }
+  return [];
+}
+
+/**
+ * 加载地区树并提取地区链路
+ */
+async function loadRegionTreeAndChain(): Promise<void> {
+  try {
+    regionTree.value = await getRegionTree();
+    if (detail.value?.regionId) {
+      regionChain.value = findRegionChain(regionTree.value, detail.value.regionId);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 async function loadDetail(): Promise<void> {
   loading.value = true;
   similarList.value = [];
@@ -397,6 +442,7 @@ async function loadDetail(): Promise<void> {
   try {
     detail.value = await getScenicDetail(scenicId.value);
     reviewForm.scenicId = scenicId.value;
+    await loadRegionTreeAndChain();
     loadReviews();
     scheduleSimilarLoad();
   } catch {
@@ -522,6 +568,13 @@ function goDetail(id: number): void {
   router.push(`/scenic/${id}`);
 }
 
+function navigateToRegion(regionId: number): void {
+  router.push({
+    path: "/scenic",
+    query: { regionId: regionId.toString() },
+  });
+}
+
 function openReviewForm(): void {
   showReviewForm.value = true;
   scrollToReviews();
@@ -607,8 +660,20 @@ watch(
 }
 
 .region-crumb {
-  font-size: 14px;
-  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pine-deep);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  transition: color 0.2s;
+}
+
+.region-crumb:hover {
+  color: var(--pine);
+  text-decoration: underline;
 }
 
 .hero-header {
