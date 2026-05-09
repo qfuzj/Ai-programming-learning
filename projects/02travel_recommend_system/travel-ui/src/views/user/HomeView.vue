@@ -157,6 +157,7 @@ const router = useRouter();
 const route = useRoute();
 const loading = ref(false);
 const keyword = ref("");
+const HOT_RECOMMEND_LIMIT = 8;
 const hotList = ref<ScenicItem[]>([]);
 const tagList = ref<CommonTagItem[]>([]);
 
@@ -201,7 +202,7 @@ async function loadTags(): Promise<void> {
 async function loadData(): Promise<void> {
   loading.value = true;
   try {
-    hotList.value = await getScenicHotList();
+    hotList.value = (await getScenicHotList()).slice(0, HOT_RECOMMEND_LIMIT);
     await loadTags();
   } catch {
     alert("景点加载失败，请稍后重试");

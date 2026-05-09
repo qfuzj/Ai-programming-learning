@@ -112,7 +112,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     /**
-     * 按收藏数、评分、浏览量排序，返回热门景点前 10 条。
+     * 按收藏数、评分、浏览量排序，返回热门景点前 8 条。
      */
     @Override
     public List<ScenicListVO> hotList() {
@@ -122,7 +122,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
                 .orderByDesc(ScenicSpot::getFavoriteCount)
                 .orderByDesc(ScenicSpot::getScore)
                 .orderByDesc(ScenicSpot::getViewCount)
-                .last("limit 10");
+                .last("limit 8");
         return enrichList(scenicSpotMapper.selectList(queryWrapper));
     }
 

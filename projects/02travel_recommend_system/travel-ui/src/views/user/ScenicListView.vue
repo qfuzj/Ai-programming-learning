@@ -132,7 +132,11 @@
               <span v-if="item.score" class="score">{{ item.score.toFixed(1) }}分</span>
             </p>
             <p v-if="item.category" class="card-category">{{ item.category }}</p>
-            <p v-if="item.ticketPrice" class="card-price">¥{{ item.ticketPrice }}</p>
+            <p class="card-price">
+              {{
+                item.ticketPrice == null || item.ticketPrice === 0 ? "免费" : `¥${item.ticketPrice}`
+              }}
+            </p>
           </div>
         </div>
       </div>

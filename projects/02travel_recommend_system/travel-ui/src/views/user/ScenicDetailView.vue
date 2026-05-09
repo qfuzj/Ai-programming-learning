@@ -105,7 +105,7 @@
         </section>
 
         <section v-if="infoItems.length > 0" id="info-section" class="section">
-          <h2>实用信息</h2>
+          <h2>景点详情信息</h2>
           <div class="info-grid">
             <div v-for="item in infoItems" :key="item.label" class="info-item">
               <el-icon><component :is="item.icon" /></el-icon>
