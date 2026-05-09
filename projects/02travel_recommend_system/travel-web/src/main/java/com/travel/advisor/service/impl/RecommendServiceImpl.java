@@ -16,6 +16,7 @@ import com.travel.advisor.mapper.RecommendRecordMapper;
 import com.travel.advisor.mapper.RecommendResultItemMapper;
 import com.travel.advisor.mapper.ScenicSpotTagMapper;
 import com.travel.advisor.service.RecommendService;
+import com.travel.advisor.service.UserProfileService;
 import com.travel.advisor.recommend.recall.RecallStrategy;
 import com.travel.advisor.recommend.RecommendRankService;
 import com.travel.advisor.recommend.RecommendReasonLlmService;
@@ -26,6 +27,7 @@ import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.utils.RedisUtils;
 import com.travel.advisor.utils.SecurityUtils;
 import com.travel.advisor.vo.recommend.RecommendItemVO;
+import com.travel.advisor.vo.user.UserProfilePortraitVO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,8 +39,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class RecommendServiceImpl implements RecommendService {
 
-    // 首页推荐和相似推荐的缓存时间设置为60分钟，可以根据实际情况调整
-    private static final Duration HOME_CACHE_TTL = Duration.ofMinutes(60);
+    private static final Duration HOME_CACHE_TTL = Duration.ofMinutes(15);
     private static final Duration SIMILAR_CACHE_TTL = Duration.ofMinutes(60);
     private static final String TAG_STRATEGY_NAME = "TAG";
 
@@ -51,6 +52,7 @@ public class RecommendServiceImpl implements RecommendService {
     private final ScenicSpotTagMapper scenicSpotTagMapper;
     private final RedisUtils redisUtils;
     private final LlmProperties llmProperties;
+    private final UserProfileService userProfileService;
 
     /**
      * 首页推荐接口，基于用户画像和历史行为等信息，结合多种召回策略进行推荐，并对结果进行排序和分页展示。
@@ -59,7 +61,7 @@ public class RecommendServiceImpl implements RecommendService {
      * @return 分页结果，包含推荐结果列表、总记录数、当前页码、每页大小和总页数等信息，供前端展示使用
      */
     @Override
-    public PageResult<RecommendItemVO> homeRecommend(PageQuery pageQuery) {
+    public PageResult<RecommendItemVO> homeRecommend(PageQuery pageQuery, Boolean refresh) {
         // 获取当前用户ID，确保用户已登录，否则抛出未授权异常
         Long userId = getCurrentUserIdRequired();
 
@@ -68,17 +70,18 @@ public class RecommendServiceImpl implements RecommendService {
         String cacheKey = "recommend:user:" + userId + ":home:" + pageQuery.getPageNum() + ":"
                 + pageQuery.getPageSize();
 
-        // 尝试从Redis缓存中获取推荐结果，如果存在且不为空，则直接返回缓存中的结果，避免重复计算和数据库查询，提高响应速度
-        String cacheValue = redisUtils.get(cacheKey);
-        if (cacheValue != null && !cacheValue.isBlank()) {
-            RecommendCachePayload payload = JsonUtils.fromJson(cacheValue, RecommendCachePayload.class);
-            return PageResult.<RecommendItemVO>builder()
-                    .records(payload.getRecords() == null ? Collections.emptyList() : payload.getRecords())
-                    .total(payload.getTotal())
-                    .pageNum(pageQuery.getPageNum())
-                    .pageSize(pageQuery.getPageSize())
-                    .totalPage(payload.getTotalPage())
-                    .build();
+        if (!Boolean.TRUE.equals(refresh)) {
+            String cacheValue = redisUtils.get(cacheKey);
+            if (cacheValue != null && !cacheValue.isBlank()) {
+                RecommendCachePayload payload = JsonUtils.fromJson(cacheValue, RecommendCachePayload.class);
+                return PageResult.<RecommendItemVO>builder()
+                        .records(payload.getRecords() == null ? Collections.emptyList() : payload.getRecords())
+                        .total(payload.getTotal())
+                        .pageNum(pageQuery.getPageNum())
+                        .pageSize(pageQuery.getPageSize())
+                        .totalPage(payload.getTotalPage())
+                        .build();
+            }
         }
 
         // 记录推荐请求的开始时间，用于后续计算推荐响应时间
@@ -106,7 +109,7 @@ public class RecommendServiceImpl implements RecommendService {
 
         // 持久化推荐结果并构建返回给前端的VO对象列表，记录推荐请求的相关信息和推荐结果的详细数据，以便后续分析和优化推荐算法
         List<RecommendItemVO> pageRecords = persistAndBuildResult(userId, RecommendType.HOME, "home", ranked, pageQuery,
-                System.currentTimeMillis() - start);
+                System.currentTimeMillis() - start, refresh, null);
 
         // 计算总记录数和总页数等分页信息，构建分页结果对象，供前端展示使用
         long total = ranked.size();
@@ -136,23 +139,22 @@ public class RecommendServiceImpl implements RecommendService {
      * @return 分页结果，包含推荐结果列表、总记录数、当前页码、每页大小和总页数等信息，供前端展示使用
      */
     @Override
-    public PageResult<RecommendItemVO> scenicSimilarRecommend(Long scenicId, PageQuery pageQuery) {
+    public PageResult<RecommendItemVO> scenicSimilarRecommend(Long scenicId, PageQuery pageQuery, Boolean refresh) {
         Long userId = getCurrentUserIdRequired();
-        // 构建缓存键，格式为
-        // "recommend:scenic:{scenicId}:similar:{pageNum}:{pageSize}"，用于在Redis中存储和查询景点相似推荐结果的缓存
-        String cacheKey = "recommend:scenic:" + scenicId + ":similar:" + pageQuery.getPageNum() + ":"
+        String cacheKey = "recommend:user:" + userId + ":scenic:" + scenicId + ":similar:" + pageQuery.getPageNum() + ":"
                 + pageQuery.getPageSize();
-        // 尝试从Redis缓存中获取推荐结果，如果存在且不为空，则直接返回缓存中的结果，避免重复计算和数据库查询，提高响应速度
-        String cacheValue = redisUtils.get(cacheKey);
-        if (cacheValue != null && !cacheValue.isBlank()) {
-            RecommendCachePayload payload = JsonUtils.fromJson(cacheValue, RecommendCachePayload.class);
-            return PageResult.<RecommendItemVO>builder()
-                    .records(payload.getRecords() == null ? Collections.emptyList() : payload.getRecords())
-                    .total(payload.getTotal())
-                    .pageNum(pageQuery.getPageNum())
-                    .pageSize(pageQuery.getPageSize())
-                    .totalPage(payload.getTotalPage())
-                    .build();
+        if (!Boolean.TRUE.equals(refresh)) {
+            String cacheValue = redisUtils.get(cacheKey);
+            if (cacheValue != null && !cacheValue.isBlank()) {
+                RecommendCachePayload payload = JsonUtils.fromJson(cacheValue, RecommendCachePayload.class);
+                return PageResult.<RecommendItemVO>builder()
+                        .records(payload.getRecords() == null ? Collections.emptyList() : payload.getRecords())
+                        .total(payload.getTotal())
+                        .pageNum(pageQuery.getPageNum())
+                        .pageSize(pageQuery.getPageSize())
+                        .totalPage(payload.getTotalPage())
+                        .build();
+            }
         }
 
         // 记录推荐请求的开始时间，用于后续计算推荐响应时间
@@ -188,7 +190,7 @@ public class RecommendServiceImpl implements RecommendService {
 
         // 持久化推荐结果并构建返回给前端的VO对象列表，记录推荐请求的相关信息和推荐结果的详细数据，以便后续分析和优化推荐算法
         List<RecommendItemVO> pageRecords = persistAndBuildResult(userId, RecommendType.SIMILAR, "scenic-similar",
-                ranked, pageQuery, System.currentTimeMillis() - start);
+                ranked, pageQuery, System.currentTimeMillis() - start, refresh, scenicId);
 
         // 计算总记录数和总页数等分页信息，构建分页结果对象，供前端展示使用
         long total = ranked.size();
@@ -220,7 +222,9 @@ public class RecommendServiceImpl implements RecommendService {
             String scene,
             List<RankedRecommend> ranked,
             PageQuery pageQuery,
-            long responseTimeMs) {
+            long responseTimeMs,
+            Boolean refresh,
+            Long scenicId) {
         // 计算分页的起始和结束索引，确保不会越界，如果起始索引大于等于结束索引，则返回空列表
         long offset = (long) (pageQuery.getPageNum() - 1) * pageQuery.getPageSize();
         int fromIndex = (int) Math.min(offset, ranked.size());
@@ -231,8 +235,9 @@ public class RecommendServiceImpl implements RecommendService {
 
         // 截取当前页的推荐结果列表，供后续构建返回结果和记录推荐结果使用
         List<RankedRecommend> pageItems = ranked.subList(fromIndex, toIndex);
+        UserProfilePortraitVO portrait = userProfileService.getPortraitByUserId(userId);
         RecommendReasonResult llmReasonResult = shouldUseLlmReasons(recommendType)
-                ? recommendReasonLlmService.generateReasons(userId, scene, pageItems)
+                ? recommendReasonLlmService.generateReasons(userId, scene, pageItems, portrait)
                 : RecommendReasonResult.builder()
                         .reasons(Collections.emptyMap())
                         .llmUsed(false)
@@ -241,13 +246,16 @@ public class RecommendServiceImpl implements RecommendService {
         Map<Long, String> llmReasons = llmReasonResult.getReasons() == null
                 ? Collections.emptyMap()
                 : llmReasonResult.getReasons();
+        Map<Long, RecommendReasonResult.RecommendReasonDetail> llmDetails = llmReasonResult.getDetails() == null
+                ? Collections.emptyMap()
+                : llmReasonResult.getDetails();
 
         // 创建推荐记录对象，记录推荐请求的相关信息，包括用户ID、推荐类型、推荐场景、请求参数、使用的算法、LLM调用次数、候选总数、返回数量和响应时间等信息，并将其插入到数据库中
         RecommendRecord record = new RecommendRecord();
         record.setUserId(userId);
         record.setRecommendType(recommendType.getCode());
         record.setScene(scene);
-        record.setRequestParams(JsonUtils.toJson(pageQuery));
+        record.setRequestParams(JsonUtils.toJson(buildRequestParams(pageQuery, refresh, scenicId)));
         record.setAlgorithm(llmReasonResult.getLlmUsed() ? "规则召回+LLM理由_V1" : "规则召回_V1");
         record.setLlmUsed(llmReasonResult.getLlmUsed() ? 1 : 0);
         record.setLlmCallLogId(llmReasonResult.getLlmCallLogId());
@@ -269,7 +277,9 @@ public class RecommendServiceImpl implements RecommendService {
             item.setRankPosition(fromIndex + i + 1);
             item.setScore(rankedRecommend.getRankScore());
             String fallbackReason = recommendReasonBuilder.build(rankedRecommend.getSourceTypes());
-            item.setReason(llmReasons.getOrDefault(rankedRecommend.getScenicSpot().getId(), fallbackReason));
+            Long scenicSpotId = rankedRecommend.getScenicSpot().getId();
+            RecommendReasonResult.RecommendReasonDetail detail = llmDetails.get(scenicSpotId);
+            item.setReason(llmReasons.getOrDefault(scenicSpotId, fallbackReason));
             item.setIsClicked(0);
             item.setIsFavorited(0);
             // 插入推荐结果项到数据库中，生成推荐结果项ID，供后续关联反馈数据使用
@@ -286,11 +296,26 @@ public class RecommendServiceImpl implements RecommendService {
                     ? 0.0
                     : rankedRecommend.getScenicSpot().getScore());
             vo.setReason(item.getReason());
+            if (detail != null) {
+                vo.setReasonTone(detail.getTone());
+                vo.setReasonHighlights(detail.getHighlights());
+            }
             vo.setSourceType(String.join(",", rankedRecommend.getSourceTypes()));
             vo.setRankScore(rankedRecommend.getRankScore());
             vos.add(vo);
         }
         return vos;
+    }
+
+    private Map<String, Object> buildRequestParams(PageQuery pageQuery, Boolean refresh, Long scenicId) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("pageNum", pageQuery.getPageNum());
+        params.put("pageSize", pageQuery.getPageSize());
+        params.put("refresh", Boolean.TRUE.equals(refresh));
+        if (scenicId != null) {
+            params.put("scenicId", scenicId);
+        }
+        return params;
     }
 
     private boolean shouldUseLlmReasons(RecommendType recommendType) {
@@ -320,17 +345,26 @@ public class RecommendServiceImpl implements RecommendService {
         List<RankedRecommend> pageItems = new ArrayList<>(ranked.subList(fromIndex, toIndex));
         List<RecommendItemVO> cachedRecords = new ArrayList<>(pageRecords);
         java.util.concurrent.CompletableFuture.runAsync(() -> {
+            UserProfilePortraitVO portrait = userProfileService.getPortraitByUserId(userId);
             RecommendReasonResult result = recommendReasonLlmService
-                    .generateReasons(userId, "scenic-similar", pageItems);
+                    .generateReasons(userId, "scenic-similar", pageItems, portrait);
             if (result.getReasons() == null || result.getReasons().isEmpty()) {
                 return;
             }
+            Map<Long, RecommendReasonResult.RecommendReasonDetail> details = result.getDetails() == null
+                    ? Collections.emptyMap()
+                    : result.getDetails();
             for (RecommendItemVO vo : cachedRecords) {
                 String reason = result.getReasons().get(vo.getScenicId());
                 if (reason == null || reason.isBlank()) {
                     continue;
                 }
+                RecommendReasonResult.RecommendReasonDetail detail = details.get(vo.getScenicId());
                 vo.setReason(reason);
+                if (detail != null) {
+                    vo.setReasonTone(detail.getTone());
+                    vo.setReasonHighlights(detail.getHighlights());
+                }
                 RecommendResultItem update = new RecommendResultItem();
                 update.setId(vo.getResultItemId());
                 update.setReason(reason);

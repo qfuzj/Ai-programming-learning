@@ -12,9 +12,15 @@ export interface AiRecommendItem {
   coverImage?: string;
   score?: number;
   reason?: string;
+  reasonTone?: string;
+  reasonHighlights?: string[];
   sourceType?: string;
   rankScore?: number;
 }
+
+type RecommendPageQuery = Partial<PageQuery> & {
+  refresh?: boolean;
+};
 
 /**
  * 对应-推荐反馈DTO
@@ -26,14 +32,14 @@ export interface RecommendFeedbackPayload {
 }
 
 export function fetchAiRecommendations(
-  query: Partial<PageQuery> = { pageNum: 1, pageSize: 10 }
+  query: RecommendPageQuery = { pageNum: 1, pageSize: 10 }
 ): Promise<PageResult<AiRecommendItem>> {
   return http.get<PageResult<AiRecommendItem>>("/api/user/recommend/home", { params: query });
 }
 
 export function fetchSimilarRecommendations(
   scenicId: number,
-  query: Partial<PageQuery> = { pageNum: 1, pageSize: 10 }
+  query: RecommendPageQuery = { pageNum: 1, pageSize: 10 }
 ): Promise<PageResult<AiRecommendItem>> {
   return http.get<PageResult<AiRecommendItem>>(`/api/user/recommend/scenic/${scenicId}`, {
     params: query,

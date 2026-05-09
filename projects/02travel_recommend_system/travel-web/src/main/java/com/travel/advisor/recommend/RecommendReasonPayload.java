@@ -15,5 +15,9 @@ public class RecommendReasonPayload {
         private Long scenicId;
 
         private String reason;
+
+        private String tone;
+
+        private List<String> highlights;
     }
 }

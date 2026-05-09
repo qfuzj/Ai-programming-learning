@@ -18,6 +18,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RecommendRankService {
 
+    private static final Map<String, Double> SOURCE_WEIGHTS = Map.of(
+            "TAG", 1.35,
+            "GEO", 0.65,
+            "HOT", 0.35,
+            "SIMILAR_TAG", 1.15);
+    private static final double MULTI_SOURCE_BONUS = 0.15;
+    private static final double MAX_MULTI_SOURCE_BONUS = 0.3;
+    private static final double MAX_SCORE_BONUS = 0.1;
+
     private final ScenicSpotService scenicSpotService;
 
     /**
@@ -45,9 +54,9 @@ public class RecommendRankService {
                 continue;
             }
 
-            // 分数累加：如果同一景点被多个召回策略命中，则将它们的基础分数相加，得到一个综合得分。
             Double score = Optional.ofNullable(candidate.getBaseScore()).orElse(0.0);
-            scoreMap.merge(id, score, Double::sum);
+            double sourceWeight = SOURCE_WEIGHTS.getOrDefault(candidate.getSourceType(), 0.7);
+            scoreMap.merge(id, score * sourceWeight, Double::sum);
 
             // 来源合并
             if (candidate.getSourceType() != null) {
@@ -68,7 +77,10 @@ public class RecommendRankService {
                 .map(item ->
                         RankedRecommend.builder()
                                 .scenicSpot(item)
-                                .rankScore(scoreMap.getOrDefault(item.getId(), 0.0))
+                                .rankScore(buildFinalScore(
+                                        scoreMap.getOrDefault(item.getId(), 0.0),
+                                        sourceMap.getOrDefault(item.getId(), Collections.emptySet()),
+                                        item.getScore()))
                                 .sourceTypes(sourceMap.getOrDefault(item.getId(), Collections.emptySet()))
                                 .build()
                 ).sorted(Comparator.comparing(RankedRecommend::getRankScore, Comparator.reverseOrder()))
@@ -76,5 +88,14 @@ public class RecommendRankService {
 
         // 5. LLM 精排扩展点：如需基于用户画像 / 上下文做语义化重排，在此处接入；当前未实现。
         return ranked;
+    }
+
+    private double buildFinalScore(double weightedScore, Set<String> sources, Double scenicScore) {
+        int sourceCount = sources == null ? 0 : sources.size();
+        double sourceBonus = sourceCount <= 1
+                ? 0.0
+                : Math.min(MAX_MULTI_SOURCE_BONUS, (sourceCount - 1) * MULTI_SOURCE_BONUS);
+        double qualityBonus = scenicScore == null ? 0.0 : Math.min(MAX_SCORE_BONUS, scenicScore / 10.0 * MAX_SCORE_BONUS);
+        return weightedScore + sourceBonus + qualityBonus;
     }
 }

@@ -14,7 +14,7 @@ public interface RecommendService {
      * @param pageQuery 分页查询参数，包含页码和每页大小等信息，用于控制返回结果的分页展示
      * @return 分页结果，包含推荐项的列表和分页信息，供前端展示个性化的推荐内容
      */
-    PageResult<RecommendItemVO> homeRecommend(PageQuery pageQuery);
+    PageResult<RecommendItemVO> homeRecommend(PageQuery pageQuery, Boolean refresh);
 
     /**
      * 获取景点相似推荐，基于指定景点ID，通过相似度计算和推荐算法生成与该景点相似的推荐列表，返回分页结果以支持前端展示和分页加载
@@ -22,5 +22,5 @@ public interface RecommendService {
      * @param pageQuery 分页查询参数，包含页码和每页大小等信息，用于控制返回结果的分页展示
      * @return 分页结果，包含与指定景点相似的推荐项的列表和分页信息，供前端展示个性化的相似推荐内容
      */
-    PageResult<RecommendItemVO> scenicSimilarRecommend(Long scenicId, PageQuery pageQuery);
+    PageResult<RecommendItemVO> scenicSimilarRecommend(Long scenicId, PageQuery pageQuery, Boolean refresh);
 }

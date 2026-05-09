@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,13 +26,16 @@ public class RecommendController {
     private final RecommendFeedbackService recommendFeedbackService;
 
     @GetMapping("/home")
-    public Result<PageResult<RecommendItemVO>> home(PageQuery pageQuery) {
-        return Result.success(recommendService.homeRecommend(pageQuery));
+    public Result<PageResult<RecommendItemVO>> home(PageQuery pageQuery,
+            @RequestParam(defaultValue = "false") Boolean refresh) {
+        return Result.success(recommendService.homeRecommend(pageQuery, refresh));
     }
 
     @GetMapping("/scenic/{scenicId}")
-    public Result<PageResult<RecommendItemVO>> similar(@PathVariable Long scenicId, PageQuery pageQuery) {
-        return Result.success(recommendService.scenicSimilarRecommend(scenicId, pageQuery));
+    public Result<PageResult<RecommendItemVO>> similar(@PathVariable Long scenicId,
+            PageQuery pageQuery,
+            @RequestParam(defaultValue = "false") Boolean refresh) {
+        return Result.success(recommendService.scenicSimilarRecommend(scenicId, pageQuery, refresh));
     }
 
     @PostMapping("/feedback/exposure")

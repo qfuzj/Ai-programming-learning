@@ -4,7 +4,10 @@
     <div class="header">
       <h1 class="title">AI 推荐</h1>
       <p class="subtitle">基于智能算法为您推荐景点</p>
-      <button class="btn-refresh" :disabled="loading" @click="loadData">刷新推荐</button>
+      <button class="btn-refresh" :disabled="loading" @click="loadData(true)">
+        {{ refreshing ? "刷新中..." : "刷新推荐" }}
+      </button>
+      <p v-if="lastRefreshText" class="refresh-hint">{{ lastRefreshText }}</p>
     </div>
 
     <div v-if="loading" class="grid">
@@ -25,6 +28,12 @@
         <div class="card-body">
           <h3 class="card-title">{{ item.scenicName }}</h3>
           <p class="card-reason">{{ item.reason || "为您智能推荐" }}</p>
+          <div v-if="item.reasonTone || item.reasonHighlights?.length" class="reason-tags">
+            <span v-if="item.reasonTone" class="reason-tag tone">{{ item.reasonTone }}</span>
+            <span v-for="highlight in item.reasonHighlights" :key="highlight" class="reason-tag">
+              {{ highlight }}
+            </span>
+          </div>
           <div class="card-meta">
             <span v-if="item.score" class="score">{{ item.score.toFixed(1) }}分</span>
             <span v-if="item.sourceType" class="source">{{ item.sourceType }}</span>
@@ -60,6 +69,8 @@ import { fetchAiRecommendations, sendRecommendClick, type AiRecommendItem } from
 
 const router = useRouter();
 const loading = ref(false);
+const refreshing = ref(false);
+const lastRefreshText = ref("");
 const list = ref<AiRecommendItem[]>([]);
 const total = ref(0);
 
@@ -84,16 +95,36 @@ function changePage(page: number): void {
   loadData();
 }
 
-async function loadData(): Promise<void> {
+function buildListSignature(records: AiRecommendItem[]): string {
+  return records
+    .map((item) => `${item.scenicId}:${item.rankScore ?? ""}:${item.reason ?? ""}`)
+    .join("|");
+}
+
+async function loadData(refresh = false): Promise<void> {
+  const previousSignature = buildListSignature(list.value);
   loading.value = true;
+  refreshing.value = refresh;
+  if (refresh) {
+    lastRefreshText.value = "";
+  }
   try {
-    const res = await fetchAiRecommendations(query);
-    list.value = res.records || [];
+    const res = await fetchAiRecommendations({ ...query, refresh: refresh || undefined });
+    const records = res.records || [];
+    list.value = records;
     total.value = res.total || 0;
+    if (refresh) {
+      const nextSignature = buildListSignature(records);
+      lastRefreshText.value =
+        previousSignature && previousSignature === nextSignature
+          ? "已重新计算推荐，当前结果与上次接近"
+          : "推荐已刷新";
+    }
   } catch {
     alert("推荐结果加载失败");
   } finally {
     loading.value = false;
+    refreshing.value = false;
   }
 }
 
@@ -124,6 +155,12 @@ onMounted(() => {
   margin: 0 0 20px 0;
   font-size: 15px;
   color: #999999;
+}
+
+.refresh-hint {
+  margin: 12px 0 0 0;
+  font-size: 13px;
+  color: #666666;
 }
 
 .btn-refresh {
@@ -207,6 +244,26 @@ onMounted(() => {
   font-size: 14px;
   line-height: 1.6;
   color: #666666;
+}
+
+.reason-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.reason-tag {
+  padding: 3px 8px;
+  font-size: 12px;
+  color: #555555;
+  background: #f5f5f5;
+  border-radius: 999px;
+}
+
+.reason-tag.tone {
+  color: #007a3d;
+  background: #eafff3;
 }
 
 .card-meta {

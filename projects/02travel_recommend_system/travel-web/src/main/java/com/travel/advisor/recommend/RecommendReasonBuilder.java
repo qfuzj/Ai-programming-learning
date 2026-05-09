@@ -21,7 +21,7 @@ public class RecommendReasonBuilder {
             return "基于您的兴趣标签偏好推荐";
         }
         if (sourceTypes.contains("GEO")) {
-            return "基于您常浏览地区的相似景点推荐";
+            return "基于您的地区偏好推荐";
         }
         return "基于平台热度推荐";
     }

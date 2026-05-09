@@ -116,6 +116,11 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     public UserProfilePortraitVO getMyPortrait() {
         Long userId = SecurityUtils.getLoginUser().getUserId();
+        return getPortraitByUserId(userId);
+    }
+
+    @Override
+    public UserProfilePortraitVO getPortraitByUserId(Long userId) {
         UserProfilePortraitVO vo = new UserProfilePortraitVO();
 
         // 1. 获取 user_profile 核心画像

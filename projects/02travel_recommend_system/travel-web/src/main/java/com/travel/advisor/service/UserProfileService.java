@@ -12,6 +12,7 @@ public interface UserProfileService {
     UserProfileVO getMyProfile();
     void updateMyProfile(UserProfileUpdateDTO dto);
     UserProfilePortraitVO getMyPortrait();
+    UserProfilePortraitVO getPortraitByUserId(Long userId);
     void updatePreferenceTags(UserPreferenceTagsUpdateDTO dto);
     List<Tag> getMyPreferenceTags();
 }
