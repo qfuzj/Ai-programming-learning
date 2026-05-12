@@ -108,7 +108,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     @Override
     public ScenicDetailVO adminDetail(Long id) {
         ScenicSpot scenicSpot = findById(id);
-        return buildDetailVO(scenicSpot);
+        ScenicDetailVO vo = buildDetailVO(scenicSpot);
+        vo.setCoverImage(scenicSpot.getCoverImage());
+        return vo;
     }
 
     /**
@@ -146,6 +148,7 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     public Long create(ScenicCreateDTO dto) {
         ScenicSpot scenicSpot = new ScenicSpot();
         BeanUtils.copyProperties(dto, scenicSpot);
+        scenicSpot.setCoverImage(normalizeCoverImageForStorage(dto.getCoverImage()));
         applyDefaults(scenicSpot);
         scenicSpotMapper.insert(scenicSpot);
 
@@ -164,6 +167,9 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
         ScenicSpot existing = findById(id);
         ScenicSpot scenicSpot = new ScenicSpot();
         BeanUtils.copyProperties(dto, scenicSpot, getNullPropertyNames(dto));
+        if (dto.getCoverImage() != null) {
+            scenicSpot.setCoverImage(normalizeCoverImageForStorage(dto.getCoverImage()));
+        }
         scenicSpot.setId(id);
         scenicSpot.setCreateTime(existing.getCreateTime());
         scenicSpot.setUpdateTime(LocalDateTime.now());
@@ -708,11 +714,25 @@ public class ScenicSpotServiceImpl implements ScenicSpotService {
     }
 
     private void bindCoverImage(String coverImage, Long scenicSpotId) {
-        Long fileId = FileResourceIds.tryParseId(coverImage);
-        if (fileId != null) {
-            fileService.bindFilesToBiz(List.of(fileId), scenicSpotId, BizType.SCENIC);
+        if (!StringUtils.hasText(coverImage)) {
+            return;
         }
-        // 旧 URL 格式或空值，不绑定
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "封面图必须使用文件资源ID");
+        }
+        fileService.bindFilesToBiz(List.of(fileId), scenicSpotId, BizType.SCENIC);
+    }
+
+    private String normalizeCoverImageForStorage(String coverImage) {
+        if (!StringUtils.hasText(coverImage)) {
+            return "";
+        }
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "封面图必须使用文件资源ID");
+        }
+        return String.valueOf(fileId);
     }
 
     /**

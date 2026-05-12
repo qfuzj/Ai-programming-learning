@@ -221,15 +221,15 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="封面图">
-              <div v-if="form.coverImage" class="cover-image-preview">
+              <div v-if="coverPreviewUrl" class="cover-image-preview">
                 <el-image
                   class="cover-preview"
-                  :src="form.coverImage"
+                  :src="coverPreviewUrl"
                   fit="cover"
-                  :preview-src-list="[form.coverImage]"
+                  :preview-src-list="[coverPreviewUrl]"
                 />
                 <div class="cover-actions">
-                  <el-button link type="danger" @click="form.coverImage = ''">删除封面图</el-button>
+                  <el-button link type="danger" @click="clearCoverImage">删除封面图</el-button>
                 </div>
               </div>
               <div v-else>
@@ -557,6 +557,7 @@ const tempRegionPath = ref<number[]>([]);
 const tagPickerTarget = ref<TagPickerTarget>("filter");
 const regionPickerTarget = ref<RegionPickerTarget>("filter");
 const scenicImages = ref<ScenicImageItem[]>([]);
+const coverPreviewUrl = ref("");
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const coverInputRef = ref<HTMLInputElement | null>(null);
 
@@ -813,6 +814,7 @@ function resetForm(): void {
     imageIds: [],
   });
   scenicImages.value = [];
+  coverPreviewUrl.value = "";
   formRegionPath.value = [];
 }
 
@@ -856,6 +858,9 @@ function fillForm(detail: ScenicDetail): void {
     imageIds:
       detail.images?.map((image) => image.fileResourceId).filter((id): id is number => !!id) || [],
   });
+  const coverFileId = Number(detail.coverImage || 0);
+  const coverFromImages = detail.images?.find((image) => image.fileResourceId === coverFileId);
+  coverPreviewUrl.value = coverFromImages?.imageUrl || "";
   scenicImages.value =
     detail.images
       ?.filter((image) => image.fileResourceId)
@@ -956,7 +961,8 @@ async function onCoverSelected(event: Event): Promise<void> {
       bizId: editingId.value || undefined,
     });
     const fileResource = await getFileResource(fileId);
-    form.coverImage = fileResource.url || "";
+    form.coverImage = String(fileId);
+    coverPreviewUrl.value = fileResource.url || "";
     ElMessage.success("封面图上传成功");
   } catch {
     ElMessage.error("封面图上传失败，请重试");
@@ -1029,6 +1035,11 @@ async function onImageSelected(event: Event): Promise<void> {
   }
 }
 
+function clearCoverImage(): void {
+  form.coverImage = "";
+  coverPreviewUrl.value = "";
+}
+
 function removeScenicImage(image: ScenicImageItem): void {
   const fileResourceId = image.fileResourceId;
   scenicImages.value = scenicImages.value.filter((item) => item !== image);
@@ -1036,7 +1047,7 @@ function removeScenicImage(image: ScenicImageItem): void {
     .map((item) => item.fileResourceId)
     .filter((id): id is number => !!id);
   if (fileResourceId && form.coverImage === String(fileResourceId)) {
-    form.coverImage = "";
+    clearCoverImage();
   }
 }
 
