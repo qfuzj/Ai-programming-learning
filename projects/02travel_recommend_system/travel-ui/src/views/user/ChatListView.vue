@@ -30,15 +30,7 @@
           <p class="item-meta">
             <span>{{ item.messageCount || 0 }}条消息</span>
             <span class="dot">·</span>
-            <span>
-              {{
-                item.conversationType === 3
-                  ? "自由对话"
-                  : item.conversationType === 2
-                    ? "行程规划"
-                    : "景点咨询"
-              }}
-            </span>
+            <span>{{ formatConversationType(item.conversationType) }}</span>
           </p>
         </div>
         <span class="item-time">{{ formatTime(item.updatedAt) }}</span>
@@ -50,7 +42,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { getConversations, createConversation, type ConversationItem } from "@/api/conversation";
+import {
+  getConversations,
+  createConversation,
+  ConversationType,
+  type ConversationItem,
+} from "@/api/conversation";
 
 const router = useRouter();
 const loading = ref(false);
@@ -61,6 +58,13 @@ function formatTime(time?: string): string {
   if (!time) return "";
   const d = new Date(time);
   return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function formatConversationType(type?: number): string {
+  if (type === ConversationType.SMART_SERVICE) return "智能客服";
+  if (type === ConversationType.TRIP_PLANNING) return "行程规划";
+  if (type === ConversationType.ATTRACTION_CONSULT) return "景点咨询";
+  return "未知类型";
 }
 
 async function loadData(): Promise<void> {
@@ -77,8 +81,11 @@ async function loadData(): Promise<void> {
 async function createNew(): Promise<void> {
   creating.value = true;
   try {
-    const result = await createConversation({ title: "新的旅行咨询", conversationType: 3 });
-    await router.push(`/ai/chat/${result.conversationId}`);
+    const conversationId = await createConversation({
+      title: "新的旅行咨询",
+      conversationType: ConversationType.ATTRACTION_CONSULT,
+    });
+    await router.push(`/ai/chat/${conversationId}`);
   } catch {
     alert("创建失败");
   } finally {

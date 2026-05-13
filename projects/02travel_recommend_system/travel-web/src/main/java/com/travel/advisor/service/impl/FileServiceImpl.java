@@ -24,13 +24,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -260,7 +254,7 @@ public class FileServiceImpl implements FileService {
             return Collections.emptyMap();
         }
         // 去重后批量查询，URL 缺失的资源不进结果集，调用方按 getOrDefault 处理
-        List<Long> distinctIds = fileIds.stream().filter(java.util.Objects::nonNull).distinct().collect(Collectors.toList());
+        List<Long> distinctIds = fileIds.stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
         if (distinctIds.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -305,12 +299,12 @@ public class FileServiceImpl implements FileService {
                                 .bucket(minioProperties.getBucketName())
                                 .object(file.getObjectKey())
                                 .build());
-                
+
                 FileResource updateEntity = new FileResource();
                 updateEntity.setId(file.getId());
                 updateEntity.setStatus(FileResourceStatus.DELETED.getCode());
                 fileResourceMapper.updateById(updateEntity);
-                
+
                 count++;
             } catch (Exception e) {
                 log.warn("清理临时文件失败 id={}", file.getId(), e);

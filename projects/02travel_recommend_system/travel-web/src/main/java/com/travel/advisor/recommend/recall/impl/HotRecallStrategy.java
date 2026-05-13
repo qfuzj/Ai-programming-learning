@@ -1,6 +1,5 @@
 package com.travel.advisor.recommend.recall.impl;
 
-import com.travel.advisor.domain.recommend.RecallContext;
 import com.travel.advisor.recommend.recall.RecallStrategy;
 import com.travel.advisor.domain.recommend.RecallCandidate;
 
@@ -29,7 +28,7 @@ public class HotRecallStrategy implements RecallStrategy {
     }
 
     @Override
-    public List<RecallCandidate> recall(RecallContext context) {
+    public List<RecallCandidate> recall(Long userId) {
         List<ScenicSpot> spots = scenicSpotMapper.selectList(new LambdaQueryWrapper<ScenicSpot>()
             .eq(ScenicSpot::getStatus, 1)
             .orderByDesc(ScenicSpot::getFavoriteCount)

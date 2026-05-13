@@ -90,10 +90,8 @@ export function getConversationDetail(conversationId: number): Promise<Conversat
 /**
  * 创建聊天会话
  */
-export function createConversation(
-  payload: CreateConversationPayload
-): Promise<{ conversationId: number }> {
-  return http.post<{ conversationId: number }>("/api/user/chat/conversations", {
+export function createConversation(payload: CreateConversationPayload): Promise<number> {
+  return http.post<number>("/api/user/chat/conversations", {
     title: payload.title,
     conversationType: payload.conversationType,
   });
@@ -118,8 +116,121 @@ export function sendConversationMessage(
     `/api/user/chat/conversations/${conversationId}/messages`,
     {
       content,
-    }
+    },
+    { timeout: 45000 }
   );
+}
+
+/**
+ * 流式发送会话消息
+ */
+export function sendConversationMessageStream(
+  conversationId: number,
+  content: string,
+  onMessage: (chunk: string) => void,
+  onComplete: () => void,
+  onError: (error: Error) => void
+): void {
+  const token = localStorage.getItem("travel_token");
+
+  fetch(`/dev-api/api/user/chat/conversations/${conversationId}/messages/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify({ content }),
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Response body reader is null");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let completed = false;
+
+      const processEvent = (rawEvent: string): void => {
+        const event = rawEvent.replace(/\r/g, "").trim();
+        if (!event) {
+          return;
+        }
+
+        const lines = event.split("\n");
+        const dataLines: string[] = [];
+
+        for (const line of lines) {
+          if (!line || line.startsWith(":")) {
+            continue;
+          }
+          if (line.startsWith("data:")) {
+            dataLines.push(line.slice(5).trimStart());
+          }
+        }
+
+        if (dataLines.length === 0) {
+          return;
+        }
+
+        const data = dataLines.join("\n");
+        if (!data) {
+          return;
+        }
+
+        if (data === "[DONE]") {
+          completed = true;
+          onComplete();
+          return;
+        }
+
+        onMessage(data);
+      };
+
+      const read = (): void => {
+        reader
+          .read()
+          .then(({ done, value }) => {
+            if (done) {
+              if (buffer) {
+                processEvent(buffer);
+              }
+              if (!completed) {
+                onComplete();
+              }
+              return;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            let delimiterIndex = buffer.indexOf("\n\n");
+            while (delimiterIndex !== -1) {
+              const rawEvent = buffer.slice(0, delimiterIndex);
+              buffer = buffer.slice(delimiterIndex + 2);
+              processEvent(rawEvent);
+              if (completed) {
+                return;
+              }
+              delimiterIndex = buffer.indexOf("\n\n");
+            }
+
+            read();
+          })
+          .catch((err: unknown) => {
+            onError(err instanceof Error ? err : new Error(String(err)));
+          });
+      };
+
+      read();
+    })
+    .catch((err: unknown) => {
+      onError(err instanceof Error ? err : new Error(String(err)));
+    });
 }
 
 /**

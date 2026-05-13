@@ -9,12 +9,13 @@
     <div class="chat-box">
       <div v-if="loading" class="loading">加载中...</div>
 
-      <div v-else-if="messages.length === 0" class="empty">暂无消息，开始对话吧</div>
-
-      <div v-else class="message-list">
+      <div v-else ref="messageListRef" class="message-list">
+        <div v-if="messages.length === 0" class="empty-inline">暂无消息，开始对话吧</div>
         <div v-for="msg in messages" :key="msg.messageId" class="message" :class="msg.role">
           <div class="avatar">{{ msg.role === "user" ? "我" : "AI" }}</div>
-          <div class="bubble">{{ msg.content }}</div>
+          <div class="bubble">
+            {{ msg.content }}
+          </div>
         </div>
       </div>
 
@@ -33,12 +34,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import {
   getConversationDetail,
   getConversationMessages,
-  sendConversationMessage,
+  sendConversationMessageStream,
   type ChatMessageItem,
   ContentType,
 } from "@/api/conversation";
@@ -50,6 +52,9 @@ const sending = ref(false);
 const messages = ref<ChatMessageItem[]>([]);
 const text = ref("");
 const title = ref("会话详情");
+const DEFAULT_TITLES = new Set(["新的旅行咨询", "新对话", "新的对话", "默认会话", "会话详情"]);
+const messageListRef = ref<HTMLElement>();
+let titlePollingToken = 0;
 
 const conversationId = computed(() => Number(route.params.conversationId));
 
@@ -67,6 +72,8 @@ async function loadData(): Promise<void> {
     ]);
     title.value = detail.title || `会话 #${id}`;
     messages.value = msgs || [];
+    await nextTick();
+    scrollToBottom();
   } catch {
     alert("加载失败");
   } finally {
@@ -74,23 +81,132 @@ async function loadData(): Promise<void> {
   }
 }
 
+async function loadConversationTitle(id: number): Promise<string> {
+  const detail = await getConversationDetail(id);
+  const nextTitle = detail.title || `会话 #${id}`;
+  title.value = nextTitle;
+  return nextTitle;
+}
+
+function startTitlePolling(id: number): void {
+  titlePollingToken += 1;
+  const currentToken = titlePollingToken;
+  const maxAttempts = 12;
+  const intervalMs = 1000;
+
+  const poll = async (attempt: number): Promise<void> => {
+    if (currentToken !== titlePollingToken || conversationId.value !== id) {
+      return;
+    }
+
+    try {
+      const nextTitle = await loadConversationTitle(id);
+      if (!DEFAULT_TITLES.has(nextTitle)) {
+        return;
+      }
+    } catch (error) {
+      console.error("标题轮询失败:", error);
+    }
+
+    if (
+      attempt >= maxAttempts ||
+      currentToken !== titlePollingToken ||
+      conversationId.value !== id
+    ) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      void poll(attempt + 1);
+    }, intervalMs);
+  };
+
+  void poll(1);
+}
+
+async function syncConversationAfterSend(): Promise<void> {
+  await loadData();
+}
+
 async function send(): Promise<void> {
   const content = text.value.trim();
-  if (!content || !conversationId.value) return;
+  const id = conversationId.value;
+  if (!content || !id) return;
+
   sending.value = true;
-  try {
-    const res = await sendConversationMessage(conversationId.value, content);
-    messages.value = [
-      ...messages.value,
-      buildMsg(res.userMessageId, "user", content),
-      buildMsg(res.assistantMessageId, "assistant", res.replyContent),
-    ];
-    text.value = "";
-  } catch {
-    alert("发送失败");
-  } finally {
-    sending.value = false;
-  }
+  text.value = "";
+
+  // 立即显示用户消息
+  const userMsg = buildMsg(Date.now(), "user", content);
+  messages.value.push(userMsg);
+  await nextTick();
+  scrollToBottom();
+
+  // 创建AI消息占位符
+  const aiMsg = buildMsg(Date.now() + 1, "assistant", "");
+  const aiMsgIndex = messages.value.length;
+  messages.value.push(aiMsg);
+  await nextTick();
+  scrollToBottom();
+
+  let pendingText = "";
+  let flushTimer: number | null = null;
+
+  const flushPending = (): void => {
+    if (!pendingText) {
+      return;
+    }
+    const target = messages.value[aiMsgIndex];
+    if (!target) {
+      pendingText = "";
+      return;
+    }
+    target.content += pendingText;
+    pendingText = "";
+    nextTick(() => scrollToBottom());
+  };
+
+  const scheduleFlush = (): void => {
+    if (flushTimer !== null) {
+      return;
+    }
+    flushTimer = window.setTimeout(() => {
+      flushTimer = null;
+      flushPending();
+    }, 50);
+  };
+
+  const clearFlushTimer = (): void => {
+    if (flushTimer !== null) {
+      window.clearTimeout(flushTimer);
+      flushTimer = null;
+    }
+  };
+
+  startTitlePolling(id);
+
+  // 流式接收AI回复
+  sendConversationMessageStream(
+    id,
+    content,
+    (chunk: string) => {
+      pendingText += chunk;
+      scheduleFlush();
+    },
+    () => {
+      clearFlushTimer();
+      flushPending();
+      sending.value = false;
+      void syncConversationAfterSend();
+    },
+    (error: Error) => {
+      clearFlushTimer();
+      sending.value = false;
+      console.error("发送失败:", error);
+      ElMessage.error("发送失败，请重试");
+      messages.value = messages.value.filter((m) => m !== userMsg && m !== aiMsg);
+    }
+  );
 }
 
 function buildMsg(id: number, role: "user" | "assistant", content: string): ChatMessageItem {
@@ -105,16 +221,22 @@ function buildMsg(id: number, role: "user" | "assistant", content: string): Chat
   };
 }
 
+function scrollToBottom(): void {
+  nextTick(() => {
+    if (messageListRef.value) {
+      messageListRef.value.scrollTop = messageListRef.value.scrollHeight;
+    }
+  });
+}
+
 watch(
   conversationId,
   () => {
+    titlePollingToken += 1;
     if (conversationId.value) loadData();
   },
   { immediate: true }
 );
-onMounted(() => {
-  if (conversationId.value) loadData();
-});
 </script>
 
 <style scoped>

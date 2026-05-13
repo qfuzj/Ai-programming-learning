@@ -1,6 +1,5 @@
 package com.travel.advisor.recommend.recall.impl;
 
-import com.travel.advisor.domain.recommend.RecallContext;
 import com.travel.advisor.recommend.recall.RecallStrategy;
 import com.travel.advisor.domain.recommend.RecallCandidate;
 
@@ -46,8 +45,7 @@ public class TagRecallStrategy implements RecallStrategy {
     }
 
     @Override
-    public List<RecallCandidate> recall(RecallContext context) {
-        Long userId = context.getUserId();
+    public List<RecallCandidate> recall(Long userId) {
         if (userId == null) {
             return Collections.emptyList();
         }

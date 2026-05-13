@@ -1,6 +1,5 @@
 package com.travel.advisor.recommend.recall;
 
-import com.travel.advisor.domain.recommend.RecallContext;
 import com.travel.advisor.domain.recommend.RecallCandidate;
 
 import java.util.List;
@@ -17,9 +16,9 @@ public interface RecallStrategy {
     String strategyName();
 
     /**
-     * 根据给定的召回上下文生成召回候选项列表。
-     * @param context 召回上下文，包含用户信息、请求参数等相关数据
-     * @return 召回候选项列表，根据上下文生成的候选项可能包含不同的属性和权重
+     * 基于用户ID生成召回候选项列表。
+     * @param userId 当前用户ID
+     * @return 召回候选项列表
      */
-    List<RecallCandidate> recall(RecallContext context);
+    List<RecallCandidate> recall(Long userId);
 }

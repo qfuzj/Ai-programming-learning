@@ -2,6 +2,7 @@ package com.travel.advisor.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.travel.advisor.common.enums.ConversationType;
 import com.travel.advisor.common.enums.LLMCallLogStatus;
 import com.travel.advisor.common.enums.MessageContentType;
 import com.travel.advisor.common.enums.MessageRole;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -47,6 +49,14 @@ public class MessageServiceImpl implements MessageService {
      * 发送给 LLM 的历史消息 token 上限
      */
     private static final int HISTORY_MAX_TOKENS = 2800;
+    /**
+     * 自动生成标题最大长度
+     */
+    private static final int AUTO_TITLE_MAX_LENGTH = 16;
+    /**
+     * 需要自动覆盖的默认标题
+     */
+    private static final Set<String> DEFAULT_CONVERSATION_TITLES = Set.of("新的旅行咨询", "新对话", "新的对话", "默认会话");
 
     private final TransactionTemplate transactionTemplate;
     private final LlmMessageMapper llmMessageMapper;
@@ -95,6 +105,10 @@ public class MessageServiceImpl implements MessageService {
 
         // 事务1：保存用户信息 + 合并景点上下文
         LlmMessage userMessage = mergeContextAndSaveUserMessage(conversation, dto.getContextScenicId(), filteredContent, sensitive);
+        // 首条用户消息自动识别会话类型（仅默认景点咨询时触发）
+        autoClassifyConversationTypeIfNeeded(conversation, filteredContent, userMessage);
+        // 首条用户消息自动生成标题摘要并覆盖默认标题
+        autoGenerateConversationTitleIfNeeded(conversation, filteredContent, userMessage);
 
         // 敏感内容直接拒绝，不进入 LLM 调用。
         if (sensitive) {
@@ -150,6 +164,96 @@ public class MessageServiceImpl implements MessageService {
     }
 
     /**
+     * 流式发送消息：
+     * 1. 敏感检测
+     * 2. 保存用户消息（事务1）
+     * 3. 敏感内容直接返回拒绝
+     * 4. 查询历史 -> 构建请求 -> 流式调用 LLM
+     * 5. 流结束后保存完整回复（事务2）
+     */
+    @Override
+    public Flux<String> sendMessageStream(Long conversationId, ChatSendMessageDTO dto) {
+        Long userId = getCurrentUserIdRequired();
+        LlmConversation conversation = conversationService.getConversationEntity(conversationId, userId);
+
+        // 敏感检测
+        String originalContent = dto.getContent();
+        boolean sensitive = sensitiveFilterService.isSensitive(originalContent);
+        String filteredContent = sensitive ? sensitiveFilterService.filter(originalContent) : originalContent;
+
+        // 事务1：保存用户消息
+        LlmMessage userMessage = mergeContextAndSaveUserMessage(conversation, dto.getContextScenicId(), filteredContent, sensitive);
+        // 首条用户消息自动识别会话类型（仅默认景点咨询时触发）
+        autoClassifyConversationTypeIfNeeded(conversation, filteredContent, userMessage);
+        // 首条用户消息自动生成标题摘要并覆盖默认标题
+        autoGenerateConversationTitleIfNeeded(conversation, filteredContent, userMessage);
+
+        // 敏感内容直接拒绝
+        if (sensitive) {
+            String rejectReply = "消息包含敏感内容，请修改后再试。";
+            saveAssistantResponse(conversation, userMessage, rejectReply, 0, null, "sensitive-filter", true);
+            return Flux.just(rejectReply);
+        }
+
+        // 拉取历史消息
+        Page<LlmMessage> page = new Page<>(1, HISTORY_FETCH_LIMIT);
+        page.setSearchCount(false);
+        List<LlmMessage> historyMessages = llmMessageMapper.selectPage(
+                        page,
+                        new LambdaQueryWrapper<LlmMessage>()
+                                .eq(LlmMessage::getConversationId, conversationId)
+                                .orderByDesc(LlmMessage::getId))
+                .getRecords()
+                .stream()
+                .sorted(Comparator.comparing(LlmMessage::getId))
+                .toList();
+        historyMessages = truncateHistory(historyMessages);
+
+        // 构建 LLM 请求
+        LlmRequest request = chatPromptBuilder.buildChatRequest(
+                userId, conversationId, conversation.getContextData(), historyMessages);
+
+        // 流式调用 LLM
+        StringBuilder fullReply = new StringBuilder();
+        long start = System.currentTimeMillis();
+
+        return llmGateway.generateStream(request)
+                .doOnNext(fullReply::append)
+                .doOnError(error -> {
+                    // 记录失败日志
+                    llmCallLogService.saveChatLog(userId, JsonUtils.toJson(request.getMessages()),
+                            null, LLMCallLogStatus.FAILED.getCode(), error.getMessage(),
+                            (int) (System.currentTimeMillis() - start));
+                    // 保存兜底回复
+                    Exception ex = error instanceof Exception ? (Exception) error : new Exception(error);
+                    String fallbackReply = chatFallbackService.getFallbackReply(ex);
+                    saveAssistantResponse(conversation, userMessage, fallbackReply, 0, null, "fallback", false);
+                })
+                .doOnComplete(() -> {
+                    // 流结束后保存完整回复
+                    String completeReply = fullReply.toString();
+                    int tokenUsage = estimateTokens(completeReply);
+                    // 记录成功日志
+                    LlmResponse mockResponse = LlmResponse.builder()
+                            .content(completeReply)
+                            .totalTokens(tokenUsage)
+                            .modelName(request.getModelName())
+                            .build();
+                    Long callLogId = llmCallLogService.saveChatLog(userId, JsonUtils.toJson(request.getMessages()),
+                            mockResponse, LLMCallLogStatus.SUCCESS.getCode(), null,
+                            (int) (System.currentTimeMillis() - start));
+                    saveAssistantResponse(conversation, userMessage, completeReply, tokenUsage, callLogId,
+                            request.getModelName(), false);
+                })
+                .onErrorResume(error -> {
+                    // 返回兜底回复
+                    Exception ex = error instanceof Exception ? (Exception) error : new Exception(error);
+                    String fallbackReply = chatFallbackService.getFallbackReply(ex);
+                    return Flux.just(fallbackReply);
+                });
+    }
+
+    /**
      * 事务1：合并景点上下文 + 保存用户消息。
      * 两步操作需要原子性： 上下文更新成功但消息插入失败时需要一起回滚
      */
@@ -179,6 +283,153 @@ public class MessageServiceImpl implements MessageService {
                 conversation.getContextData(), contextScenicId);
         conversation.setContextData(mergedContext);
         llmConversationMapper.updateById(conversation);
+    }
+
+    /**
+     * 会话类型自动分类：仅在首条用户消息，且当前为默认景点咨询类型时触发。
+     */
+    private void autoClassifyConversationTypeIfNeeded(LlmConversation conversation,
+                                                      String userContent,
+                                                      LlmMessage userMessage) {
+        if (conversation == null || userMessage == null || !StringUtils.hasText(userContent)) {
+            return;
+        }
+        Integer currentType = conversation.getConversationType();
+        if (currentType == null || !currentType.equals(ConversationType.SCENIC_SPOT_INQUIRY.getCode())) {
+            return;
+        }
+        Integer messageCount = conversation.getMessageCount();
+        if (messageCount != null && messageCount > 0) {
+            return;
+        }
+        Integer classifiedType = classifyConversationType(userContent);
+        if (classifiedType == null || classifiedType.equals(currentType)) {
+            return;
+        }
+        conversation.setConversationType(classifiedType);
+        llmConversationMapper.updateById(conversation);
+    }
+
+    private Integer classifyConversationType(String userContent) {
+        String classifyPrompt = "你是旅游会话分类器。请根据用户首条消息，将会话分类为以下代码之一：" +
+                "1=智能客服（账号、登录、订单、售后、支付、平台规则、系统功能问题）；" +
+                "2=行程规划（路线安排、天数、交通衔接、住宿搭配、时间规划）；" +
+                "3=景点咨询（景点介绍、玩法、门票、开放时间、注意事项、对比推荐）。" +
+                "仅返回一个数字：1 或 2 或 3，不要输出其他内容。";
+        LlmRequest classifyRequest = LlmRequest.builder()
+                .userId(0L)
+                .conversationId(0L)
+                .modelName(null)
+                .jsonMode(false)
+                .timeoutMs(3000)
+                .messages(List.of(
+                        LlmRequest.Message.builder().role("system").content(classifyPrompt).build(),
+                        LlmRequest.Message.builder().role("user").content(userContent).build()))
+                .build();
+        try {
+            LlmResponse response = llmGateway.generate(classifyRequest);
+            if (response == null || !StringUtils.hasText(response.getContent())) {
+                return null;
+            }
+            String raw = response.getContent().trim();
+            String normalized = raw.replaceAll("[^123]", "");
+            if (normalized.isEmpty()) {
+                return null;
+            }
+            int code = Integer.parseInt(String.valueOf(normalized.charAt(0)));
+            if (code < 1 || code > 3) {
+                return null;
+            }
+            return code;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * 会话标题自动摘要：仅在首条用户消息，且当前标题为默认标题时触发。
+     */
+    private void autoGenerateConversationTitleIfNeeded(LlmConversation conversation,
+                                                        String userContent,
+                                                        LlmMessage userMessage) {
+        if (conversation == null || userMessage == null || !StringUtils.hasText(userContent)) {
+            return;
+        }
+        Integer messageCount = conversation.getMessageCount();
+        if (messageCount != null && messageCount > 0) {
+            return;
+        }
+        String currentTitle = conversation.getTitle();
+        if (!shouldAutoGenerateTitle(currentTitle)) {
+            return;
+        }
+        String generatedTitle = generateConversationTitle(userContent);
+        if (!StringUtils.hasText(generatedTitle)) {
+            return;
+        }
+        conversation.setTitle(generatedTitle);
+        llmConversationMapper.updateById(conversation);
+    }
+
+    private boolean shouldAutoGenerateTitle(String title) {
+        if (!StringUtils.hasText(title)) {
+            return true;
+        }
+        String normalized = title.trim();
+        return DEFAULT_CONVERSATION_TITLES.contains(normalized);
+    }
+
+    private String generateConversationTitle(String userContent) {
+        String titlePrompt = "你是旅游会话标题生成器。请根据用户首条消息，生成一个简洁中文标题。"
+                + "要求：8到16个字，不能包含标点符号、引号、换行，不要出现‘请问’‘帮我’等口语前缀，只输出标题本身。";
+        LlmRequest titleRequest = LlmRequest.builder()
+                .userId(0L)
+                .conversationId(0L)
+                .modelName(null)
+                .jsonMode(false)
+                .timeoutMs(3000)
+                .messages(List.of(
+                        LlmRequest.Message.builder().role("system").content(titlePrompt).build(),
+                        LlmRequest.Message.builder().role("user").content(userContent).build()))
+                .build();
+        try {
+            LlmResponse response = llmGateway.generate(titleRequest);
+            if (response == null || !StringUtils.hasText(response.getContent())) {
+                return null;
+            }
+            String title = sanitizeGeneratedTitle(response.getContent());
+            return StringUtils.hasText(title) ? title : null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String sanitizeGeneratedTitle(String rawTitle) {
+        if (!StringUtils.hasText(rawTitle)) {
+            return "";
+        }
+        String sanitized = rawTitle
+                .replace("\n", "")
+                .replace("\r", "")
+                .replace("\"", "")
+                .replace("“", "")
+                .replace("”", "")
+                .replace("'", "")
+                .replace("，", "")
+                .replace(",", "")
+                .replace("。", "")
+                .replace("！", "")
+                .replace("？", "")
+                .replace("：", "")
+                .replace(":", "")
+                .trim();
+        if (!StringUtils.hasText(sanitized)) {
+            return "";
+        }
+        if (sanitized.length() > AUTO_TITLE_MAX_LENGTH) {
+            sanitized = sanitized.substring(0, AUTO_TITLE_MAX_LENGTH);
+        }
+        return sanitized.trim();
     }
 
     /**

@@ -7,7 +7,6 @@ import com.travel.advisor.common.page.PageResult;
 import com.travel.advisor.common.result.ResultCode;
 import com.travel.advisor.domain.recommend.RankedRecommend;
 import com.travel.advisor.domain.recommend.RecallCandidate;
-import com.travel.advisor.domain.recommend.RecallContext;
 import com.travel.advisor.entity.RecommendRecord;
 import com.travel.advisor.entity.RecommendResultItem;
 import com.travel.advisor.entity.ScenicSpotTag;
@@ -15,6 +14,7 @@ import com.travel.advisor.exception.BusinessException;
 import com.travel.advisor.mapper.RecommendRecordMapper;
 import com.travel.advisor.mapper.RecommendResultItemMapper;
 import com.travel.advisor.mapper.ScenicSpotTagMapper;
+import com.travel.advisor.service.FileService;
 import com.travel.advisor.service.RecommendService;
 import com.travel.advisor.service.UserProfileService;
 import com.travel.advisor.recommend.recall.RecallStrategy;
@@ -23,6 +23,7 @@ import com.travel.advisor.recommend.RecommendReasonLlmService;
 import com.travel.advisor.recommend.RecommendReasonResult;
 import com.travel.advisor.recommend.RecommendReasonBuilder;
 import com.travel.advisor.llm.LlmProperties;
+import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.utils.JsonUtils;
 import com.travel.advisor.utils.RedisUtils;
 import com.travel.advisor.utils.SecurityUtils;
@@ -31,6 +32,7 @@ import com.travel.advisor.vo.user.UserProfilePortraitVO;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.util.*;
@@ -50,6 +52,7 @@ public class RecommendServiceImpl implements RecommendService {
     private final RecommendRecordMapper recommendRecordMapper;
     private final RecommendResultItemMapper recommendResultItemMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
+    private final FileService fileService;
     private final RedisUtils redisUtils;
     private final LlmProperties llmProperties;
     private final UserProfileService userProfileService;
@@ -87,17 +90,10 @@ public class RecommendServiceImpl implements RecommendService {
         // 记录推荐请求的开始时间，用于后续计算推荐响应时间
         long start = System.currentTimeMillis();
 
-        // 构建召回上下文，包含用户ID、页码和每页大小等信息，供召回策略使用
-        RecallContext context = RecallContext.builder()
-                .userId(userId)
-                .pageNum(pageQuery.getPageNum())
-                .pageSize(pageQuery.getPageSize())
-                .build();
-
         // 执行多种召回策略，收集召回候选结果，供后续排序和过滤使用
         List<RecallCandidate> candidates = new ArrayList<>();
         for (RecallStrategy strategy : recallStrategies) {
-            candidates.addAll(strategy.recall(context));
+            candidates.addAll(strategy.recall(userId));
         }
 
         // 计算期望的推荐结果数量，通常为页码乘以每页大小，以确保排序后能够返回足够的结果进行分页展示
@@ -160,15 +156,6 @@ public class RecommendServiceImpl implements RecommendService {
         // 记录推荐请求的开始时间，用于后续计算推荐响应时间
         long start = System.currentTimeMillis();
 
-        // 构建召回上下文，包含用户ID、目标景点ID、页码和每页大小等信息，供召回策略使用
-        RecallContext context = RecallContext.builder()
-                .userId(userId)
-                .scenicId(scenicId)
-                .pageNum(pageQuery.getPageNum())
-                .pageSize(pageQuery.getPageSize())
-                .build();
-
-        // 执行多种召回策略，收集召回候选结果，供后续排序和过滤使用
         List<RecallCandidate> candidates = new ArrayList<>();
         for (RecallStrategy strategy : recallStrategies) {
             // 如果是标签召回策略，则跳过，因为相似推荐的标签召回通过 recallByCurrentScenicTags
@@ -176,7 +163,7 @@ public class RecommendServiceImpl implements RecommendService {
             if (TAG_STRATEGY_NAME.equals(strategy.strategyName())) {
                 continue;
             }
-            candidates.addAll(strategy.recall(context));
+            candidates.addAll(strategy.recall(userId));
         }
         // 通过当前景点的标签进行相似景点的召回，获取与目标景点具有相似标签的其他景点作为候选结果，补充基于标签的相似推荐，增强推荐结果的相关性和多样性
         candidates.addAll(recallByCurrentScenicTags(scenicId));
@@ -291,7 +278,7 @@ public class RecommendServiceImpl implements RecommendService {
             vo.setResultItemId(item.getId());
             vo.setScenicId(rankedRecommend.getScenicSpot().getId());
             vo.setScenicName(rankedRecommend.getScenicSpot().getName());
-            vo.setCoverImage(rankedRecommend.getScenicSpot().getCoverImage());
+            vo.setCoverImage(resolveCoverImageUrl(rankedRecommend.getScenicSpot().getCoverImage()));
             vo.setScore(rankedRecommend.getScenicSpot().getScore() == null
                     ? 0.0
                     : rankedRecommend.getScenicSpot().getScore());
@@ -412,6 +399,17 @@ public class RecommendServiceImpl implements RecommendService {
                         .baseScore(Double.valueOf(1.2D))
                         .build())
                 .toList();
+    }
+
+    private String resolveCoverImageUrl(String coverImage) {
+        if (!StringUtils.hasText(coverImage)) {
+            return "";
+        }
+        Long fileId = FileResourceIds.tryParseId(coverImage);
+        if (fileId == null) {
+            return coverImage.trim();
+        }
+        return fileService.resolveUrls(List.of(fileId)).getOrDefault(fileId, "");
     }
 
     private Long getCurrentUserIdRequired() {

@@ -6,16 +6,16 @@ import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.aigc.generation.GenerationUsage;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.ResponseFormat;
-import com.alibaba.dashscope.exception.ApiException;
-import com.alibaba.dashscope.exception.InputRequiredException;
-import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.protocol.ConnectionOptions;
 import com.travel.advisor.dto.llm.LlmRequest;
 import com.travel.advisor.dto.llm.LlmResponse;
 import com.travel.advisor.llm.LlmGateway;
 import com.travel.advisor.llm.LlmProperties;
+import io.reactivex.Flowable;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import java.util.List;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DefaultLlmGateway implements LlmGateway {
 
     private final LlmProperties llmProperties;
@@ -48,9 +49,60 @@ public class DefaultLlmGateway implements LlmGateway {
                     buildConnectionOptions(request));
             GenerationResult result = generation.call(buildParam(request, apiKey));
             return buildResponse(result, request);
-        } catch (ApiException | NoApiKeyException | InputRequiredException ex) {
+        } catch (Exception ex) {
+            log.warn("DashScope 调用失败，baseUrl={}, model={}",
+                    llmProperties.getBaseUrl(), resolveModelName(request), ex);
             throw new IllegalStateException("DashScope 调用失败: " + ex.getMessage(), ex);
         }
+    }
+
+    @Override
+    public Flux<String> generateStream(LlmRequest request) {
+        if (Boolean.FALSE.equals(llmProperties.getEnabled())) {
+            return Flux.error(new IllegalStateException("LLM 已禁用"));
+        }
+
+        String apiKey = resolveApiKey();
+        if (apiKey == null || apiKey.isBlank()) {
+            return Flux.error(new IllegalStateException("未配置 DASHSCOPE_API_KEY"));
+        }
+
+        return Flux.create(sink -> {
+            try {
+                Generation generation = new Generation(
+                        "http",
+                        llmProperties.getBaseUrl(),
+                        buildConnectionOptions(request));
+
+                GenerationParam param = buildParam(request, apiKey);
+                param.setIncrementalOutput(true);
+
+                Flowable<GenerationResult> flowable = generation.streamCall(param);
+
+                flowable.subscribe(
+                        result -> {
+                            if (result.getOutput() != null
+                                    && result.getOutput().getChoices() != null
+                                    && !result.getOutput().getChoices().isEmpty()) {
+                                Message message = result.getOutput().getChoices().get(0).getMessage();
+                                if (message != null && message.getContent() != null) {
+                                    sink.next(message.getContent());
+                                }
+                            }
+                        },
+                        error -> {
+                            log.warn("DashScope 流式调用失败，baseUrl={}, model={}",
+                                    llmProperties.getBaseUrl(), resolveModelName(request), error);
+                            sink.error(new IllegalStateException("DashScope 流式调用失败: " + error.getMessage(), error));
+                        },
+                        sink::complete
+                );
+            } catch (Exception ex) {
+                log.warn("DashScope 流式调用初始化失败，baseUrl={}, model={}",
+                        llmProperties.getBaseUrl(), resolveModelName(request), ex);
+                sink.error(new IllegalStateException("DashScope 流式调用失败: " + ex.getMessage(), ex));
+            }
+        });
     }
 
     /**

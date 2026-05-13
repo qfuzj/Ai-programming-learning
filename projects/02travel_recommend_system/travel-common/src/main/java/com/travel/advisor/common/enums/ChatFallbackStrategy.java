@@ -40,6 +40,11 @@ public enum ChatFallbackStrategy {
         }
         String msg = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
 
+        if (msg.contains("llm 已禁用")
+                || msg.contains("未配置 dashscope_api_key")) {
+            return SERVICE_UNAVAILABLE;
+        }
+
         // 超时：SocketTimeoutException / TimeoutException / 消息含 timeout/timed out
         if (ex instanceof SocketTimeoutException
                 || ex instanceof TimeoutException
