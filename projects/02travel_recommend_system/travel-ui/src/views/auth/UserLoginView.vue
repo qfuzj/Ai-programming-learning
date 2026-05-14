@@ -52,7 +52,7 @@
 
       <div class="auth-footer">
         <span class="link" @click="goRegister">没有账号？去注册</span>
-        <span class="divider">|</span>
+        <span class="divider"></span>
         <span class="link" @click="goResetPassword">忘记密码</span>
       </div>
 

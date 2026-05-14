@@ -295,6 +295,7 @@ import {
 import { ElMessage } from "element-plus";
 import { getScenicDetail } from "@/api/scenic";
 import { addFavorite, removeFavorite } from "@/api/favorite";
+import { reportBrowseHistory } from "@/api/history";
 import { getScenicReviews, submitReview as submitReviewApi } from "@/api/audit";
 import { fetchSimilarRecommendations as getSimilarRecommend } from "@/api/recommend";
 import { getRegionTree } from "@/api/common";
@@ -441,6 +442,14 @@ async function loadDetail(): Promise<void> {
   }
   try {
     detail.value = await getScenicDetail(scenicId.value);
+    if (detail.value?.id) {
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      void reportBrowseHistory({
+        scenicId: detail.value.id,
+        source: "scenic_detail",
+        deviceType: isMobile ? "mobile" : "desktop",
+      });
+    }
     reviewForm.scenicId = scenicId.value;
     await loadRegionTreeAndChain();
     loadReviews();

@@ -11,36 +11,29 @@
         <el-input v-model="form.title" placeholder="请输入行程标题 (必填，例: 重庆三日游)" />
       </el-form-item>
 
-      <el-form-item label="出发日期" prop="startDate">
+      <el-form-item label="出行日期" prop="dateRange">
         <el-date-picker
-          v-model="form.startDate"
-          type="date"
-          placeholder="选择出发日期"
-          value-format="YYYY-MM-DD"
-          style="width: 100%"
-        />
-      </el-form-item>
-
-      <el-form-item label="结束日期" prop="endDate">
-        <el-date-picker
-          v-model="form.endDate"
-          type="date"
-          placeholder="选择结束日期"
-          value-format="YYYY-MM-DD"
+          v-model="dateRange"
+          type="daterange"
+          range-separator="To"
+          start-placeholder="Start date"
+          end-placeholder="End date"
           style="width: 100%"
         />
       </el-form-item>
 
       <el-form-item label="总天数" prop="totalDays">
-        <el-input-number v-model="form.totalDays" :min="1" :max="90" />
+        <el-input-number v-model="form.totalDays" :min="1" :max="90" style="width: 100%" />
       </el-form-item>
 
       <el-form-item label="目的地区域">
-        <el-input-number
+        <el-cascader
           v-model="form.destinationRegionId"
-          :min="1"
-          :step="1"
-          placeholder="可选，填写区域 ID"
+          :options="regionTree"
+          :props="regionCascaderProps"
+          filterable
+          clearable
+          placeholder="可选，按层级选择地区"
           style="width: 100%"
         />
       </el-form-item>
@@ -110,9 +103,13 @@ import type { FormInstance, FormRules } from "element-plus";
 import type { ItineraryDialogType, ItineraryFormModel } from "@/types/itinerary-list";
 import { getPublicStatusDict, getTravelPlanStatusDict } from "@/api/dict";
 import { useDictOptions } from "@/composables/useDictOptions";
+import { getScenicFilterOptions, type RegionTreeNode } from "@/api/scenic";
 
 const { options: statusOptions } = useDictOptions("travel-plan-status", getTravelPlanStatusDict);
 const { options: publicOptions } = useDictOptions("public-status", getPublicStatusDict);
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_ITINERARY_DAYS = 90;
 
 interface Props {
   visible: boolean;
@@ -129,20 +126,147 @@ const emit = defineEmits<{
 }>();
 
 const formRef = ref<FormInstance>();
+const dateRange = ref<[Date, Date] | null>(null);
+const regionTree = ref<RegionTreeNode[]>([]);
+
+const regionCascaderProps = {
+  value: "id",
+  label: "name",
+  children: "children",
+  checkStrictly: true,
+  emitPath: false,
+};
 
 const rules = reactive<FormRules>({
   title: [{ required: true, message: "请输入行程标题", trigger: "blur" }],
+  startDate: [{ required: true, message: "请选择出行日期", trigger: "change" }],
   totalDays: [{ required: true, message: "请填写总天数", trigger: "blur" }],
 });
 
+function parseDateInput(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  const date = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function formatDateInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function clampDays(days: number): number {
+  if (!Number.isFinite(days) || days < 1) return 1;
+  if (days > MAX_ITINERARY_DAYS) return MAX_ITINERARY_DAYS;
+  return Math.floor(days);
+}
+
+function normalizeRange(range: [Date, Date]): [Date, Date] {
+  const start = new Date(range[0]);
+  const end = new Date(range[1]);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  if (end.getTime() < start.getTime()) {
+    end.setTime(start.getTime());
+  }
+
+  const inclusiveDays = Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  if (inclusiveDays > MAX_ITINERARY_DAYS) {
+    end.setTime(start.getTime() + (MAX_ITINERARY_DAYS - 1) * DAY_MS);
+  }
+
+  return [start, end];
+}
+
+function syncFormFromDateRange(range: [Date, Date]): void {
+  const [start, end] = normalizeRange(range);
+  const normalizedDays = Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+
+  if (
+    !dateRange.value ||
+    dateRange.value[0].getTime() !== start.getTime() ||
+    dateRange.value[1].getTime() !== end.getTime()
+  ) {
+    dateRange.value = [start, end];
+  }
+
+  props.form.startDate = formatDateInput(start);
+  props.form.endDate = formatDateInput(end);
+  props.form.totalDays = normalizedDays;
+}
+
+function syncDateRangeFromForm(): void {
+  const start = parseDateInput(props.form.startDate || "");
+  if (!start) {
+    dateRange.value = null;
+    return;
+  }
+
+  const endFromForm = props.form.endDate ? parseDateInput(props.form.endDate) : null;
+  if (endFromForm) {
+    syncFormFromDateRange([start, endFromForm]);
+    return;
+  }
+
+  const days = clampDays(Number(props.form.totalDays) || 1);
+  const end = new Date(start.getTime() + (days - 1) * DAY_MS);
+  dateRange.value = [start, end];
+  props.form.endDate = formatDateInput(end);
+}
+
 watch(
-  () => props.visible,
-  (visible) => {
-    if (visible) {
-      formRef.value?.clearValidate();
+  () => dateRange.value,
+  (range) => {
+    if (!range || range.length !== 2) {
+      props.form.startDate = "";
+      props.form.endDate = "";
+      return;
+    }
+    syncFormFromDateRange(range);
+  },
+  { deep: true }
+);
+
+watch(
+  () => props.form.totalDays,
+  (value) => {
+    const days = clampDays(Number(value));
+    if (days !== value) {
+      props.form.totalDays = days;
+      return;
+    }
+
+    const start = parseDateInput(props.form.startDate || "");
+    if (!start) return;
+
+    const nextEnd = new Date(start.getTime() + (days - 1) * DAY_MS);
+    const nextEndDate = formatDateInput(nextEnd);
+    if (props.form.endDate !== nextEndDate) {
+      props.form.endDate = nextEndDate;
+      syncDateRangeFromForm();
     }
   }
 );
+
+watch(
+  () => props.visible,
+  async (visible) => {
+    if (visible) {
+      formRef.value?.clearValidate();
+      syncDateRangeFromForm();
+      await ensureRegionOptionsLoaded();
+    }
+  }
+);
+
+async function ensureRegionOptionsLoaded(): Promise<void> {
+  if (regionTree.value.length > 0) return;
+  const res = await getScenicFilterOptions();
+  regionTree.value = res.regions || [];
+}
 
 async function handleSubmit(): Promise<void> {
   if (!formRef.value) return;

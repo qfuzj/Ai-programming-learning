@@ -15,18 +15,30 @@
         </div>
         <div class="form-group">
           <label class="label">总天数</label>
-          <input v-model.number="form.days" type="number" class="input" min="1" max="15" />
+          <input
+            v-model.number="form.days"
+            type="number"
+            class="input"
+            min="1"
+            :max="MAX_ITINERARY_DAYS"
+            placeholder="例如3"
+          />
         </div>
       </div>
 
       <div class="form-row">
-        <div class="form-group">
-          <label class="label">开始日期</label>
-          <input v-model="form.startDate" type="date" class="input" />
-        </div>
-        <div class="form-group">
-          <label class="label">结束日期</label>
-          <input v-model="form.endDate" type="date" class="input" />
+        <div class="form-group form-group-full">
+          <label class="label">出行日期</label>
+          <div class="block">
+            <el-date-picker
+              v-model="dateRange"
+              type="datetimerange"
+              range-separator="To"
+              start-placeholder="Start date"
+              end-placeholder="End date"
+              class="date-range-picker"
+            />
+          </div>
         </div>
       </div>
 
@@ -115,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { reactive, ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { generateItineraryByAi, createItinerary } from "@/api/itinerary";
 import { getRegionTree } from "@/api/common";
@@ -141,6 +153,84 @@ const form = reactive({
   preferredTagIds: [] as number[],
 });
 
+const dateRange = ref<[Date, Date] | null>(null);
+
+const MAX_ITINERARY_DAYS = 10;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function parseDateInput(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  const date = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function formatDateInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function clampDays(days: number): number {
+  if (!Number.isFinite(days) || days < 1) return 1;
+  if (days > MAX_ITINERARY_DAYS) return MAX_ITINERARY_DAYS;
+  return Math.floor(days);
+}
+
+function normalizeRange(range: [Date, Date]): [Date, Date] {
+  const start = new Date(range[0]);
+  const end = new Date(range[1]);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  if (end.getTime() < start.getTime()) {
+    end.setTime(start.getTime());
+  }
+
+  const inclusiveDays = Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  if (inclusiveDays > MAX_ITINERARY_DAYS) {
+    end.setTime(start.getTime() + (MAX_ITINERARY_DAYS - 1) * DAY_MS);
+  }
+
+  return [start, end];
+}
+
+function syncFormFromDateRange(range: [Date, Date]): void {
+  const [start, end] = normalizeRange(range);
+  const normalizedDays = Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+  const startDate = formatDateInput(start);
+  const endDate = formatDateInput(end);
+
+  if (
+    !dateRange.value ||
+    dateRange.value[0].getTime() !== start.getTime() ||
+    dateRange.value[1].getTime() !== end.getTime()
+  ) {
+    dateRange.value = [start, end];
+  }
+
+  form.startDate = startDate;
+  form.endDate = endDate;
+  form.days = normalizedDays;
+}
+
+function syncDateRangeFromForm(): void {
+  if (!form.startDate) return;
+  const start = parseDateInput(form.startDate);
+  if (!start) return;
+
+  const endFromForm = form.endDate ? parseDateInput(form.endDate) : null;
+  if (endFromForm) {
+    syncFormFromDateRange([start, endFromForm]);
+    return;
+  }
+
+  const days = clampDays(Number(form.days) || 1);
+  const end = new Date(start.getTime() + (days - 1) * DAY_MS);
+  dateRange.value = [start, end];
+}
+
 async function loadData(): Promise<void> {
   try {
     const [regions, tags] = await Promise.all([
@@ -165,6 +255,7 @@ function resetForm(): void {
   form.days = 3;
   form.startDate = "";
   form.endDate = "";
+  dateRange.value = null;
   form.budget = undefined;
   form.companionType = "";
   form.travelStyle = "";
@@ -172,6 +263,42 @@ function resetForm(): void {
   result.value = null;
   errorMsg.value = "";
 }
+
+watch(
+  () => dateRange.value,
+  (range) => {
+    if (!range || range.length !== 2) {
+      form.startDate = "";
+      form.endDate = "";
+      return;
+    }
+    syncFormFromDateRange(range);
+  },
+  { deep: true }
+);
+
+watch(
+  () => form.days,
+  (value) => {
+    const days = clampDays(Number(value));
+    if (days !== value) {
+      form.days = days;
+      return;
+    }
+
+    if (!form.startDate) return;
+
+    const start = parseDateInput(form.startDate);
+    if (!start) return;
+
+    const nextEnd = new Date(start.getTime() + (days - 1) * DAY_MS);
+    const nextEndDate = formatDateInput(nextEnd);
+    if (form.endDate !== nextEndDate) {
+      form.endDate = nextEndDate;
+      syncDateRangeFromForm();
+    }
+  }
+);
 
 async function generate(): Promise<void> {
   if (!form.destinationRegionId) {
@@ -271,6 +398,18 @@ onMounted(() => {
   }
 }
 
+.form-group-full {
+  grid-column: 1 / -1;
+}
+
+.block {
+  width: 100%;
+}
+
+.date-range-picker {
+  width: 100%;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -325,6 +464,7 @@ onMounted(() => {
 .tag-option:hover {
   background: #eeeeee;
 }
+
 .tag-option.active:hover {
   background: #00c665;
 }
@@ -367,6 +507,7 @@ onMounted(() => {
 .btn-submit:hover:not(:disabled) {
   background: #00c665;
 }
+
 .btn-submit:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -453,6 +594,7 @@ onMounted(() => {
 .btn-save:hover:not(:disabled) {
   background: #00c665;
 }
+
 .btn-save:disabled {
   cursor: not-allowed;
   opacity: 0.6;
