@@ -7,6 +7,7 @@ export type ItineraryFormModel = ItineraryCreatePayload;
 export function createDefaultItineraryForm(): ItineraryFormModel {
   return {
     title: "",
+    destination: "",
     startDate: "",
     endDate: "",
     totalDays: 1,

@@ -26,15 +26,10 @@
         <el-input-number v-model="form.totalDays" :min="1" :max="90" style="width: 100%" />
       </el-form-item>
 
-      <el-form-item label="目的地区域">
-        <el-cascader
-          v-model="form.destinationRegionId"
-          :options="regionTree"
-          :props="regionCascaderProps"
-          filterable
-          clearable
-          placeholder="可选，按层级选择地区"
-          style="width: 100%"
+      <el-form-item label="目的地">
+        <el-input
+          v-model="form.destination"
+          placeholder="可选，输入任意目的地（如：川西、成都+乐山）"
         />
       </el-form-item>
 
@@ -103,7 +98,6 @@ import type { FormInstance, FormRules } from "element-plus";
 import type { ItineraryDialogType, ItineraryFormModel } from "@/types/itinerary-list";
 import { getPublicStatusDict, getTravelPlanStatusDict } from "@/api/dict";
 import { useDictOptions } from "@/composables/useDictOptions";
-import { getScenicFilterOptions, type RegionTreeNode } from "@/api/scenic";
 
 const { options: statusOptions } = useDictOptions("travel-plan-status", getTravelPlanStatusDict);
 const { options: publicOptions } = useDictOptions("public-status", getPublicStatusDict);
@@ -127,15 +121,6 @@ const emit = defineEmits<{
 
 const formRef = ref<FormInstance>();
 const dateRange = ref<[Date, Date] | null>(null);
-const regionTree = ref<RegionTreeNode[]>([]);
-
-const regionCascaderProps = {
-  value: "id",
-  label: "name",
-  children: "children",
-  checkStrictly: true,
-  emitPath: false,
-};
 
 const rules = reactive<FormRules>({
   title: [{ required: true, message: "请输入行程标题", trigger: "blur" }],
@@ -253,20 +238,13 @@ watch(
 
 watch(
   () => props.visible,
-  async (visible) => {
+  (visible) => {
     if (visible) {
       formRef.value?.clearValidate();
       syncDateRangeFromForm();
-      await ensureRegionOptionsLoaded();
     }
   }
 );
-
-async function ensureRegionOptionsLoaded(): Promise<void> {
-  if (regionTree.value.length > 0) return;
-  const res = await getScenicFilterOptions();
-  regionTree.value = res.regions || [];
-}
 
 async function handleSubmit(): Promise<void> {
   if (!formRef.value) return;

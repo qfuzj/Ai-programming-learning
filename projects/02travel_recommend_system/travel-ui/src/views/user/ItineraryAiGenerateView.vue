@@ -1,136 +1,145 @@
 <!-- 极简风格AI生成行程页 -->
 <template>
   <div class="page">
-    <h1 class="title">AI 生成行程</h1>
-    <p class="subtitle">告诉AI您的偏好，自动生成行程草案</p>
+    <div class="content-layout">
+      <section class="form-panel" :class="{ compact: !!result }">
+        <h1 class="title">AI 生成行程</h1>
+        <p class="subtitle">告诉AI您的偏好，自动生成行程草案</p>
 
-    <form class="form" @submit.prevent="generate">
-      <div class="form-row">
-        <div class="form-group">
-          <label class="label">目的地</label>
-          <select v-model="form.destinationRegionId" class="input">
-            <option :value="undefined">请选择地区</option>
-            <option v-for="r in regionList" :key="r.id" :value="r.id">{{ r.name }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="label">总天数</label>
-          <input
-            v-model.number="form.days"
-            type="number"
-            class="input"
-            min="1"
-            :max="MAX_ITINERARY_DAYS"
-            placeholder="例如3"
-          />
-        </div>
-      </div>
+        <form class="form" @submit.prevent="generate">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="label">目的地</label>
+              <input
+                v-model.trim="form.destination"
+                type="text"
+                class="input"
+                placeholder="请输入目的地"
+              />
+            </div>
+            <div class="form-group">
+              <label class="label">总天数</label>
+              <input
+                v-model.number="form.days"
+                type="number"
+                class="input"
+                min="1"
+                :max="MAX_ITINERARY_DAYS"
+                placeholder="例如3"
+              />
+            </div>
+          </div>
 
-      <div class="form-row">
-        <div class="form-group form-group-full">
-          <label class="label">出行日期</label>
-          <div class="block">
-            <el-date-picker
-              v-model="dateRange"
-              type="datetimerange"
-              range-separator="To"
-              start-placeholder="Start date"
-              end-placeholder="End date"
-              class="date-range-picker"
-            />
+          <div class="form-row">
+            <div class="form-group form-group-full">
+              <label class="label">出行日期</label>
+              <div class="block">
+                <el-date-picker
+                  v-model="dateRange"
+                  type="datetimerange"
+                  range-separator="To"
+                  start-placeholder="Start date"
+                  end-placeholder="End date"
+                  class="date-range-picker"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="label">预算（可选）</label>
+              <input
+                v-model.number="form.budget"
+                type="number"
+                class="input"
+                placeholder="例如：3000"
+              />
+            </div>
+            <div class="form-group">
+              <label class="label">旅行同伴</label>
+              <select v-model="form.companionType" class="input">
+                <option value="">请选择</option>
+                <option value="solo">独自旅行</option>
+                <option value="couple">情侣出游</option>
+                <option value="family">家庭旅行</option>
+                <option value="friends">朋友同行</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="label">旅行风格</label>
+            <select v-model="form.travelStyle" class="input">
+              <option value="">请选择</option>
+              <option value="classic">经典游</option>
+              <option value="slow">慢旅行</option>
+              <option value="food">美食游</option>
+              <option value="outdoor">户外游</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="label">偏好标签（可选）</label>
+            <div class="tag-select">
+              <span
+                v-for="t in tagOptions"
+                :key="t.id"
+                class="tag-option"
+                :class="{ active: form.preferredTagIds.includes(t.id) }"
+                @click="toggleTag(t.id)"
+              >
+                {{ t.name }}
+              </span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-reset" @click="resetForm">重置</button>
+            <button type="submit" class="btn-submit" :disabled="loading">
+              {{ loading ? "生成中..." : "生成行程" }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section ref="resultSectionRef" class="result-panel">
+        <div v-if="loading" class="loading">正在生成行程草案，请稍候...</div>
+
+        <div v-else-if="result" class="result">
+          <div class="result-header">
+            <h2 class="result-title">行程草案</h2>
+            <span class="result-tip">已生成，请确认后保存</span>
+          </div>
+          <div v-for="day in result.days" :key="day.dayNo" class="day-card">
+            <h3 class="day-title">第 {{ day.dayNo }} 天</h3>
+            <div v-for="item in day.items" :key="item.id" class="day-item">
+              <span class="item-time">{{ item.startTime || "--:--" }}</span>
+              <div class="item-content">
+                <strong>{{ item.title }}</strong>
+                <p>{{ item.description }}</p>
+                <span v-if="item.location" class="item-location">{{ item.location }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-actions">
+            <button class="btn-save" :disabled="saveLoading" @click="save">
+              {{ saveLoading ? "保存中..." : "保存行程" }}
+            </button>
           </div>
         </div>
-      </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="label">预算（可选）</label>
-          <input
-            v-model.number="form.budget"
-            type="number"
-            class="input"
-            placeholder="例如：3000"
-          />
-        </div>
-        <div class="form-group">
-          <label class="label">旅行同伴</label>
-          <select v-model="form.companionType" class="input">
-            <option value="">请选择</option>
-            <option value="solo">独自旅行</option>
-            <option value="couple">情侣出游</option>
-            <option value="family">家庭旅行</option>
-            <option value="friends">朋友同行</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="label">旅行风格</label>
-        <select v-model="form.travelStyle" class="input">
-          <option value="">请选择</option>
-          <option value="classic">经典游</option>
-          <option value="slow">慢旅行</option>
-          <option value="food">美食游</option>
-          <option value="outdoor">户外游</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="label">偏好标签（可选）</label>
-        <div class="tag-select">
-          <span
-            v-for="t in tagOptions"
-            :key="t.id"
-            class="tag-option"
-            :class="{ active: form.preferredTagIds.includes(t.id) }"
-            @click="toggleTag(t.id)"
-          >
-            {{ t.name }}
-          </span>
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <button type="button" class="btn-reset" @click="resetForm">重置</button>
-        <button type="submit" class="btn-submit" :disabled="loading">
-          {{ loading ? "生成中..." : "生成行程" }}
-        </button>
-      </div>
-    </form>
-
-    <!-- 生成结果 -->
-    <div v-if="loading" class="loading">正在生成行程草案，请稍候...</div>
-
-    <div v-else-if="result" class="result">
-      <h2 class="result-title">行程草案</h2>
-      <div v-for="day in result.days" :key="day.dayNo" class="day-card">
-        <h3 class="day-title">第 {{ day.dayNo }} 天</h3>
-        <div v-for="item in day.items" :key="item.id" class="day-item">
-          <span class="item-time">{{ item.startTime || "--:--" }}</span>
-          <div class="item-content">
-            <strong>{{ item.title }}</strong>
-            <p>{{ item.description }}</p>
-            <span v-if="item.location" class="item-location">{{ item.location }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="result-actions">
-        <button class="btn-save" :disabled="saveLoading" @click="save">
-          {{ saveLoading ? "保存中..." : "保存行程" }}
-        </button>
-      </div>
+        <div v-if="errorMsg" class="error">{{ errorMsg }}</div>
+      </section>
     </div>
-
-    <div v-if="errorMsg" class="error">{{ errorMsg }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, watch } from "vue";
+import { reactive, ref, onMounted, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
-import { generateItineraryByAi, createItinerary } from "@/api/itinerary";
-import { getRegionTree } from "@/api/common";
+import { generateItineraryByAi, createItinerary, addItineraryItem } from "@/api/itinerary";
 import { getMyPreferenceTags } from "@/api/profile";
 import type { CommonTagItem } from "@/api/common";
 
@@ -138,12 +147,12 @@ const router = useRouter();
 const loading = ref(false);
 const saveLoading = ref(false);
 const result = ref<any>(null);
+const resultSectionRef = ref<HTMLElement | null>(null);
 const errorMsg = ref("");
-const regionList = ref<any[]>([]);
 const tagOptions = ref<CommonTagItem[]>([]);
 
 const form = reactive({
-  destinationRegionId: undefined as number | undefined,
+  destination: "",
   days: 3,
   startDate: "",
   endDate: "",
@@ -233,11 +242,7 @@ function syncDateRangeFromForm(): void {
 
 async function loadData(): Promise<void> {
   try {
-    const [regions, tags] = await Promise.all([
-      getRegionTree(),
-      getMyPreferenceTags().catch(() => []),
-    ]);
-    regionList.value = regions || [];
+    const tags = await getMyPreferenceTags().catch(() => []);
     tagOptions.value = tags || [];
   } catch {
     /* empty */
@@ -251,7 +256,7 @@ function toggleTag(id: number): void {
 }
 
 function resetForm(): void {
-  form.destinationRegionId = undefined;
+  form.destination = "";
   form.days = 3;
   form.startDate = "";
   form.endDate = "";
@@ -300,9 +305,14 @@ watch(
   }
 );
 
+function scrollToResult(): void {
+  if (!resultSectionRef.value) return;
+  resultSectionRef.value.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 async function generate(): Promise<void> {
-  if (!form.destinationRegionId) {
-    alert("请选择目的地");
+  if (!form.destination) {
+    alert("请输入目的地");
     return;
   }
   if (!form.startDate || !form.endDate) {
@@ -314,10 +324,8 @@ async function generate(): Promise<void> {
   errorMsg.value = "";
   result.value = null;
   try {
-    const destinationName =
-      regionList.value.find((r) => r.id === form.destinationRegionId)?.name || "";
     const res = await generateItineraryByAi({
-      destination: destinationName,
+      destination: form.destination,
       days: form.days,
       startDate: form.startDate,
       endDate: form.endDate,
@@ -327,6 +335,8 @@ async function generate(): Promise<void> {
       preferredTags: form.preferredTagIds.length > 0 ? form.preferredTagIds.map(String) : undefined,
     });
     result.value = res;
+    await nextTick();
+    scrollToResult();
   } catch {
     errorMsg.value = "生成失败，请重试";
   } finally {
@@ -338,16 +348,42 @@ async function save(): Promise<void> {
   if (!result.value) return;
   saveLoading.value = true;
   try {
-    const res = await createItinerary({
+    const planId = await createItinerary({
       title: result.value.title || "AI生成行程",
-      destinationRegionId: result.value.destinationRegionId || form.destinationRegionId,
+      destination: result.value.destination || form.destination,
+      destinationRegionId: result.value.destinationRegionId,
       totalDays: result.value.totalDays || form.days,
       startDate: result.value.startDate || form.startDate,
       endDate: result.value.endDate || form.endDate,
       estimatedBudget: result.value.estimatedBudget,
       description: result.value.description,
     });
-    await router.push(`/itinerary/${res}`);
+
+    const dayList = Array.isArray(result.value.days) ? result.value.days : [];
+    for (const day of dayList) {
+      const dayNo = Number(day?.dayNo);
+      if (!dayNo || !Array.isArray(day?.items)) continue;
+      for (const item of day.items) {
+        if (!item?.title) continue;
+        await addItineraryItem(planId, {
+          dayNo,
+          scenicSpotId: item.scenicSpotId,
+          sortOrder: item.sortOrder,
+          itemType: item.itemType,
+          title: item.title,
+          description: item.description,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          location: item.location,
+          longitude: item.longitude,
+          latitude: item.latitude,
+          estimatedCost: item.estimatedCost,
+          notes: item.notes,
+        });
+      }
+    }
+
+    await router.push(`/itinerary/${planId}`);
   } catch {
     alert("保存失败");
   } finally {
@@ -362,9 +398,44 @@ onMounted(() => {
 
 <style scoped>
 .page {
-  max-width: 800px;
+  max-width: 1240px;
   padding: 40px 24px;
   margin: 0 auto;
+}
+
+.content-layout {
+  display: grid;
+  grid-template-columns: 440px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.form-panel {
+  position: sticky;
+  top: 88px;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 16px;
+}
+
+.form-panel.compact {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.result-panel {
+  min-height: 320px;
+}
+
+@media (max-width: 960px) {
+  .content-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .form-panel {
+    position: static;
+  }
 }
 
 .title {
@@ -407,7 +478,7 @@ onMounted(() => {
 }
 
 .date-range-picker {
-  width: 100%;
+  width: 100% !important;
 }
 
 .form-group {
@@ -515,14 +586,27 @@ onMounted(() => {
 
 /* Result */
 .result {
-  margin-top: 48px;
+  margin-top: 0;
+}
+
+.result-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
 .result-title {
-  margin: 0 0 24px 0;
+  margin: 0;
   font-size: 24px;
   font-weight: 700;
   color: #000000;
+}
+
+.result-tip {
+  font-size: 13px;
+  color: #00a152;
 }
 
 .day-card {

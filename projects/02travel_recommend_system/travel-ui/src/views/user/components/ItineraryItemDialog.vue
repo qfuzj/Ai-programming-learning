@@ -86,7 +86,7 @@
         </el-col>
       </el-row>
 
-      <el-form-item label="关联景点ID">
+      <!-- <el-form-item label="关联景点ID">
         <el-input-number
           v-model="form.scenicSpotId"
           :min="1"
@@ -94,7 +94,7 @@
           placeholder="可选，关联已有景点"
           style="width: 100%"
         />
-      </el-form-item>
+      </el-form-item> -->
     </el-form>
 
     <template #footer>

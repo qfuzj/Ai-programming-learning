@@ -108,9 +108,9 @@
               </div>
               <p v-if="item.description" class="item-desc">{{ item.description }}</p>
               <div class="item-meta">
-                <span v-if="item.location">📍 {{ item.location }}</span>
-                <span v-if="item.estimatedCost">¥{{ item.estimatedCost }}</span>
-                <span v-if="item.scenicSpotId">景点 ID {{ item.scenicSpotId }}</span>
+                <span v-if="item.location">地点： {{ item.location }}</span>
+                <span v-if="item.estimatedCost">预算：¥{{ item.estimatedCost }}</span>
+                <!-- <span v-if="item.scenicSpotId">景点 ID：{{ item.scenicSpotId }}</span> -->
               </div>
               <p v-if="item.notes" class="notes">备注：{{ item.notes }}</p>
             </div>

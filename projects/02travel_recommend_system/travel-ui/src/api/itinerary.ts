@@ -44,6 +44,7 @@ export interface ItineraryCreatePayload {
   startDate?: string;
   endDate?: string;
   totalDays: number;
+  destination?: string;
   destinationRegionId?: number;
   description?: string;
   estimatedBudget?: number;
