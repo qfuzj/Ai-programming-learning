@@ -65,4 +65,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         return uri.startsWith("/swagger-ui") || uri.startsWith("/v3/api-docs");
     }
+
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        // SSE/异步请求在后续 ASYNC dispatch 时仍然会经过安全链。
+        // 默认跳过会导致 SecurityContext 丢失，最终在流结束阶段被判定为匿名请求。
+        return false;
+    }
 }

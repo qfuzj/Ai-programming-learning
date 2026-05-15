@@ -2,6 +2,7 @@ package com.travel.advisor.llm.impl;
 
 import com.alibaba.dashscope.aigc.generation.Generation;
 import com.alibaba.dashscope.aigc.generation.GenerationParam;
+import com.alibaba.dashscope.aigc.generation.GenerationOutput;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.aigc.generation.GenerationUsage;
 import com.alibaba.dashscope.common.Message;
@@ -12,6 +13,7 @@ import com.travel.advisor.dto.llm.LlmResponse;
 import com.travel.advisor.llm.LlmGateway;
 import com.travel.advisor.llm.LlmProperties;
 import io.reactivex.Flowable;
+import io.reactivex.disposables.Disposable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,7 @@ import reactor.core.publisher.Flux;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 默认的 LLM 网关实现，调用阿里 DashScope 获取真实回复。
@@ -78,25 +81,54 @@ public class DefaultLlmGateway implements LlmGateway {
                 param.setIncrementalOutput(true);
 
                 Flowable<GenerationResult> flowable = generation.streamCall(param);
+                AtomicBoolean terminated = new AtomicBoolean(false);
+                final Disposable[] subscriptionRef = new Disposable[1];
 
-                flowable.subscribe(
+                subscriptionRef[0] = flowable.subscribe(
                         result -> {
-                            if (result.getOutput() != null
-                                    && result.getOutput().getChoices() != null
-                                    && !result.getOutput().getChoices().isEmpty()) {
-                                Message message = result.getOutput().getChoices().get(0).getMessage();
+                            GenerationOutput output = result.getOutput();
+                            if (output != null
+                                    && output.getChoices() != null
+                                    && !output.getChoices().isEmpty()) {
+                                Message message = output.getChoices().get(0).getMessage();
                                 if (message != null && message.getContent() != null) {
                                     sink.next(message.getContent());
+                                }
+                            }
+
+                            // DashScope 的最后一帧可能已经带 finishReason，但底层完成回调会延后，
+                            // 这里主动结束流，避免前端一直等待连接关闭。
+                            if (output != null
+                                    && output.getFinishReason() != null
+                                    && !output.getFinishReason().isBlank()
+                                    && terminated.compareAndSet(false, true)) {
+                                sink.complete();
+                                Disposable subscription = subscriptionRef[0];
+                                if (subscription != null && !subscription.isDisposed()) {
+                                    subscription.dispose();
                                 }
                             }
                         },
                         error -> {
                             log.warn("DashScope 流式调用失败，baseUrl={}, model={}",
                                     llmProperties.getBaseUrl(), resolveModelName(request), error);
-                            sink.error(new IllegalStateException("DashScope 流式调用失败: " + error.getMessage(), error));
+                            if (terminated.compareAndSet(false, true)) {
+                                sink.error(new IllegalStateException("DashScope 流式调用失败: " + error.getMessage(), error));
+                            }
                         },
-                        sink::complete
+                        () -> {
+                            if (terminated.compareAndSet(false, true)) {
+                                sink.complete();
+                            }
+                        }
                 );
+
+                sink.onDispose(() -> {
+                    Disposable subscription = subscriptionRef[0];
+                    if (subscription != null && !subscription.isDisposed()) {
+                        subscription.dispose();
+                    }
+                });
             } catch (Exception ex) {
                 log.warn("DashScope 流式调用初始化失败，baseUrl={}, model={}",
                         llmProperties.getBaseUrl(), resolveModelName(request), ex);

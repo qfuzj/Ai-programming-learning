@@ -27,7 +27,9 @@
           rows="2"
           @keyup.enter.ctrl="send"
         ></textarea>
-        <button class="btn-send" :disabled="sending || !text.trim()" @click="send">发送</button>
+        <button class="btn-send" :disabled="sending" @click="send">
+          {{ sending ? "发送中..." : "发送" }}
+        </button>
       </div>
     </div>
   </div>
@@ -64,6 +66,7 @@ async function loadData(): Promise<void> {
     messages.value = [];
     return;
   }
+  let shouldScrollAfterRender = false;
   loading.value = true;
   try {
     const [detail, msgs] = await Promise.all([
@@ -72,12 +75,15 @@ async function loadData(): Promise<void> {
     ]);
     title.value = detail.title || `会话 #${id}`;
     messages.value = msgs || [];
-    await nextTick();
-    scrollToBottom();
+    shouldScrollAfterRender = true;
   } catch {
     alert("加载失败");
   } finally {
     loading.value = false;
+    if (shouldScrollAfterRender) {
+      await nextTick();
+      scrollToBottom();
+    }
   }
 }
 
@@ -222,11 +228,9 @@ function buildMsg(id: number, role: "user" | "assistant", content: string): Chat
 }
 
 function scrollToBottom(): void {
-  nextTick(() => {
-    if (messageListRef.value) {
-      messageListRef.value.scrollTop = messageListRef.value.scrollHeight;
-    }
-  });
+  if (messageListRef.value) {
+    messageListRef.value.scrollTop = messageListRef.value.scrollHeight;
+  }
 }
 
 watch(

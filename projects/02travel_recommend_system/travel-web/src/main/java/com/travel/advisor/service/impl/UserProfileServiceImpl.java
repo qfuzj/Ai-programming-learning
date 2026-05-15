@@ -24,6 +24,8 @@ import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.security.LoginUser;
 import com.travel.advisor.service.FileService;
 import com.travel.advisor.service.UserProfileService;
+import com.travel.advisor.service.portrait.PortraitSummaryContext;
+import com.travel.advisor.service.portrait.UserPortraitAnalyzer;
 import com.travel.advisor.utils.BeanCopyUtils;
 import com.travel.advisor.utils.FileResourceIds;
 import com.travel.advisor.utils.SecurityUtils;
@@ -33,6 +35,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -54,12 +58,15 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserReviewMapper userReviewMapper;
     private final ScenicSpotTagMapper scenicSpotTagMapper;
     private final FileService fileService;
+    private final UserPortraitAnalyzer userPortraitAnalyzer;
 
     private static final int RECENT_BROWSE_LIMIT = 30;
     private static final int RECENT_PREFERENCES_TOP_N = 5;
     private static final double BROWSE_WEIGHT = 1D;
     private static final double FAVORITE_WEIGHT = 3D;
     private static final double REVIEW_WEIGHT = 5D;
+    /** 画像数据过期阈值：超过此时长则触发重新分析。 */
+    private static final Duration PORTRAIT_REFRESH_INTERVAL = Duration.ofHours(6);
 
     private String resolveAvatarUrl(String avatar) {
         if (!StringUtils.hasText(avatar)) {
@@ -123,45 +130,126 @@ public class UserProfileServiceImpl implements UserProfileService {
     public UserProfilePortraitVO getPortraitByUserId(Long userId) {
         UserProfilePortraitVO vo = new UserProfilePortraitVO();
 
-        // 1. 获取 user_profile 核心画像
         UserProfile profile = userProfileMapper
                 .selectOne(Wrappers.<UserProfile>lambdaQuery().eq(UserProfile::getUserId, userId));
-        if (profile != null) {
-            vo.setTravelStyle(profile.getTravelStyle() != null ? profile.getTravelStyle() : "待发掘");
-            // 仅 1/2/3 是约定的预算等级，其余值（含历史脏数据 0/null/-1）一律降级为"未知"，
-            // 避免之前三元嵌套把任意非 1/2 值都当成"奢华型"。
-            Integer budget = profile.getBudgetLevel();
-            String budgetLabel = "未知";
-            if (budget != null) {
-                switch (budget) {
-                    case 1 -> budgetLabel = "经济型";
-                    case 2 -> budgetLabel = "舒适型";
-                    case 3 -> budgetLabel = "奢华型";
-                    default -> { /* 保持"未知" */ }
-                }
+        if (shouldRefreshPortrait(profile)) {
+            try {
+                userPortraitAnalyzer.analyzeAndPersist(userId);
+                profile = userProfileMapper
+                        .selectOne(Wrappers.<UserProfile>lambdaQuery().eq(UserProfile::getUserId, userId));
+            } catch (Exception ignored) {
+                // 分析失败时降级为旧数据/默认值，不影响接口返回
             }
-            vo.setBudgetLevel(budgetLabel);
-            vo.setSummary("基于足迹与偏好综合生成的旅行摘要");
-        } else {
-            vo.setTravelStyle("待发掘");
-            vo.setBudgetLevel("未知");
-            vo.setSummary("暂无足够数据生成画像");
         }
 
-        // 2. 获取用户偏好标签名列表
+        String travelStyle = profile != null && profile.getTravelStyle() != null && !profile.getTravelStyle().isBlank()
+                ? profile.getTravelStyle()
+                : "待发掘";
+        String budgetLabel = mapBudgetLevel(profile == null ? null : profile.getBudgetLevel());
+        vo.setTravelStyle(travelStyle);
+        vo.setBudgetLevel(budgetLabel);
+
         List<UserPreferenceTag> prefTags = userPreferenceTagMapper
                 .selectList(Wrappers.<UserPreferenceTag>lambdaQuery().eq(UserPreferenceTag::getUserId, userId));
+        List<String> preferredTagNames;
         if (!prefTags.isEmpty()) {
             List<Long> tagIds = prefTags.stream().map(UserPreferenceTag::getTagId).collect(Collectors.toList());
             List<Tag> tags = tagMapper.selectBatchIds(tagIds);
-            vo.setPreferredTags(tags.stream().map(Tag::getName).collect(Collectors.toList()));
+            preferredTagNames = tags.stream().map(Tag::getName).collect(Collectors.toList());
         } else {
-            vo.setPreferredTags(new ArrayList<>());
+            preferredTagNames = new ArrayList<>();
         }
+        vo.setPreferredTags(preferredTagNames);
 
-        vo.setRecentPreferences(buildRecentPreferences(userId));
-        vo.setLocation("未知地区");
+        List<String> recentPreferences = buildRecentPreferences(userId);
+        vo.setRecentPreferences(recentPreferences);
+
+        String location = resolveUserLocation(userId);
+        vo.setLocation(location);
+
+        String preferredSeason = profile == null ? null : profile.getPreferredSeason();
+        vo.setSummary(buildSummary(userId, profile, travelStyle, budgetLabel, preferredSeason,
+                preferredTagNames, recentPreferences, location));
+
         return vo;
+    }
+
+    private boolean shouldRefreshPortrait(UserProfile profile) {
+        if (profile == null) {
+            return true;
+        }
+        LocalDateTime lastAnalyzedAt = profile.getLastAnalyzedAt();
+        if (lastAnalyzedAt == null) {
+            return true;
+        }
+        return Duration.between(lastAnalyzedAt, LocalDateTime.now()).compareTo(PORTRAIT_REFRESH_INTERVAL) > 0;
+    }
+
+    private String mapBudgetLevel(Integer budget) {
+        if (budget == null) {
+            return "未知";
+        }
+        return switch (budget) {
+            case 1 -> "经济型";
+            case 2 -> "舒适型";
+            case 3 -> "奢华型";
+            default -> "未知";
+        };
+    }
+
+    private String resolveUserLocation(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null || user.getRegionId() == null) {
+            return "未知地区";
+        }
+        try {
+            var region = regionMapper.selectById(user.getRegionId());
+            if (region != null && region.getName() != null && !region.getName().isBlank()) {
+                return region.getName();
+            }
+        } catch (Exception ignored) {
+            // ignore
+        }
+        return "未知地区";
+    }
+
+    /** 优先返回 LLM 缓存摘要；缺失时返回模板兜底并异步触发 LLM 生成更自然的版本。 */
+    private String buildSummary(Long userId, UserProfile profile, String travelStyle, String budgetLabel,
+            String preferredSeason, List<String> preferredTags, List<String> recentPreferences, String location) {
+        String cached = userPortraitAnalyzer.getCachedSummary(userId);
+        if (cached != null && !cached.isBlank()) {
+            return cached;
+        }
+        if (profile == null) {
+            return "暂无足够数据生成画像";
+        }
+        userPortraitAnalyzer.asyncRefreshSummary(userId, PortraitSummaryContext.builder()
+                .travelStyle(travelStyle)
+                .budgetLabel(budgetLabel)
+                .preferredSeason(preferredSeason)
+                .preferredTags(preferredTags)
+                .recentPreferences(recentPreferences)
+                .location(location)
+                .build());
+        return buildTemplateSummary(travelStyle, budgetLabel, preferredSeason, recentPreferences);
+    }
+
+    private String buildTemplateSummary(String travelStyle, String budgetLabel, String preferredSeason,
+            List<String> recentPreferences) {
+        StringBuilder sb = new StringBuilder("近期更偏好");
+        sb.append(travelStyle == null || travelStyle.isBlank() ? "多元体验" : travelStyle);
+        if (budgetLabel != null && !"未知".equals(budgetLabel)) {
+            sb.append("，预算偏").append(budgetLabel);
+        }
+        if (preferredSeason != null && !preferredSeason.isBlank()) {
+            sb.append("，常在").append(preferredSeason).append("出行");
+        }
+        if (recentPreferences != null && !recentPreferences.isEmpty()) {
+            int limit = Math.min(3, recentPreferences.size());
+            sb.append("，关注").append(String.join("、", recentPreferences.subList(0, limit)));
+        }
+        sb.append("。");
+        return sb.toString();
     }
 
     private List<String> buildRecentPreferences(Long userId) {
