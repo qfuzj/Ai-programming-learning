@@ -9,7 +9,7 @@
           @keyup.enter="search"
         />
       </el-form-item>
-      <el-form-item label="配置分组">
+      <el-form-item label="配置分组" style="width: 220px">
         <el-select v-model="query.configGroup" clearable placeholder="全部分组">
           <el-option
             v-for="item in configGroupOptions"

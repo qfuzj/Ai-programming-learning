@@ -9,7 +9,7 @@
           @keyup.enter="search"
         />
       </el-form-item>
-      <el-form-item label="模块">
+      <el-form-item label="模块" style="width: 150px">
         <el-select v-model="query.module" clearable placeholder="全部模块">
           <el-option
             v-for="item in moduleOptions"
@@ -27,7 +27,7 @@
           @keyup.enter="search"
         />
       </el-form-item>
-      <el-form-item label="状态">
+      <el-form-item label="状态" style="width: 150px">
         <el-select v-model="query.status" clearable placeholder="全部状态">
           <el-option
             v-for="item in statusOptions"

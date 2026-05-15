@@ -23,12 +23,14 @@ import com.travel.advisor.mapper.UserMapper;
 import com.travel.advisor.mapper.UserReviewMapper;
 import com.travel.advisor.service.AuditService;
 import com.travel.advisor.service.audit.AuditStrategy;
+import com.travel.advisor.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,6 +57,7 @@ public class AuditServiceImpl implements AuditService {
                 .eq(dto.getAuditStatus() != null, ContentAudit::getAuditStatus, dto.getAuditStatus())
                 .eq(dto.getContentId() != null, ContentAudit::getContentId, dto.getContentId())
                 .eq(dto.getSubmitUserId() != null, ContentAudit::getSubmitUserId, dto.getSubmitUserId())
+                .orderByAsc(ContentAudit::getAuditStatus)
                 .orderByDesc(ContentAudit::getCreateTime);
 
         Page<ContentAudit> page = new Page<>(dto.getPageNum(), dto.getPageSize());
@@ -256,8 +259,18 @@ public class AuditServiceImpl implements AuditService {
             throw new BusinessException(ResultCode.NOT_FOUND, "审核记录不存在");
         }
 
+        LocalDateTime now = LocalDateTime.now();
+        ContentAudit updateAudit = new ContentAudit();
+        updateAudit.setId(audit.getId());
+        updateAudit.setAuditStatus(auditStatus);
+        updateAudit.setAuditRemark(dto == null ? null : dto.getReason());
+        updateAudit.setAuditorId(SecurityUtils.getCurrentUserId());
+        updateAudit.setAuditTime(now);
+        updateAudit.setUpdateTime(now);
+        contentAuditMapper.updateById(updateAudit);
+
         AuditStrategy strategy = getStrategy(audit.getContentType());
-        strategy.executeAudit(audit.getContentId(), auditStatus, action, dto);
+        strategy.executeAudit(audit.getContentId(), action, dto);
         strategy.refreshRelatedData(audit.getContentId());
     }
 

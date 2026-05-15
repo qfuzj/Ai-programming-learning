@@ -93,35 +93,9 @@
     </div>
 
     <el-drawer v-model="detailVisible" title="审核详情" size="760px">
-      <el-descriptions v-if="detail" :column="1" border>
-        <el-descriptions-item label="审核ID">{{ detail.id }}</el-descriptions-item>
-        <el-descriptions-item label="内容类型">
-          {{ contentTypeText(detail.contentType) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="内容ID">{{ detail.contentId || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="提交用户ID">
-          {{ detail.submitUserId || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="状态">
-          {{ auditStatusText(detail.auditStatus) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="自动评分">
-          {{ detail.autoAuditScore ?? "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="LLM日志ID">
-          {{ detail.llmCallLogId || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="审核员ID">{{ detail.auditorId || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="审核备注">
-          {{ detail.auditRemark || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="审核时间">
-          {{ formatTime(detail.auditTime) || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="违规类型">
-          <pre class="json-box">{{ formatJson(detail.violationType) }}</pre>
-        </el-descriptions-item>
-        <el-descriptions-item label="内容快照">
+      <template v-if="detail">
+        <section class="detail-section">
+          <div class="section-title">内容快照</div>
           <div v-if="parsedSnapshot">
             <div v-if="detail.contentType === 'review'" class="review-snapshot-card">
               <div class="review-userInfo">
@@ -226,11 +200,48 @@
             </div>
           </div>
           <pre v-else class="json-box">{{ formatJson(detail.snapshot) }}</pre>
-        </el-descriptions-item>
-        <el-descriptions-item label="自动审核结果">
-          <pre class="json-box">{{ formatJson(detail.autoAuditResult) }}</pre>
-        </el-descriptions-item>
-      </el-descriptions>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-title">基础信息</div>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="审核ID">{{ detail.id }}</el-descriptions-item>
+            <el-descriptions-item label="内容类型">
+              {{ contentTypeText(detail.contentType) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="内容ID">
+              {{ detail.contentId || "-" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="提交用户ID">
+              {{ detail.submitUserId || "-" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="状态">
+              {{ auditStatusText(detail.auditStatus) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="自动评分">
+              {{ detail.autoAuditScore ?? "-" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="LLM日志ID">
+              {{ detail.llmCallLogId || "-" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="审核员ID">
+              {{ detail.auditorId || "-" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="审核备注">
+              {{ detail.auditRemark || "-" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="审核时间">
+              {{ formatTime(detail.auditTime) || "-" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="违规类型">
+              <pre class="json-box">{{ formatJson(detail.violationType) }}</pre>
+            </el-descriptions-item>
+            <el-descriptions-item label="自动审核结果">
+              <pre class="json-box">{{ formatJson(detail.autoAuditResult) }}</pre>
+            </el-descriptions-item>
+          </el-descriptions>
+        </section>
+      </template>
     </el-drawer>
   </div>
 </template>
@@ -439,6 +450,33 @@ onMounted(async () => {
   border-radius: 6px;
 }
 
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #101828;
+}
+
+.section-title::before {
+  display: inline-block;
+  width: 4px;
+  height: 16px;
+  content: "";
+  background: #4f7cff;
+  border-radius: 99px;
+}
+
 .filter-panel {
   position: relative;
 }
@@ -448,25 +486,30 @@ onMounted(async () => {
   flex-direction: column;
   gap: 8px;
 }
+
 .snapshot-field {
   display: flex;
   flex-direction: column;
 }
+
 .snapshot-label {
   margin-bottom: 4px;
   font-weight: bold;
   color: #606266;
 }
+
 .snapshot-value {
   color: #333;
   word-break: break-all;
   white-space: pre-wrap;
 }
+
 .snapshot-images {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
+
 .snapshot-img {
   width: 100px;
   height: 100px;
@@ -480,25 +523,30 @@ onMounted(async () => {
   border: 1px solid #ebeef5;
   border-radius: 8px;
 }
+
 .review-userInfo {
   display: flex;
   gap: 8px;
   align-items: center;
   margin-bottom: 12px;
 }
+
 .review-uname {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
 }
+
 .meta-tag {
   margin-left: 4px;
 }
+
 .review-time {
   margin-left: auto;
   font-size: 13px;
   color: #909399;
 }
+
 .review-scenic {
   display: inline-block;
   padding: 6px 12px;
@@ -508,11 +556,13 @@ onMounted(async () => {
   background: #ecf5ff;
   border-radius: 4px;
 }
+
 .review-rating {
   display: flex;
   align-items: center;
   margin-bottom: 16px;
 }
+
 .review-text {
   padding: 12px;
   margin-bottom: 16px;
@@ -524,23 +574,27 @@ onMounted(async () => {
   border: 1px dashed #dcdfe6;
   border-radius: 6px;
 }
+
 .generic-snapshot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
+
 .generic-field {
   padding: 10px;
   background: #fafafa;
   border: 1px solid #ebeef5;
   border-radius: 6px;
 }
+
 .generic-label {
   margin-bottom: 6px;
   font-size: 12px;
   color: #909399;
   text-transform: uppercase;
 }
+
 .generic-value {
   font-size: 14px;
   color: #303133;

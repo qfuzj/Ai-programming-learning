@@ -1,11 +1,18 @@
 <template>
   <div class="admin-page">
-    <el-form :model="query" class="filter-panel" inline>
+    <el-form :model="filter" class="filter-panel" inline>
       <el-form-item label="地区名称">
-        <el-input v-model="query.name" clearable placeholder="输入地区名称" @keyup.enter="search" />
+        <el-input
+          v-model="filter.keyword"
+          clearable
+          placeholder="按名称/简称/拼音/编码筛选"
+          @keyup.enter="onFilterChange"
+          @clear="onFilterChange"
+          @input="onFilterChange"
+        />
       </el-form-item>
       <el-form-item label="层级">
-        <el-select v-model="query.level" clearable placeholder="全部层级">
+        <el-select v-model="filter.level" clearable placeholder="全部层级" @change="onFilterChange">
           <el-option
             v-for="item in regionLevelOptions"
             :key="item.code"
@@ -14,22 +21,8 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="父级">
-        <el-cascader
-          v-model="queryParentPath"
-          clearable
-          filterable
-          :options="regionTree"
-          :props="cascaderProps"
-          placeholder="先选一级再选二级"
-          @change="syncParentQuery"
-        />
-      </el-form-item>
-      <el-form-item label="编码">
-        <el-input v-model="query.code" clearable placeholder="行政区划编码" @keyup.enter="search" />
-      </el-form-item>
       <el-form-item label="热门">
-        <el-select v-model="query.isHot" clearable placeholder="全部">
+        <el-select v-model="filter.isHot" clearable placeholder="全部" @change="onFilterChange">
           <el-option
             v-for="item in yesNoOptions"
             :key="item.code"
@@ -39,57 +32,71 @@
         </el-select>
       </el-form-item>
       <el-form-item class="form-actions">
-        <el-button type="primary" @click="search">查询</el-button>
-        <el-button @click="resetQuery">重置</el-button>
-        <el-button type="success" @click="openCreate">新增地区</el-button>
+        <el-button @click="resetFilter">重置</el-button>
+        <el-button @click="expandAll(true)">全部展开</el-button>
+        <el-button @click="expandAll(false)">全部收起</el-button>
+        <el-button type="success" @click="openCreate(null)">新增一级地区</el-button>
       </el-form-item>
     </el-form>
 
-    <el-table v-loading="loading" :data="list" border stripe row-key="id">
-      <el-table-column prop="id" label="ID" width="90" />
-      <el-table-column prop="name" label="地区名称" min-width="150" />
-      <el-table-column prop="shortName" label="简称" min-width="110" />
-      <el-table-column label="层级" width="100">
-        <template #default="{ row }">{{ dictText(regionLevelOptions, row.level) }}</template>
-      </el-table-column>
-      <el-table-column prop="parentId" label="父级ID" width="100" />
-      <el-table-column prop="code" label="编码" min-width="130" />
-      <el-table-column prop="pinyin" label="拼音" min-width="130" show-overflow-tooltip />
-      <el-table-column label="经纬度" min-width="170">
-        <template #default="{ row }">
-          {{ row.longitude ?? "-" }}, {{ row.latitude ?? "-" }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="sortOrder" label="排序" width="90" />
-      <el-table-column label="热门" width="90">
-        <template #default="{ row }">
-          <el-tag :type="row.isHot === 1 ? 'warning' : 'info'">
-            {{ dictText(yesNoOptions, row.isHot) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column fixed="right" label="操作" width="150">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="deleteItem(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="pager">
-      <el-pagination
-        v-model:current-page="page.pageNum"
-        v-model:page-size="page.pageSize"
-        background
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="total"
-        :page-sizes="[10, 20, 50, 100]"
-        @current-change="loadData"
-        @size-change="search"
-      />
+    <div class="table-shell">
+      <el-table
+        ref="tableRef"
+        v-loading="loading"
+        :data="filteredTree"
+        border
+        stripe
+        row-key="id"
+        :tree-props="{ children: 'children' }"
+        :default-expand-all="expandAllFlag"
+        class="region-table"
+      >
+        <el-table-column prop="name" label="地区名称" min-width="220" />
+        <el-table-column prop="shortName" label="简称" min-width="110" />
+        <el-table-column label="层级" width="90">
+          <template #default="{ row }">
+            <el-tag :type="levelTagType(row.level)" size="small">
+              {{ dictText(regionLevelOptions, row.level) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="code" label="编码" min-width="120" />
+        <el-table-column prop="pinyin" label="拼音" min-width="120" show-overflow-tooltip />
+        <el-table-column label="经纬度" min-width="170">
+          <template #default="{ row }">
+            {{ row.longitude ?? "-" }}, {{ row.latitude ?? "-" }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="sortOrder" label="排序" width="80" />
+        <el-table-column label="热门" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.isHot === 1 ? 'warning' : 'info'" size="small">
+              {{ dictText(yesNoOptions, row.isHot) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="220">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.level !== undefined && row.level < 3"
+              link
+              type="success"
+              @click="openCreate(row)"
+            >
+              新增子级
+            </el-button>
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
+            <el-button link type="danger" @click="deleteItem(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editing ? '编辑地区' : '新增地区'" width="720px">
+    <el-dialog
+      v-model="dialogVisible"
+      :title="editing ? '编辑地区' : `新增${dictText(regionLevelOptions, form.level)}`"
+      width="720px"
+    >
       <el-form :model="form" label-width="96px">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -104,7 +111,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="层级" required>
-              <el-select v-model="form.level" @change="onFormLevelChange">
+              <el-select v-model="form.level" disabled>
                 <el-option
                   v-for="item in regionLevelOptions"
                   :key="item.code"
@@ -115,17 +122,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="父级地区" required>
-              <el-cascader
-                v-model="formParentPath"
-                :disabled="form.level === 1"
-                clearable
-                filterable
-                :options="parentOptions"
-                :props="cascaderProps"
-                :placeholder="form.level === 1 ? '一级地区父级固定为0' : '先选一级再选二级'"
-                @change="syncFormParent"
-              />
+            <el-form-item label="父级地区">
+              <el-input :model-value="parentDisplay" disabled placeholder="无父级" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -192,46 +190,32 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import {
   createAdminRegion,
   deleteAdminRegion,
-  getAdminRegionPage,
   getRegionTree,
   updateAdminRegion,
   type AdminRegionItem,
-  type AdminRegionQuery,
   type CommonRegionNode,
   type RegionPayload,
 } from "@/api/common";
 import { getRegionLevelDict, getYesNoFlagDict, type DictItem } from "@/api/dict";
 import { findDictDesc } from "@/composables/useDictOptions";
 
-const cascaderProps = {
-  value: "id",
-  label: "name",
-  children: "children",
-  checkStrictly: true,
-  emitPath: true,
-};
 const loading = ref(false);
 const saving = ref(false);
 const dialogVisible = ref(false);
-const list = ref<AdminRegionItem[]>([]);
-const regionTree = ref<CommonRegionNode[]>([]);
-const total = ref(0);
-const editing = ref<AdminRegionItem | null>(null);
+const tree = ref<CommonRegionNode[]>([]);
+const editing = ref<CommonRegionNode | null>(null);
+const parent = ref<CommonRegionNode | null>(null);
 const regionLevelOptions = ref<DictItem[]>([]);
 const yesNoOptions = ref<DictItem[]>([]);
-const queryParentPath = ref<number[]>([]);
-const formParentPath = ref<number[]>([]);
+const expandAllFlag = ref(true);
+const tableRef = ref();
 
-const page = reactive({ pageNum: 1, pageSize: 10 });
-const query = reactive<AdminRegionQuery>({
-  pageNum: 1,
-  pageSize: 10,
-  name: "",
-  level: undefined,
-  code: "",
-  isHot: undefined,
-  parentId: undefined,
+const filter = reactive({
+  keyword: "",
+  level: undefined as number | undefined,
+  isHot: undefined as number | undefined,
 });
+
 const form = reactive<RegionPayload>({
   parentId: 0,
   name: "",
@@ -245,21 +229,55 @@ const form = reactive<RegionPayload>({
   isHot: 0,
 });
 
-const parentOptions = computed(() => {
-  if (form.level === 2) {
-    return regionTree.value.map((node) => ({ ...node, children: undefined }));
-  }
-  if (form.level === 3) {
-    return regionTree.value.map((province) => ({
-      ...province,
-      children: province.children?.map((city) => ({ ...city, children: undefined })) || [],
-    }));
-  }
-  return [];
+const parentDisplay = computed(() => {
+  if (!parent.value) return "（一级地区）";
+  return parent.value.name;
 });
+
+const filteredTree = computed(() => {
+  const hasFilter =
+    !!filter.keyword?.trim() || filter.level !== undefined || filter.isHot !== undefined;
+  if (!hasFilter) return tree.value;
+  return filterNodes(tree.value, filter.keyword?.trim() || "", filter.level, filter.isHot);
+});
+
+function filterNodes(
+  nodes: CommonRegionNode[],
+  keyword: string,
+  level: number | undefined,
+  isHot: number | undefined
+): CommonRegionNode[] {
+  const lower = keyword.toLowerCase();
+  const result: CommonRegionNode[] = [];
+  for (const node of nodes) {
+    const matchKeyword =
+      !keyword ||
+      node.name?.toLowerCase().includes(lower) ||
+      node.shortName?.toLowerCase().includes(lower) ||
+      node.pinyin?.toLowerCase().includes(lower) ||
+      node.code?.toLowerCase().includes(lower);
+    const matchLevel = level === undefined || node.level === level;
+    const matchHot = isHot === undefined || node.isHot === isHot;
+
+    const filteredChildren = node.children?.length
+      ? filterNodes(node.children, keyword, level, isHot)
+      : [];
+
+    if ((matchKeyword && matchLevel && matchHot) || filteredChildren.length > 0) {
+      result.push({ ...node, children: filteredChildren });
+    }
+  }
+  return result;
+}
 
 function dictText(options: DictItem[], code: unknown): string {
   return findDictDesc(options, code, "-");
+}
+
+function levelTagType(level?: number): "primary" | "success" | "info" | "warning" {
+  if (level === 1) return "primary";
+  if (level === 2) return "success";
+  return "info";
 }
 
 async function loadDictionaries(): Promise<void> {
@@ -269,57 +287,37 @@ async function loadDictionaries(): Promise<void> {
   ]);
 }
 
-async function refreshTree(): Promise<void> {
-  regionTree.value = await getRegionTree();
-}
-
-async function loadData(): Promise<void> {
+async function loadTree(): Promise<void> {
   loading.value = true;
   try {
-    const res = await getAdminRegionPage({
-      ...query,
-      pageNum: page.pageNum,
-      pageSize: page.pageSize,
-      name: query.name?.trim() || undefined,
-      code: query.code?.trim() || undefined,
-    });
-    list.value = res.records || [];
-    total.value = res.total || 0;
+    tree.value = await getRegionTree();
   } finally {
     loading.value = false;
   }
 }
 
-function search(): void {
-  page.pageNum = 1;
-  void loadData();
+function onFilterChange(): void {
+  // computed 自动响应，无需主动调用，但保留钩子以便后续接入服务端筛选。
 }
 
-function resetQuery(): void {
-  page.pageNum = 1;
-  query.name = "";
-  query.level = undefined;
-  query.code = "";
-  query.isHot = undefined;
-  query.parentId = undefined;
-  queryParentPath.value = [];
-  void loadData();
+function resetFilter(): void {
+  filter.keyword = "";
+  filter.level = undefined;
+  filter.isHot = undefined;
 }
 
-function syncParentQuery(value: unknown): void {
-  const path = Array.isArray(value) ? (value as number[]) : [];
-  query.parentId = path.length ? path[path.length - 1] : undefined;
-  search();
+function expandAll(expand: boolean): void {
+  expandAllFlag.value = expand;
+  walkTree(filteredTree.value, (node) => {
+    tableRef.value?.toggleRowExpansion?.(node, expand);
+  });
 }
 
-function findPathById(nodes: CommonRegionNode[], id?: number): number[] {
-  if (!id) return [];
+function walkTree(nodes: CommonRegionNode[], visit: (node: CommonRegionNode) => void): void {
   for (const node of nodes) {
-    if (node.id === id) return [node.id];
-    const childPath = findPathById(node.children || [], id);
-    if (childPath.length) return [node.id, ...childPath];
+    visit(node);
+    if (node.children?.length) walkTree(node.children, visit);
   }
-  return [];
 }
 
 function resetForm(): void {
@@ -335,22 +333,29 @@ function resetForm(): void {
     sortOrder: 0,
     isHot: 0,
   });
-  formParentPath.value = [];
 }
 
-function openCreate(): void {
+function openCreate(parentNode: CommonRegionNode | null): void {
+  if (parentNode && (parentNode.level ?? 0) >= 3) {
+    ElMessage.warning("已是最末级，无法继续添加子级");
+    return;
+  }
   editing.value = null;
+  parent.value = parentNode;
   resetForm();
+  form.parentId = parentNode?.id ?? 0;
+  form.level = (parentNode?.level ?? 0) + 1;
   dialogVisible.value = true;
 }
 
-function openEdit(item: AdminRegionItem): void {
+function openEdit(item: CommonRegionNode): void {
   editing.value = item;
+  parent.value = findParent(tree.value, item.id);
   Object.assign(form, {
     parentId: item.parentId ?? 0,
     name: item.name,
     shortName: item.shortName || "",
-    level: item.level,
+    level: item.level ?? 1,
     code: item.code || "",
     pinyin: item.pinyin || "",
     longitude: item.longitude,
@@ -358,22 +363,16 @@ function openEdit(item: AdminRegionItem): void {
     sortOrder: item.sortOrder ?? 0,
     isHot: item.isHot ?? 0,
   });
-  formParentPath.value = findPathById(regionTree.value, item.parentId);
   dialogVisible.value = true;
 }
 
-function onFormLevelChange(): void {
-  form.parentId = form.level === 1 ? 0 : (undefined as unknown as number);
-  formParentPath.value = [];
-}
-
-function syncFormParent(value: unknown): void {
-  const path = Array.isArray(value) ? (value as number[]) : [];
-  form.parentId = path.length
-    ? path[path.length - 1]
-    : form.level === 1
-      ? 0
-      : (undefined as unknown as number);
+function findParent(nodes: CommonRegionNode[], id: number): CommonRegionNode | null {
+  for (const node of nodes) {
+    if (node.children?.some((c) => c.id === id)) return node;
+    const found = node.children ? findParent(node.children, id) : null;
+    if (found) return found;
+  }
+  return null;
 }
 
 async function save(): Promise<void> {
@@ -381,14 +380,10 @@ async function save(): Promise<void> {
     ElMessage.warning("请输入地区名称");
     return;
   }
-  if (form.level !== 1 && !form.parentId) {
-    ElMessage.warning("请选择父级地区");
-    return;
-  }
   saving.value = true;
   try {
     const payload: RegionPayload = {
-      parentId: form.level === 1 ? 0 : form.parentId,
+      parentId: form.parentId ?? 0,
       name: form.name.trim(),
       shortName: form.shortName || undefined,
       level: form.level,
@@ -406,13 +401,13 @@ async function save(): Promise<void> {
     }
     ElMessage.success("保存成功");
     dialogVisible.value = false;
-    await Promise.all([loadData(), refreshTree()]);
+    await loadTree();
   } finally {
     saving.value = false;
   }
 }
 
-async function deleteItem(item: AdminRegionItem): Promise<void> {
+async function deleteItem(item: AdminRegionItem | CommonRegionNode): Promise<void> {
   await ElMessageBox.confirm(
     `确认删除地区「${item.name}」？有子地区时后端会阻止删除。`,
     "删除确认",
@@ -422,12 +417,11 @@ async function deleteItem(item: AdminRegionItem): Promise<void> {
   );
   await deleteAdminRegion(item.id);
   ElMessage.success("删除成功");
-  await Promise.all([loadData(), refreshTree()]);
+  await loadTree();
 }
 
 onMounted(async () => {
-  await Promise.all([loadDictionaries(), refreshTree()]);
-  await loadData();
+  await Promise.all([loadDictionaries(), loadTree()]);
 });
 </script>
 
@@ -436,33 +430,46 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .filter-panel {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  align-items: center;
   padding: 16px 16px 0;
   background: #fff;
   border: 1px solid #e7eaf0;
   border-radius: 8px;
 }
 
-.pager {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.filter-panel {
-  position: relative;
-}
-
-.filter-panel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.filter-panel .el-form-item {
+.filter-panel :deep(.el-form-item) {
+  margin-right: 0;
   margin-bottom: 16px;
 }
+
+.filter-panel :deep(.el-input),
+.filter-panel :deep(.el-select) {
+  width: 200px;
+}
+
 .filter-panel .form-actions {
   margin-left: auto;
+}
+
+.table-shell {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  border: 1px solid #e7eaf0;
+  border-radius: 8px;
+}
+
+.region-table {
+  width: 100%;
 }
 </style>

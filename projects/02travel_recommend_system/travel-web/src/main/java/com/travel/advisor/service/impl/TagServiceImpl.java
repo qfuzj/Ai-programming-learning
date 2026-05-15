@@ -79,6 +79,9 @@ public class TagServiceImpl implements TagService {
         if (dto != null && StringUtils.hasText(dto.getScope())) {
             queryWrapper.eq(Tag::getScope, dto.getScope());
         }
+        if (dto != null && StringUtils.hasText(dto.getCategory())) {
+            queryWrapper.eq(Tag::getCategory, dto.getCategory());
+        }
         if (dto != null && StringUtils.hasText(dto.getName())) {
             queryWrapper.like(Tag::getName, dto.getName());
         }

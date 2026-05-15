@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 LLM-Travel-Advisor 是一个基于 Spring Boot 3 的智能旅游景点推荐平台，包含完整的后端服务和前端应用。
 
+## 参考文档
+
+仓库根目录维护了几份设计文档，遇到对应主题先查这里再写代码：
+
+- `后端接口规范文档.md` — 接口规范与请求/响应示例的权威来源
+- `前端页面与路由设计.md` — 前端路由结构与页面职责的设计依据
+- `travel_recommend_system.sql` — 数据库 DDL 与初始化脚本
+
 ## 技术栈
 
 **后端**: Spring Boot 3.3.4 + Java 17 + MyBatis-Plus 3.5.7
@@ -48,7 +56,11 @@ travel-recommend-platform (父 POM)
 | | `com.travel.advisor.llm` | LLM 对话网关、提示词构建、上下文管理 |
 | | `com.travel.advisor.recommend` | 推荐引擎: 召回策略、排名、理由生成 |
 | | `com.travel.advisor.config` | Redis, MyBatis-Plus, ResponseAdvice 配置 |
-| | `com.travel.advisor.security` | Spring Security 配置, JWT 过滤器, 权限服务 |
+| | `com.travel.advisor.security` | Spring Security 配置, `JwtAuthenticationFilter`, 权限服务 |
+| | `com.travel.advisor.annotation` | 自定义注解 (如 `@OperationLog`) |
+| | `com.travel.advisor.aspect` | AOP 切面 (如 `OperationLogAspect` 记录管理员操作) |
+| | `com.travel.advisor.filter` | Servlet 过滤器 (如 `RequestIdFilter` 注入请求 ID) |
+| | `com.travel.advisor.task` | 定时任务 (如 `FileCleanupTask` 清理无效文件) |
 | **travel-app** | `com.travel.advisor` | `LLMTravelAdvisorApplication` 主启动类 |
 | | `resources/` | `application.yml`, `application-dev.yml`, `application-prod.yml` |
 
@@ -173,24 +185,7 @@ MinIO 已集成，使用预签名 URL 模式：
 
 ## 实现进度
 
-**已完成**:
-- ✅ 认证模块 (注册/登录/登出/刷新Token/重置密码/验证码)
-- ✅ 地区模块 (用户端树形查询、管理端 CRUD)
-- ✅ 标签模块 (用户端按类型查询、管理端 CRUD、图标上传)
-- ✅ 景点管理模块 (用户端分页/详情/筛选/热门榜, 管理端 CRUD/上下架/标签绑定/图片管理)
-- ✅ 收藏模块 (收藏/取消收藏/收藏列表)
-- ✅ 浏览历史模块 (上报/查询/删除/清空)
-- ✅ 点评模块 (发布点评/我的点评/景点评价列表/删除点评)
-- ✅ 审核模块 (review/image/scenic/plan 类型审核, 通过/拒绝/隐藏)
-- ✅ 用户管理 (管理端用户分页查询、详情查询、状态更新、禁用时清理会话)
-- ✅ 行程计划模块 (创建/列表/详情/修改/删除/行程项管理)
-- ✅ 推荐系统模块 (多路召回策略、推荐排名服务、推荐理由生成、推荐反馈)
-- ✅ LLM 对话模块 (网关、提示词构建、上下文管理、敏感词过滤、流式响应)
-- ✅ 系统配置模块 (配置查询与更新)
-- ✅ 操作日志模块 (AOP 记录管理员操作)
-- ✅ 统计看板模块 (统计数据接口，前端图表消费)
-- ✅ 文件上传模块 (MinIO 集成、预签名 URL 上传、文件确认)
-- ✅ 前端应用 (Vue 3 + Element Plus，用户端和管理端完整页面)
+后端功能模块基本完成，覆盖认证、地区、标签、景点、收藏、浏览历史、点评、审核、用户管理、行程计划、推荐系统、LLM 对话、系统配置、操作日志、统计看板、文件上传等模块。前端用户端与管理端页面已完整实现。具体接口清单见 `后端接口规范文档.md`。
 
 ## 已知问题
 

@@ -25,36 +25,61 @@
       </el-form-item>
     </el-form>
 
-    <el-table v-loading="loading" :data="list" border stripe>
-      <el-table-column prop="id" label="ID" width="90" />
-      <el-table-column prop="username" label="用户名" min-width="130" />
-      <el-table-column prop="nickname" label="昵称" min-width="130" show-overflow-tooltip />
-      <el-table-column prop="phone" label="手机号" min-width="140" />
-      <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-      <el-table-column label="性别" width="90">
-        <template #default="{ row }">{{ dictText(genderOptions, row.gender) }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ dictText(commonStatusOptions, row.status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="lastLoginTime" label="最后登录" min-width="170" />
-      <el-table-column fixed="right" label="操作" width="180">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="openDetail(row.id)">详情</el-button>
-          <el-button
-            link
-            :type="row.status === 1 ? 'danger' : 'success'"
-            @click="toggleStatus(row)"
-          >
-            {{ row.status === 1 ? "禁用" : "启用" }}
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-shell">
+      <el-table v-loading="loading" :data="list" border stripe class="user-table">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column label="用户" min-width="220">
+          <template #default="{ row }">
+            <div class="user-cell">
+              <el-avatar :size="40" :src="row.avatar || ''" class="user-avatar">
+                {{ avatarFallback(row) }}
+              </el-avatar>
+              <div class="user-meta">
+                <el-tooltip
+                  :content="row.username || '-'"
+                  placement="top"
+                  :disabled="!(row.username && row.username.length > 12)"
+                >
+                  <div class="user-name ellipsis">{{ row.username || "-" }}</div>
+                </el-tooltip>
+                <el-tooltip
+                  :content="row.nickname || '-'"
+                  placement="top"
+                  :disabled="!(row.nickname && row.nickname.length > 12)"
+                >
+                  <div class="user-nick ellipsis">{{ row.nickname || "-" }}</div>
+                </el-tooltip>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="phone" label="手机号" min-width="140" />
+        <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
+        <el-table-column label="性别" width="80">
+          <template #default="{ row }">{{ dictText(genderOptions, row.gender) }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ dictText(commonStatusOptions, row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="lastLoginTime" label="最后登录" min-width="170" />
+        <el-table-column fixed="right" label="操作" width="160">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openDetail(row.id)">详情</el-button>
+            <el-button
+              link
+              :type="row.status === 1 ? 'danger' : 'success'"
+              @click="toggleStatus(row)"
+            >
+              {{ row.status === 1 ? "禁用" : "启用" }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <div class="pager">
       <el-pagination
@@ -70,29 +95,49 @@
     </div>
 
     <el-drawer v-model="detailVisible" title="用户详情" size="520px">
-      <el-descriptions v-if="detail" :column="1" border>
-        <el-descriptions-item label="用户ID">{{ detail.id }}</el-descriptions-item>
-        <el-descriptions-item label="用户名">{{ detail.username || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="昵称">{{ detail.nickname || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="手机号">{{ detail.phone || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="邮箱">{{ detail.email || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="性别">
-          {{ dictText(genderOptions, detail.gender) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="生日">{{ detail.birthday || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="地区">
-          {{ detail.regionName || detail.regionId || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="状态">
-          {{ dictText(commonStatusOptions, detail.status) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="最后登录">
-          {{ detail.lastLoginTime || "-" }}
-        </el-descriptions-item>
-        <el-descriptions-item label="登录IP">{{ detail.lastLoginIp || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ detail.createdAt || "-" }}</el-descriptions-item>
-        <el-descriptions-item label="更新时间">{{ detail.updatedAt || "-" }}</el-descriptions-item>
-      </el-descriptions>
+      <template v-if="detail">
+        <div class="detail-header">
+          <el-avatar :size="72" :src="detail.avatar || ''" class="detail-avatar">
+            {{ avatarFallback(detail) }}
+          </el-avatar>
+          <div class="detail-header-meta">
+            <div class="detail-name">{{ detail.nickname || detail.username || "未命名用户" }}</div>
+            <div class="detail-sub">@{{ detail.username || "-" }}</div>
+            <el-tag
+              :type="detail.status === 1 ? 'success' : 'info'"
+              size="small"
+              class="detail-status"
+            >
+              {{ dictText(commonStatusOptions, detail.status) }}
+            </el-tag>
+          </div>
+        </div>
+
+        <el-descriptions :column="1" border class="detail-descriptions">
+          <el-descriptions-item label="用户ID">{{ detail.id }}</el-descriptions-item>
+          <el-descriptions-item label="手机号">{{ detail.phone || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="邮箱">{{ detail.email || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="性别">
+            {{ dictText(genderOptions, detail.gender) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="生日">{{ detail.birthday || "-" }}</el-descriptions-item>
+          <el-descriptions-item label="地区">
+            {{ detail.regionName || detail.regionId || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="最后登录">
+            {{ detail.lastLoginTime || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="登录IP">
+            {{ detail.lastLoginIp || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ detail.createdAt || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="更新时间">
+            {{ detail.updatedAt || "-" }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </template>
     </el-drawer>
   </div>
 </template>
@@ -127,6 +172,12 @@ const query = reactive<AdminUserQuery>({
 
 function dictText(options: DictItem[], code: unknown): string {
   return findDictDesc(options, code, "-");
+}
+
+function avatarFallback(user: AdminUserItem | null): string {
+  if (!user) return "?";
+  const source = user.nickname || user.username || "";
+  return source ? source.trim().charAt(0).toUpperCase() : "?";
 }
 
 async function loadDictionaries(): Promise<void> {
@@ -192,13 +243,136 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .filter-panel {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  align-items: center;
   padding: 16px 16px 0;
   background: #fff;
   border: 1px solid #e7eaf0;
   border-radius: 8px;
+}
+
+.filter-panel :deep(.el-form-item) {
+  margin-right: 0;
+  margin-bottom: 16px;
+}
+
+.filter-panel :deep(.el-input),
+.filter-panel :deep(.el-select) {
+  width: 200px;
+}
+
+.filter-panel .form-actions {
+  margin-left: auto;
+}
+
+.table-shell {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  border: 1px solid #e7eaf0;
+  border-radius: 8px;
+}
+
+.user-table {
+  width: 100%;
+}
+
+.user-cell {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.user-avatar {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #5b8def 0%, #08d878 100%);
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  max-width: 220px;
+  overflow: hidden;
+}
+
+.user-name {
+  font-weight: 700;
+  color: #101828;
+}
+
+.user-nick {
+  font-size: 12px;
+  color: #667085;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #f5f9ff 0%, #f0fff6 100%);
+  border: 1px solid #e7eaf0;
+  border-radius: 12px;
+}
+
+.detail-avatar {
+  flex-shrink: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #5b8def 0%, #08d878 100%);
+  box-shadow: 0 4px 12px rgb(91 141 239 / 25%);
+}
+
+.detail-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.detail-name {
+  overflow: hidden;
+  font-size: 18px;
+  font-weight: 700;
+  color: #101828;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-sub {
+  font-size: 13px;
+  color: #667085;
+}
+
+.detail-status {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.detail-descriptions :deep(.el-descriptions__label) {
+  width: 100px;
+  color: #667085;
 }
 
 .pager {
@@ -206,7 +380,18 @@ onMounted(async () => {
   justify-content: flex-end;
 }
 
-.filter-panel {
-  position: relative;
+@media (max-width: 980px) {
+  .filter-panel :deep(.el-input),
+  .filter-panel :deep(.el-select) {
+    width: 100%;
+  }
+
+  .filter-panel :deep(.el-form-item) {
+    width: 100%;
+  }
+
+  .user-meta {
+    max-width: 140px;
+  }
 }
 </style>

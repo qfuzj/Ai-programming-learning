@@ -4,7 +4,15 @@
       <el-form-item label="标签名称">
         <el-input v-model="query.name" clearable placeholder="输入标签名称" @keyup.enter="search" />
       </el-form-item>
-      <el-form-item label="作用域">
+      <el-form-item style="width: 170px">
+        <template #label>
+          <el-tooltip
+            content="作用域决定标签出现在哪里：景点标签贴在景点上、偏好标签用于用户喜好、通用标签两边都能用"
+            placement="top"
+          >
+            <span class="label-with-hint">作用域</span>
+          </el-tooltip>
+        </template>
         <el-select
           v-model="query.scope"
           clearable
@@ -19,7 +27,15 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="分类">
+      <el-form-item style="width: 170px">
+        <template #label>
+          <el-tooltip
+            content="分类是同作用域内的二级分组，仅用于在选择器里把相关标签归到一组（如自然风光 / 美食 / 历史文化）"
+            placement="top"
+          >
+            <span class="label-with-hint">分类</span>
+          </el-tooltip>
+        </template>
         <el-select
           v-model="query.category"
           clearable
@@ -30,7 +46,7 @@
           <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态">
+      <el-form-item label="状态" style="width: 170px">
         <el-select v-model="query.status" clearable placeholder="全部状态">
           <el-option
             v-for="item in commonStatusOptions"
@@ -50,10 +66,10 @@
     <el-table v-loading="loading" :data="list" border stripe>
       <el-table-column prop="id" label="ID" width="90" />
       <el-table-column prop="name" label="标签名称" min-width="150" />
-      <el-table-column prop="category" label="分类" min-width="130" show-overflow-tooltip />
       <el-table-column label="作用域" min-width="120">
         <template #default="{ row }">{{ dictText(tagScopeOptions, row.scope) }}</template>
       </el-table-column>
+      <el-table-column prop="category" label="分类" min-width="130" show-overflow-tooltip />
       <el-table-column prop="icon" label="图标" min-width="120" show-overflow-tooltip />
       <el-table-column prop="sortOrder" label="排序" width="90" />
       <el-table-column label="状态" width="100">
@@ -89,11 +105,10 @@
         <el-form-item label="标签名称" required>
           <el-input v-model="form.name" maxlength="50" show-word-limit />
         </el-form-item>
-        <el-form-item label="作用域">
+        <el-form-item label="作用域" required>
           <el-select
             v-model="form.scope"
-            clearable
-            placeholder="请选择作用域"
+            placeholder="请选择作用域（必填）"
             @change="loadCategories"
           >
             <el-option
@@ -103,6 +118,7 @@
               :value="String(item.code)"
             />
           </el-select>
+          <div class="form-hint">决定标签出现在哪里，提交后不建议随意改动</div>
         </el-form-item>
         <el-form-item label="分类">
           <el-select
@@ -110,10 +126,11 @@
             clearable
             filterable
             allow-create
-            placeholder="选择或输入分类"
+            placeholder="可选，作用域内的二级分组"
           >
             <el-option v-for="item in categoryOptions" :key="item" :label="item" :value="item" />
           </el-select>
+          <div class="form-hint">仅用于在选择器里把相关标签归到一起，可留空</div>
         </el-form-item>
         <el-form-item label="图标">
           <el-input v-model="form.icon" placeholder="图标名或资源地址" />
@@ -344,5 +361,17 @@ onMounted(async () => {
 }
 .filter-panel .form-actions {
   margin-left: auto;
+}
+
+.label-with-hint {
+  cursor: help;
+  border-bottom: 1px dashed #c0c4cc;
+}
+
+.form-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #909399;
 }
 </style>
