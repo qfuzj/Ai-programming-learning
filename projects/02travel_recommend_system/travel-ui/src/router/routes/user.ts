@@ -109,4 +109,10 @@ export const userRoutes: RouteRecordRaw[] = [
     component: () => import("@/views/auth/ResetPasswordView.vue"),
     meta: { title: "重置密码", requiresAuth: false, hidden: true },
   },
+  {
+    path: "/onboarding",
+    name: "UserOnboarding",
+    component: () => import("@/views/auth/OnboardingView.vue"),
+    meta: { title: "完善偏好", requiresAuth: true, roles: ["USER"], hidden: true },
+  },
 ];

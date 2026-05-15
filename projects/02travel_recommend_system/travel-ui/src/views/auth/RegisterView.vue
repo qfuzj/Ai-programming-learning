@@ -140,6 +140,7 @@ async function onSubmit(): Promise<void> {
     };
     await registerUser(payload);
     sessionStorage.setItem("auth_prefill_username", payload.username);
+    sessionStorage.setItem("auth_onboarding_pending", "1");
     await router.push({
       path: ROUTE_PATHS.USER_LOGIN,
       query: { registered: "1", username: payload.username },

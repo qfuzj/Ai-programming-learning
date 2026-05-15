@@ -100,8 +100,12 @@ async function onSubmit(): Promise<void> {
   submitting.value = true;
   try {
     await userStore.loginAsUser({ ...form, loginType: "username" as const });
-    const redirect =
-      typeof route.query.redirect === "string" ? route.query.redirect : ROUTE_PATHS.USER_HOME;
+    const onboardingPending = sessionStorage.getItem("auth_onboarding_pending") === "1";
+    const redirect = onboardingPending
+      ? "/onboarding"
+      : typeof route.query.redirect === "string"
+        ? route.query.redirect
+        : ROUTE_PATHS.USER_HOME;
     await router.push(redirect);
   } catch {
     await loadCaptcha();
