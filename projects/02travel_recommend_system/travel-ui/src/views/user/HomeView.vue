@@ -192,11 +192,36 @@ function onTagImageError(event: Event): void {
 async function loadTags(): Promise<void> {
   try {
     const [allTags, myTagIds] = await Promise.all([getTags(), getMyPreferenceTags()]);
-    const idSet = new Set(myTagIds.map((t: any) => Number(t.id ?? t)));
-    tagList.value = allTags.filter((tag: CommonTagItem) => idSet.has(tag.id));
+    const myTagIdSet = new Set(myTagIds.map((t: any) => Number(t.id ?? t)));
+    const candidateTags = allTags.filter((tag: CommonTagItem) => {
+      if (tag.status !== undefined && tag.status !== 1) {
+        return false;
+      }
+      if (myTagIdSet.has(tag.id)) {
+        return false;
+      }
+      return tag.scope === "PREFERENCE" || tag.scope === "BOTH";
+    });
+    tagList.value = pickRandomTags(candidateTags, 4, 5);
   } catch {
     // ignore
   }
+}
+
+function pickRandomTags(tags: CommonTagItem[], minCount: number, maxCount: number): CommonTagItem[] {
+  if (tags.length <= minCount) {
+    return [...tags];
+  }
+  const shuffled = [...tags];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+  }
+  const count = Math.min(
+    shuffled.length,
+    minCount + Math.floor(Math.random() * (Math.max(1, maxCount - minCount + 1)))
+  );
+  return shuffled.slice(0, count);
 }
 
 async function loadData(): Promise<void> {

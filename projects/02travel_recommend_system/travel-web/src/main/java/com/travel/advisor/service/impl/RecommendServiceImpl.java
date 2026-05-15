@@ -95,17 +95,18 @@ public class RecommendServiceImpl implements RecommendService {
         for (RecallStrategy strategy : recallStrategies) {
             candidates.addAll(strategy.recall(userId));
         }
+        UserProfilePortraitVO portrait = userProfileService.getPortraitByUserId(userId);
 
         // 计算期望的推荐结果数量，通常为页码乘以每页大小，以确保排序后能够返回足够的结果进行分页展示
         int expected = pageQuery.getPageNum() * pageQuery.getPageSize();
 
         // 对召回候选结果进行排序，得到最终的推荐结果列表，排序过程中可以结合多种特征和算法进行综合评分，并且可以根据需要过滤掉一些不合适的结果
-        List<RankedRecommend> ranked = recommendRankService.rank(candidates, null,
+        List<RankedRecommend> ranked = recommendRankService.rank(userId, "home", portrait, candidates, null,
                 Math.max(expected, pageQuery.getPageSize()));
 
         // 持久化推荐结果并构建返回给前端的VO对象列表，记录推荐请求的相关信息和推荐结果的详细数据，以便后续分析和优化推荐算法
         List<RecommendItemVO> pageRecords = persistAndBuildResult(userId, RecommendType.HOME, "home", ranked, pageQuery,
-                System.currentTimeMillis() - start, refresh, null);
+                portrait, System.currentTimeMillis() - start, refresh, null);
 
         // 计算总记录数和总页数等分页信息，构建分页结果对象，供前端展示使用
         long total = ranked.size();
@@ -167,17 +168,18 @@ public class RecommendServiceImpl implements RecommendService {
         }
         // 通过当前景点的标签进行相似景点的召回，获取与目标景点具有相似标签的其他景点作为候选结果，补充基于标签的相似推荐，增强推荐结果的相关性和多样性
         candidates.addAll(recallByCurrentScenicTags(scenicId));
+        UserProfilePortraitVO portrait = userProfileService.getPortraitByUserId(userId);
 
         // 计算期望的推荐结果数量，通常为页码乘以每页大小，以确保排序后能够返回足够的结果进行分页展示
         int expected = pageQuery.getPageNum() * pageQuery.getPageSize();
 
         // 对召回候选结果进行排序，得到最终的推荐结果列表，排序过程中可以结合多种特征和算法进行综合评分，并且可以根据需要过滤掉一些不合适的结果
-        List<RankedRecommend> ranked = recommendRankService.rank(candidates, scenicId,
+        List<RankedRecommend> ranked = recommendRankService.rank(userId, "scenic-similar", portrait, candidates, scenicId,
                 Math.max(expected, pageQuery.getPageSize()));
 
         // 持久化推荐结果并构建返回给前端的VO对象列表，记录推荐请求的相关信息和推荐结果的详细数据，以便后续分析和优化推荐算法
         List<RecommendItemVO> pageRecords = persistAndBuildResult(userId, RecommendType.SIMILAR, "scenic-similar",
-                ranked, pageQuery, System.currentTimeMillis() - start, refresh, scenicId);
+                ranked, pageQuery, portrait, System.currentTimeMillis() - start, refresh, scenicId);
 
         // 计算总记录数和总页数等分页信息，构建分页结果对象，供前端展示使用
         long total = ranked.size();
@@ -197,7 +199,7 @@ public class RecommendServiceImpl implements RecommendService {
         payload.setTotal(total);
         payload.setTotalPage(totalPage);
         redisUtils.set(cacheKey, JsonUtils.toJson(payload), SIMILAR_CACHE_TTL);
-        asyncEnrichSimilarReasons(userId, pageRecords, ranked, pageQuery, cacheKey, total, totalPage);
+        asyncEnrichSimilarReasons(userId, portrait, pageRecords, ranked, pageQuery, cacheKey, total, totalPage);
         return pageResult;
     }
 
@@ -209,6 +211,7 @@ public class RecommendServiceImpl implements RecommendService {
             String scene,
             List<RankedRecommend> ranked,
             PageQuery pageQuery,
+            UserProfilePortraitVO portrait,
             long responseTimeMs,
             Boolean refresh,
             Long scenicId) {
@@ -222,7 +225,6 @@ public class RecommendServiceImpl implements RecommendService {
 
         // 截取当前页的推荐结果列表，供后续构建返回结果和记录推荐结果使用
         List<RankedRecommend> pageItems = ranked.subList(fromIndex, toIndex);
-        UserProfilePortraitVO portrait = userProfileService.getPortraitByUserId(userId);
         RecommendReasonResult llmReasonResult = shouldUseLlmReasons(recommendType)
                 ? recommendReasonLlmService.generateReasons(userId, scene, pageItems, portrait)
                 : RecommendReasonResult.builder()
@@ -310,6 +312,7 @@ public class RecommendServiceImpl implements RecommendService {
     }
 
     private void asyncEnrichSimilarReasons(Long userId,
+            UserProfilePortraitVO portrait,
             List<RecommendItemVO> pageRecords,
             List<RankedRecommend> ranked,
             PageQuery pageQuery,
@@ -332,7 +335,6 @@ public class RecommendServiceImpl implements RecommendService {
         List<RankedRecommend> pageItems = new ArrayList<>(ranked.subList(fromIndex, toIndex));
         List<RecommendItemVO> cachedRecords = new ArrayList<>(pageRecords);
         java.util.concurrent.CompletableFuture.runAsync(() -> {
-            UserProfilePortraitVO portrait = userProfileService.getPortraitByUserId(userId);
             RecommendReasonResult result = recommendReasonLlmService
                     .generateReasons(userId, "scenic-similar", pageItems, portrait);
             if (result.getReasons() == null || result.getReasons().isEmpty()) {
