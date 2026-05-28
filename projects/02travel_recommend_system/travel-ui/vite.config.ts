@@ -159,6 +159,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
           "option",
           "pagination",
           "popover",
+          "popconfirm",
           "progress",
           "radio",
           "radio-button",

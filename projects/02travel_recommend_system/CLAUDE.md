@@ -55,12 +55,15 @@ travel-recommend-platform (父 POM)
 | | `com.travel.advisor.vo` | 响应 VO (按模块分子包) |
 | | `com.travel.advisor.llm` | LLM 对话网关、提示词构建、上下文管理 |
 | | `com.travel.advisor.recommend` | 推荐引擎: 召回策略、排名、理由生成 |
-| | `com.travel.advisor.config` | Redis, MyBatis-Plus, ResponseAdvice 配置 |
+| | `com.travel.advisor.service.audit` | 内容审核策略 (景点/点评/图文/行程) |
+| | `com.travel.advisor.service.portrait` | 用户画像分析器、动态摘要生成 |
+| | `com.travel.advisor.config` | Redis, MyBatis-Plus, Async, ResponseAdvice 配置 |
 | | `com.travel.advisor.security` | Spring Security 配置, `JwtAuthenticationFilter`, 权限服务 |
 | | `com.travel.advisor.annotation` | 自定义注解 (如 `@OperationLog`) |
 | | `com.travel.advisor.aspect` | AOP 切面 (如 `OperationLogAspect` 记录管理员操作) |
 | | `com.travel.advisor.filter` | Servlet 过滤器 (如 `RequestIdFilter` 注入请求 ID) |
 | | `com.travel.advisor.task` | 定时任务 (如 `FileCleanupTask` 清理无效文件) |
+| **travel-model** | `com.travel.advisor.domain` | 领域对象 (`recommend` 包: `RankedRecommend`, `RecallCandidate`, `RecallContext`) |
 | **travel-app** | `com.travel.advisor` | `LLMTravelAdvisorApplication` 主启动类 |
 | | `resources/` | `application.yml`, `application-dev.yml`, `application-prod.yml` |
 
@@ -74,7 +77,12 @@ travel-ui/src/
 ├── views/         # 页面组件
 │   ├── admin/     # 管理端页面
 │   ├── user/      # 用户端页面
-│   └── auth/      # 认证页面 (登录/注册)
+│   │   ├── components/  # 用户页通用组件 (ScenicCardGrid, ReviewItemCard 等 25 个)
+│   │   └── editorial/    # 编辑精选页 (预留)
+│   ├── auth/      # 认证页面 (登录/注册)
+│   └── error/     # 错误页 (403/404)
+├── composables/   # 组合式函数 (useProfile, useScenicDetail, useItineraryList 等 9 个)
+├── directives/   # 自定义指令
 ├── layouts/       # 布局组件 (AdminLayout, UserLayout)
 ├── components/    # 通用组件
 ├── utils/         # 工具函数 (request.ts - axios 封装含 token 刷新)

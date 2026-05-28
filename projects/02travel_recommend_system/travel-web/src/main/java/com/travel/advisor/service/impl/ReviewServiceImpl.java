@@ -36,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +58,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewReplyMapper reviewReplyMapper;
     private final FileResourceMapper fileResourceMapper;
     private final com.travel.advisor.service.FileService fileService;
+    private final com.travel.advisor.service.ContentAutoAuditService contentAutoAuditService;
 
     /**
      * 提交评论
@@ -93,6 +96,17 @@ public class ReviewServiceImpl implements ReviewService {
 
         fileService.bindFilesToBiz(dto.getImageIds(), review.getId(), BizType.REVIEW);
         refreshScenicSpotScore(dto.getScenicId());
+
+        // 事务提交后异步触发LLM自动审核，确保异步线程能读到已提交的数据
+        final Long auditId = audit.getId();
+        final Long reviewId = review.getId();
+        final String reviewContent = dto.getContent();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                contentAutoAuditService.auditReviewAsync(auditId, reviewId, reviewContent);
+            }
+        });
 
         return review.getId();
     }

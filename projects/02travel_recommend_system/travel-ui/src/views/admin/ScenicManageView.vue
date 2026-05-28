@@ -137,10 +137,32 @@
         </el-table-column>
         <el-table-column label="标签" min-width="165">
           <template #default="{ row }">
-            <el-tag v-for="tag in row.tagList || []" :key="tag" class="tag-item" size="small">
-              {{ tag }}
-            </el-tag>
-            <span v-if="!row.tagList?.length">-</span>
+            <el-tooltip
+              v-if="row.tagList?.length"
+              placement="top"
+              effect="light"
+              :disabled="row.tagList.length <= 2"
+            >
+              <template #content>
+                <div class="tag-tooltip-list">
+                  <el-tag v-for="tag in row.tagList" :key="tag" size="small">{{ tag }}</el-tag>
+                </div>
+              </template>
+              <div class="tag-preview-list">
+                <el-tag
+                  v-for="tag in row.tagList.slice(0, 2)"
+                  :key="tag"
+                  class="tag-item tag-preview-item"
+                  size="small"
+                >
+                  <span class="tag-preview-text">{{ tag }}</span>
+                </el-tag>
+                <el-tag v-if="row.tagList.length > 2" class="tag-item" size="small" type="info">
+                  +{{ row.tagList.length - 2 }}
+                </el-tag>
+              </div>
+            </el-tooltip>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="180">
@@ -1260,8 +1282,31 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+.tag-preview-list,
+.tag-tooltip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.tag-tooltip-list {
+  max-width: 260px;
+}
+
 .tag-item {
-  margin: 2px 4px 2px 0;
+  margin: 0;
+}
+
+.tag-preview-item {
+  max-width: 72px;
+}
+
+.tag-preview-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .selected-tags-field,
